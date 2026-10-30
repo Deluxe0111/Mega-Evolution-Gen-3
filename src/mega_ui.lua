@@ -21,6 +21,7 @@ function Ui.install(mod, game, art, modules)
   local RS=modules and modules.RS or optional("src.ui.game3.rs.summary_menu")
   local RSE=modules and modules.RSE or optional("src.ui.game3.rse.summary_menu")
   local PartyMenu=modules and modules.PartyMenu or optional("src.ui.game3.party_menu")
+  local Oam=modules and modules.Oam or optional("src.core.game3.oam")
   if not Pokemon or not art or not art.picture then
     return nil,"Pokemon or Mega image provider not available"
   end
@@ -29,6 +30,8 @@ function Ui.install(mod, game, art, modules)
     partySlotOverrides=0, megaIconAttempts=0, megaIconSuccess=0,
     megaIconFailures=0, lastIcon=nil, lastFailure=nil,
     partyDraws=0, lastPartySlot=nil,
+    nativePartyFlushes=0, nativeMegaOverrides=0,
+    lastNativeSlot=nil, lastNativeSlug=nil, overlayError=nil,
   }
   local warned={}
   local function warnOnce(slug,why)
@@ -81,25 +84,65 @@ function Ui.install(mod, game, art, modules)
     return false
   end
 
-  wrap(Pokemon,"monIcon",function(next,mon)
-    local v=viewOf(mon)
-    if v and art.icon then
-      diagnostics.megaIconAttempts=diagnostics.megaIconAttempts+1
-      diagnostics.lastIcon=v.slug
-      local ok, icon=pcall(art.icon,v.slug,shiny(mon),female(mon))
-      if ok and icon and icon.image and icon.quads and icon.quads[0]
-          and icon.quads[1] then
-        diagnostics.megaIconSuccess=diagnostics.megaIconSuccess+1
-        diagnostics.lastIconSource=icon.source or "unknown"
-        return icon
-      end
-      diagnostics.megaIconFailures=diagnostics.megaIconFailures+1
-      diagnostics.lastFailure=ok and "missing/invalid two-frame Mega artwork"
-        or tostring(icon)
-      warnOnce(v.slug,diagnostics.lastFailure)
+  local function iconFor(v,mon)
+    if not v or not art.icon then return nil end
+    diagnostics.megaIconAttempts=diagnostics.megaIconAttempts+1
+    diagnostics.lastIcon=v.slug
+    local ok,icon=pcall(art.icon,v.slug,shiny(mon),female(mon))
+    if ok and icon and icon.image and icon.quads and icon.quads[0]
+        and icon.quads[1] then
+      diagnostics.megaIconSuccess=diagnostics.megaIconSuccess+1
+      diagnostics.lastIconSource=icon.source or "unknown"
+      return icon
     end
-    return next(mon)
+    diagnostics.megaIconFailures=diagnostics.megaIconFailures+1
+    diagnostics.lastFailure=ok and "missing/invalid two-frame Mega artwork"
+      or tostring(icon)
+    warnOnce(v.slug,diagnostics.lastFailure)
+    return nil
+  end
+  wrap(Pokemon,"monIcon",function(next,mon)
+    local icon=iconFor(viewOf(mon),mon)
+    return icon or next(mon)
   end)
+
+  -- FireRed paints native party sprites via Oam.flushOne after its icon
+  -- lookup. A later G9 icon wrapper can bypass Pokemon.monIcon altogether.
+  -- Override only Mega Pokémon OAM sprites at this final render boundary.
+  -- _order converts the visible battle-switch row to its original party slot.
+  -- No party arrays, saved Pokémon or battle stats are mutated here.
+  if PartyMenu and Oam and type(Oam.flushOne)=="function"
+      and type(Oam.get)=="function" and type(game.partyView)=="function" then
+    wrap(Oam,"flushOne",function(next,sprite,...)
+      if PartyMenu.open and PartyMenu._battle
+          and type(PartyMenu._party)=="table" and PartyMenu._oam then
+        for i,record in pairs(PartyMenu._oam) do
+          if type(i)=="number" and record and record.mon
+              and Oam.get(record.mon)==sprite then
+            diagnostics.nativePartyFlushes=diagnostics.nativePartyFlushes+1
+            local slot=PartyMenu._order and PartyMenu._order[i] or i
+            local ok,v=pcall(game.partyView,slot)
+            if ok and v then
+              local mon=PartyMenu._party[i]
+              local icon=iconFor(v,mon)
+              if icon then
+                local frame=tonumber(sprite.data and sprite.data[2]) or 0
+                frame=math.floor(frame)%2
+                sprite.image=icon.image
+                sprite._quads=icon.quads
+                sprite.quad=icon.quads[frame] or icon.quads[0]
+                diagnostics.nativeMegaOverrides=diagnostics.nativeMegaOverrides+1
+                diagnostics.lastNativeSlot=slot
+                diagnostics.lastNativeSlug=v.slug
+              end
+            end
+            break
+          end
+        end
+      end
+      return next(sprite,...)
+    end)
+  end
 
   -- Battle-switch roster can contain COPIES and a reordered view of the
   -- original player party. Patch only its synchronous draw, replacing
@@ -121,14 +164,20 @@ function Ui.install(mod, game, art, modules)
     if not diagnosticsVisible() then return end
     local G=love and love.graphics
     if not G or not G.push or not G.rectangle or not G.print then return end
-    pcall(function()
+    local pushed=false
+    local ok,err=pcall(function()
       G.push("all")
+      pushed=true
       if G.origin then G.origin() end
       if G.setShader then G.setShader() end
       G.setColor(0.04,0.09,0.15,0.94)
       G.rectangle("fill",0,132,240,28)
       G.setColor(1,1,1,1)
-      if not tinyFont and G.newFont then tinyFont=G.newFont(7) end
+      -- An unavailable font must not suppress the entire diagnostic.
+      if not tinyFont and G.newFont then
+        local fontOk,font=pcall(G.newFont,7)
+        if fontOk then tinyFont=font end
+      end
       if tinyFont and G.setFont then G.setFont(tinyFont) end
       local slot=diagnostics.lastPartySlot or "-"
       local slug=diagnostics.lastIcon or "NO MEGA STATE"
@@ -137,9 +186,16 @@ function Ui.install(mod, game, art, modules)
         or (diagnostics.megaIconFailures>0 and "ICON FAILED"
           or "ICON NOT REQUESTED")
       G.print("MEGA SLOT "..tostring(slot)..": "..tostring(slug),4,134)
-      G.print(info.." / hits "..tostring(diagnostics.partySlotOverrides),4,145)
+      G.print(info.." / OAM "..tostring(diagnostics.nativeMegaOverrides)
+        .."/"..tostring(diagnostics.nativePartyFlushes),4,145)
       G.pop()
+      pushed=false
     end)
+    if not ok then
+      if pushed then pcall(G.pop) end
+      diagnostics.overlayError=tostring(err)
+      warnOnce("diagnostic overlay",err)
+    end
   end
   if PartyMenu and type(PartyMenu.draw)=="function"
       and type(game.partyView)=="function" then
@@ -274,6 +330,12 @@ function Ui.install(mod, game, art, modules)
       end
       return next(species,frame,isShiny,...)
     end)
+  end
+
+  if mod and mod.log and type(mod.log.info)=="function" then
+    mod.log:info("Mega UI OAM diagnostic hooks: party=%s oam=%s",
+      tostring(PartyMenu and type(PartyMenu.draw)=="function"),
+      tostring(Oam and type(Oam.flushOne)=="function"))
   end
 
   local bridge={}
