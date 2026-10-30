@@ -1,0 +1,34 @@
+name: Mega animation atlas proof
+on:
+  workflow_dispatch:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  atlas-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Pillow
+        run: python -m pip install Pillow==11.3.0
+      - name: Run lossless packing tests
+        run: python -m unittest discover -s tests -p 'test_mega_atlas.py'
+      - name: Audit EBDX Mega source geometry
+        run: python tools/build_mega_atlas.py --audit-only
+      - name: Build Mega Venusaur atlas and animated GIF previews
+        run: python tools/build_mega_atlas.py --only mega_venusaur --preview
+      - name: Upload six sprite variants, indexes and geometry report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mega-venusaur-animation-proof
+          path: |
+            assets/runtime/
+            reports/mega_sheet_geometry.csv
+          if-no-files-found: warn
+          retention-days: 14
