@@ -10,7 +10,7 @@ The build **does not resize source art, change alpha, edit original files, regis
 
 ## Run it
 
-Install Python 3.11+ and Pillow 11.3.0:
+Install Python 3.11–3.15 and Pillow 13.0.0, including prebuilt wheels for Python 3.15:
 
     py -3 -m pip install --only-binary=:all: Pillow==13.0.0
 
