@@ -53,13 +53,19 @@ def main():
                 assert seg["fs"] == fs and seg["frames"] >= 1
                 assert seg["cols"] >= 1
                 assert seg["ox"] >= 0 and seg["oy"] >= 0
+                # Optional motion-preserving common crop. Without these fields
+                # legacy packed atlases still use source-square frame geometry.
+                fw, fh = seg.get("fw", fs), seg.get("fh", fs)
+                cx, cy = seg.get("cx", 0), seg.get("cy", 0)
+                assert 0 < fw <= fs and 0 < fh <= fs
+                assert 0 <= cx <= fs - fw and 0 <= cy <= fs - fh
                 page = DEST / "atlas" / f"battle_{kind}_{seg['sheet']}.png"
                 if page not in page_dims:
                     page_dims[page] = dimensions(page)
                 width, height = page_dims[page]
                 row_count = (seg["frames"] + seg["cols"] - 1) // seg["cols"]
-                assert seg["ox"] + min(seg["frames"], seg["cols"]) * fs <= width, (slug, kind)
-                assert seg["oy"] + row_count * fs <= height, (slug, kind)
+                assert seg["ox"] + min(seg["frames"], seg["cols"]) * fw <= width, (slug, kind)
+                assert seg["oy"] + row_count * fh <= height, (slug, kind)
                 next_first += seg["frames"]
             assert next_first == count, (slug, kind)
             nframes += count
