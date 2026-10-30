@@ -15,4 +15,4 @@ jobs:
       - name: Check manifest and artwork inventory format
         run: python tests/check_project.py
       - name: Check imported artwork if present
-        run: python tools/validate_assets.py --root assets/source/ebdx --strict
+        run: python tools/validate_assets.py --root assets/source/ebdx --strict --no-report

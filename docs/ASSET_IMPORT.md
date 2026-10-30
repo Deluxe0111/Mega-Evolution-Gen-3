@@ -34,10 +34,10 @@ assets/source/ebdx/
     README.md               Complete upstream contributor credits
   mega_forms.json           Parsed form metadata including original PBS key
   mega_roster.csv
-  asset_plan.csv
-  download_results.csv
-  missing_assets.csv
-  mega_coverage.csv
+  asset_plan.csv             Regenerated locally (not committed)
+  download_results.csv       Regenerated locally (not committed)
+  missing_assets.csv         Regenerated locally (not committed)
+  mega_coverage.csv          Regenerated locally (not committed)
 ```
 
 Source files are not GIFs. EBDX `front.png`/`back.png` are sprite sheets with engine-specific animation; inspect the frame shape and timing before adapting them. This repository intentionally does not assume all sheets use the same frame count.
@@ -45,5 +45,7 @@ Source files are not GIFs. EBDX `front.png`/`back.png` are sprite sheets with en
 ### What belongs in version control?
 
 Keep the curated Mega art, corresponding item icons, source metadata, credits, and conversion scripts. Do **not** copy the entire Essentials game (`Game.exe`, engine code, ROMs, unrelated Pokémon, full audio collection, etc.). Do not overwrite existing hand-curated art blindly; maintain provenance when swapping a sprite source.
+
+The asset checker writes its per-file audit to the ignored `reports/ebdx_asset_audit.csv` by default (or specify `--no-report` in CI). Do not commit machine-specific audit paths.
 
 When you later implement gameplay, use parsed, explicitly mapped IDs rather than treating a Mega form's EBDX PBS index as a Gen1Recomp species slot.
