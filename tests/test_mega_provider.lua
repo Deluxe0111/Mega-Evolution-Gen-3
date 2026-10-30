@@ -55,6 +55,22 @@ local croppedFrame = Provider.locate(synthetic, "mega_crop", "back", 2)
 assert(croppedFrame and croppedFrame.x == 0 and croppedFrame.y == 14)
 assert(croppedFrame.fs == 32 and croppedFrame.fw == 20 and croppedFrame.fh == 14)
 assert(croppedFrame.cx == 4 and croppedFrame.cy == 7)
+-- New index uses a padded stride, while the Quad crops exactly the source
+-- rectangle. Adjacent poses must not lie one texture pixel from its edge.
+synthetic.forms.mega_crop.variants.back.segments[1].ox = 2
+synthetic.forms.mega_crop.variants.back.segments[1].oy = 2
+synthetic.forms.mega_crop.variants.back.segments[1].stepX = 24
+synthetic.forms.mega_crop.variants.back.segments[1].stepY = 18
+synthetic.forms.mega_crop.variants.back.segments[1].gutter = 2
+local padded = Provider.locate(synthetic, "mega_crop", "back", 2)
+assert(padded.x == 2 and padded.y == 20)
+assert(Provider.locate(synthetic, "mega_crop", "back", 1).x == 26)
+-- Existing indexed atlases without stepX/stepY keep their old coordinates.
+synthetic.forms.mega_crop.variants.back.segments[1].stepX = nil
+synthetic.forms.mega_crop.variants.back.segments[1].stepY = nil
+assert(Provider.locate(synthetic, "mega_crop", "back", 2).y == 16)
+synthetic.forms.mega_crop.variants.back.segments[1].ox = 0
+synthetic.forms.mega_crop.variants.back.segments[1].oy = 0
 local p2 = Provider.locate(synthetic, "mega_test", "front", 3)
 assert(p2.file == "battle_front_1.png" and p2.y == 32 and p2.frame == 3)
 assert(Provider.locate(synthetic, "mega_test", "front", 4).frame == 0)
