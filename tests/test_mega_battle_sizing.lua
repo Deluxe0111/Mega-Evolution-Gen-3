@@ -54,8 +54,8 @@ assert(wide.image.w>64 and wide.image.h>64 and wide.image.dpi==2)
 assert(wide~=public)
 assert(a.picture("mega_venusaur","back",false,0,true)==wide)
 local s=spec.back.scale
-local ox=(64-121*s)/2
-local oy=spec.back.baseline-spec.back.feet*s
+local ox=(64-121*s)/2 + (spec.back.dx or 0)
+local oy=spec.back.baseline-spec.back.feet*s + (spec.back.dy or 0)
 local xmin=math.floor(ox)
 local ymin=math.floor(oy)
 local wantPivotX=32-xmin
