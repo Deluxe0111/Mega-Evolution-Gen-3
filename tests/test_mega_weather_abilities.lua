@@ -115,6 +115,10 @@ a.mon.hp=120
 set(a,"DELTA_STREAM")
 assert(Weather.activate(game,st,a,adapter))
 assert(st.weather=="STRONG_WINDS" and st.weatherTurns==0)
+b.ability="DROUGHT"
+assert(Weather.blockNativeWeather(game,adapter,b),
+  "opposing Drought cannot replace Delta Stream")
+b.ability=nil
 local rock={moveType=5,effectiveness=2,typeFlags={super=true,notVery=false,immune=false}}
 local amount,changed=Weather.finalDamage(game,st,adapter,b,a,120,rock,Types)
 assert(amount==120,"non-Flying target unaffected")
@@ -164,7 +168,16 @@ local Hit={run=function()end,dealDamage=function(M,amount)
   return amount
 end}
 local Secondary={changeStat=function()return "blocked" end}
-local NativeAbilities={endTurn=function()return false end}
+local NativeAbilities={
+  endTurn=function()return false end,
+  switchIn=function(ad,battler)
+    if battler.ability=="DROUGHT" then
+      ad._st.weather="SUN"
+      return true
+    end
+    return false
+  end,
+}
 local WeatherHandlers={tickWeather=function()return "native tick"end}
 local Status={cantMakeAsleep=function()return false end}
 local original={
@@ -172,6 +185,7 @@ local original={
   switchOut=Engine.switchOutEffects,
   damageBase=Damage.base,damageCalc=Damage.calc,
   endTurn=NativeAbilities.endTurn,
+  nativeWeatherSwitchIn=NativeAbilities.switchIn,
   tick=WeatherHandlers.tickWeather,
   sleep=Status.cantMakeAsleep,
 }
@@ -207,7 +221,14 @@ assert(res==150 and a.mon.spAtk==100)
 assert(NativeAbilities.endTurn(adapter,a)==true and a.mon.hp==105)
 set(a,"DELTA_STREAM")
 assert(Engine.switchInEffects(st,adapter,a)==true and st.weather=="STRONG_WINDS")
+b.ability="DROUGHT"
+assert(NativeAbilities.switchIn(adapter,b)==false
+  and st.weather=="STRONG_WINDS",
+  "native Drought cannot displace active strong winds")
 assert(Engine.switchOutEffects(st,adapter,a)==false and st.weather==nil)
+assert(NativeAbilities.switchIn(adapter,b)==true and st.weather=="SUN",
+  "native weather setters resume when Delta Stream exits")
+b.ability=nil
 set(a,nil)
 assert(NativeAbilities.endTurn(adapter,a)==false)
 bridge.uninstall()
@@ -215,6 +236,7 @@ assert(Engine.switchInEffects==original.switchIn
   and Engine.switchOutEffects==original.switchOut
   and Damage.base==original.damageBase and Damage.calc==original.damageCalc
   and NativeAbilities.endTurn==original.endTurn
+  and NativeAbilities.switchIn==original.nativeWeatherSwitchIn
   and WeatherHandlers.tickWeather==original.tick
   and Status.cantMakeAsleep==original.sleep)
 print("PASS: Snow Warning, Solar Power, Electric Surge, Delta Stream and native hook cleanup")
