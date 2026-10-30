@@ -27,7 +27,7 @@ function Icons.install(mod, rows, opts)
     local key = row.id
     if loaded[key] ~= nil then return loaded[key] or nil, true end
     local file = (key == "KEY_STONE")
-      and "assets/source/ebdx/ui_reference/MEGARING.png"
+      and "assets/source/ebdx/ui_reference/Graphics/Items/MEGARING.png"
       or ("assets/source/ebdx/mega_stones/" .. key .. ".png")
     local ok, image = pcall(graphics.newImage, mod.path .. "/" .. file)
     if ok and image then
