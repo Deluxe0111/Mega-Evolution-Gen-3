@@ -20,10 +20,11 @@ From the repository root:
 
     py -3 tools/build_mega_atlas.py --audit-only
     py -3 tools/build_mega_atlas.py --only mega_venusaur --preview
-    py -3 tools/build_mega_atlas.py
+    py -3 tools/build_mega_atlas.py --only mega_venusaur --preview --normalize-padding
+    py -3 tools/build_mega_atlas.py --normalize-padding
     py -3 -m unittest discover -s tests -p "test_mega_atlas.py"
 
-The first command checks all 588 source PNGs. The second builds six Mega Venusaur atlases and GIF previews to inspect. The third builds the entire 98-variant Mega roster. Alternatively, on Windows run `5_BUILD_ALL_MEGA_ATLASES.bat` for the complete collection. The repository also includes a separately triggered **Full Mega atlas build** workflow, which checks that every frame range and generated PNG page resolves correctly. For locally generated output, run `py -3 tests/check_full_mega_atlas.py` after the full build.
+The first command checks all 588 source PNGs. The second makes a legacy six-variant preview; the third demonstrates **motion-safe transparent-padding normalisation** for Mega Venusaur. The fourth builds the full 98-variant roster with shared-border packing. **Use this full build before installing normalised atlases**: this branch's committed runtime pages are still legacy-packed until regenerated. The new format is opt-in, so older bundled atlases work unchanged. Alternatively, on Windows run `5_BUILD_ALL_MEGA_ATLASES.bat` for the complete collection. The repository also includes a separately triggered **Full Mega atlas build** workflow, which checks that every frame range and generated PNG page resolves correctly. For locally generated output, run `py -3 tests/check_full_mega_atlas.py` after the full build.
 
 The packer uses 2048px atlas pages by default, with configurable 256–4096px page size. Large strips can be split across segments without losing a frame. Generated pages are not yet committed or packaged as a player release.
 
@@ -45,7 +46,7 @@ The packer uses 2048px atlas pages by default, with configurable 256–4096px pa
 
 The actual number of PNG atlas pages is determined by the source images.
 
-The Lua and JSON indexes are keyed by stable Mega slugs, such as mega_venusaur and mega_charizard_x. Each sprite variant records the square frame size, number of frames, playback FPS and one or more atlas segments. Each segment stores: sheet (page index), first (first frame of the segment), frames (frame count), ox and oy (page origin), cols (columns) and fs (frame size).
+The Lua and JSON indexes are keyed by stable Mega slugs, such as mega_venusaur and mega_charizard_x. Each sprite variant records the square frame size, number of frames, playback FPS and one or more atlas segments. Each legacy segment stores: sheet (page index), first (first frame of the segment), frames (frame count), ox and oy (page origin), cols (columns) and fs (source frame size). With `--normalize-padding` the segment additionally stores `fw` and `fh` (packed rectangle width/height), and `cx` and `cy` (original source-frame crop origin). Runtime restores these offsets when drawing. Square source frame size `fs` remains unchanged for sprite scale/positioning. No new source format or Gen1Recomp hook is required.
 
 To locate an animation frame:
 
@@ -55,6 +56,38 @@ To locate an animation frame:
     y = segment.oy + floor(local_frame / segment.cols) * segment.fs
 
 Battle FPS defaults to 8, like G9 Battle Sprites; icon FPS defaults to 2. **These are preliminary playback rates, not verified original EBDX timing.** Timing and sprite positioning will need visual QA.
+
+## Motion-safe normalisation (opt-in)
+
+A visible gap in an atlas does **not** necessarily mean a tile-spacing error: the
+Mega Venusaur example is already a contiguous 9×9 grid of 121px source-frame
+cells, but its visible pixels occupy less than each full cell. Much of the
+spacing is intentionally transparent within frames.
+
+To reduce transparent padding without changing motion, the builder:
+
+1. Reads alpha bounding boxes across the **entire animation** (all frames of
+   one Mega form and one front/back/shiny variant).
+2. Computes **one shared union rectangle**, including the Pokémon's highest
+   leap, lowest bob and furthest lateral movement. Fully transparent strips
+   retain their original full frame.
+3. Packs the same shared crop rectangle for **every frame**, recording its
+   offset relative to the original source square.
+4. At runtime, draws with that offset restored. Both the normal 64px picture
+   canvas and the optional full-resolution HD battle tag retain the source
+   frame's intended position.
+
+There is **no per-frame centring**, baseline guessing, automatic grounding,
+or movement smoothing. Floating Pokémon can remain above the platform and
+bouncing animations keep their authored trajectory. Battle-scene placement
+and individual Mega scale are still controlled separately by
+`data/mega_presentation.lua`.
+
+Use `get_frame` or GIF previews to inspect frame alignment. Python tests use
+a synthetic hovering/bouncing Pokémon and check **all visible pixels** match
+the original source coordinates exactly; cropped transparent RGB bytes are
+not semantically meaningful. Keep the optional mode separate until the full
+atlas is rebuilt, validated and visually reviewed.
 
 ## What is still missing
 
