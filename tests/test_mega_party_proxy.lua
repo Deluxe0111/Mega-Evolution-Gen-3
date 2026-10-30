@@ -51,6 +51,32 @@ assert(game.activeForm(base)=="mega_blastoise","party menu did not see Mega")
 local view=assert(game.view(base),"party menu must receive active Mega view")
 assert(view.slug=="mega_blastoise" and view.ability==expected.ability)
 assert(game.view(p).slug==view.slug)
+-- Exercise the actual Mega UI -> Pokemon.monIcon hook consumed by FireRed's
+-- OAM party roster. This must work for the ORIGINAL save-party record.
+local UI=dofile("src/mega_ui.lua")
+local Pokemon={
+  monIcon=function() return {image="vanilla-icon",quads={[0]=1,[1]=2}} end,
+  monFrontPic=function() return {image="normal-front"} end,
+  isShiny=function() return false end,
+  gender=function() return "M" end,
+  speciesOf=function(m) return m.species end,
+}
+local seen
+local bridge=assert(UI.install({},game,{
+  picture=function(slug,side) return {image=slug..":"..side} end,
+  icon=function(slug,shiny,female)
+    seen={slug,shiny,female}
+    return {image="mega-blastoise-icon",w=32,h=32,
+      quads={[0]={frame=0},[1]={frame=1}}}
+  end,
+},{Pokemon=Pokemon}))
+local icon=Pokemon.monIcon(st.playerParty[1])
+assert(icon.image=="mega-blastoise-icon" and icon.quads[0] and icon.quads[1],
+  "FireRed PartyMenu cannot resolve the Mega Blastoise animation")
+assert(seen[1]=="mega_blastoise" and seen[2]==false)
+assert(Pokemon.monIcon({species=1}).image=="vanilla-icon")
+bridge.uninstall()
+assert(Pokemon.monIcon(base).image=="vanilla-icon")
 assert(game.monPicture(st,p,true,false).image=="mega_blastoise:back:false")
 assert(game.stat(b,"speed",0)>0)
 assert(base.species==before.species and base.attack==before.attack and base.form==before.form)
