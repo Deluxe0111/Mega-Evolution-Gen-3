@@ -165,6 +165,19 @@ function Standalone.install(mod, game, modules, battleVisual)
     end)
   end
 
+  -- Active Delta Stream suppresses normal native weather setters while
+  -- the Mega holder remains on the field. Their other battle handlers
+  -- continue to work because this only skips dedicated weather setters.
+  if Weather and Weather.blockNativeWeather and NativeAbilities
+      and type(NativeAbilities.switchIn)=="function" then
+    wrap(NativeAbilities,"switchIn",function(next,adapter,b)
+      if enabled() and Weather.blockNativeWeather(game,adapter,b) then
+        return false
+      end
+      return next(adapter,b)
+    end)
+  end
+
   -- Weather-setting abilities also activate if an already Mega-Evolved
   -- battler is switched back in. Native Abilities.switchIn runs first.
   if Weather and Weather.activate
