@@ -254,8 +254,10 @@ function Standalone.install(mod, game, modules, battleVisual)
       function(next,a,am,b,bm,ctx)
         local vanilla=next(a,am,b,bm,ctx)
         if not enabled() then return vanilla end
-        local st=(type(ctx)=="table" and ctx.battle)
-          or Battle._st or Ui._st
+        -- UnifiedCallbacks may supply a read-only, non-native battle
+        -- view in ctx.battle. Prefer the live battle for ID resolution.
+        local st=Battle._st or Ui._st
+          or (type(ctx)=="table" and ctx.battle)
         local function resolve(pub)
           if type(pub)~="table" then return nil end
           local id=tonumber(pub.id)
