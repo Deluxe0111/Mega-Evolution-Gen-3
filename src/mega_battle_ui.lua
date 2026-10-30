@@ -49,7 +49,13 @@ function MegaUI.new(mod, game, opts)
     local file = (mod.path or "") .. "/" .. ASSETS[key]
     local ok, img = pcall(G.newImage, file)
     if ok and img then
-      if img.setFilter then img:setFilter("nearest", "nearest") end
+      -- The HP emblem is a 26x34 source asset. Downscaling it with nearest
+      -- caused very coarse pixel stair-steps. Linear only for this emblem;
+      -- preserve sharp pixels for the move button and transformation symbol.
+      if img.setFilter then
+        if key == "badge" then img:setFilter("linear", "linear")
+        else img:setFilter("nearest", "nearest") end
+      end
       images[key] = img
       return img
     end
@@ -297,10 +303,12 @@ function MegaUI.new(mod, game, opts)
     local barX=c.x+ox+(isPlayer and 0 or -8)
     local barY=c.y+oy
     local w,h=img:getDimensions()
-    local s=math.min(11/w,13/h)
+    -- Previously ~10x13: unreadably small. Present at ~18x24 with
+    -- bilinear minification, and keep the symbol left of the actual HP bar.
+    local s=math.min(18/w,24/h)
     G.push("all")
     G.setColor(1,1,1,1)
-    G.draw(img,math.floor(barX-12),math.floor(barY-5),0,s,s)
+    G.draw(img,math.floor(barX-20),math.floor(barY-11),0,s,s)
     G.pop()
     return true
   end
@@ -331,9 +339,12 @@ function MegaUI.new(mod, game, opts)
     H.draw=wrappedDraw
     return true
   end
-  function self:uninstall()
+  function self:resetTransform()
     self.lastFlash=nil
     pendingImage,pendingWhite=nil,nil
+  end
+  function self:uninstall()
+    self:resetTransform()
     if hbModule and hbModule.draw==wrappedDraw then
       hbModule.draw=originalDraw
     end
