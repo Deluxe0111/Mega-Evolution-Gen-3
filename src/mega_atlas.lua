@@ -59,6 +59,7 @@ function Atlas.new(mod, index, graphics, timer, presentation)
   local pivots = setmetatable({}, { __mode = "k" })
   local inBattleDraw = false
   local unpackArgs = table.unpack or unpack
+  local hdBattle
 
   -- The game's G9/HD draw wrappers are shared by EVERY sprite. Our previous
   -- version permanently inserted a second global draw shim; this could upset
@@ -68,6 +69,9 @@ function Atlas.new(mod, index, graphics, timer, presentation)
   -- and argument types (including quad drawing), not a padded 9-arg list.
   function self.withBattleDraw(drawFn, ...)
     if type(drawFn) ~= "function" then return nil end
+    -- The HD provider handles its own full-size quad and screen-space pivot.
+    -- Never interpose a G.draw shim during HD rendering.
+    if hdBattle and hdBattle() then return drawFn(...) end
     if inBattleDraw or not G or type(G.draw) ~= "function" then
       return drawFn(...)
     end
@@ -102,7 +106,7 @@ function Atlas.new(mod, index, graphics, timer, presentation)
     return G and type(G.draw) == "function" and type(G.newCanvas) == "function"
   end
 
-  local function hdBattle()
+  hdBattle = function()
     if not mod or type(mod.find) ~= "function" then return nil end
     local ok, found = pcall(mod.find, mod, "gen3-hd-sprites")
     local hd = ok and found and found.exports or nil
