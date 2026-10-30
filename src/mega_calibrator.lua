@@ -14,9 +14,19 @@ local function tryModule(path)
   return ok and result or nil
 end
 
-local function drawText(g, str, x, y, sx)
-  g.setColor(0.94, 0.98, 1, 1)
-  g.print(tostring(str), x, y, 0, sx or 1, sx or 1)
+-- Prefer the cartridge's crisp Gen 3 small font. Fractional scaling the
+-- default LÖVE font made the earlier HUD badly blurred/unreadable.
+local function drawText(g, nativeFont, str, x, y)
+  str = tostring(str)
+  if nativeFont and type(nativeFont.draw) == "function" then
+    local opts = { small = true, maxWidth = 232,
+      colors = nativeFont.COLOR and nativeFont.COLOR.WHITE }
+    local ok = pcall(nativeFont.draw, str, x, y, opts)
+    if ok then return end
+  end
+  -- Fallback keeps integer pixels even if the ROM font is unavailable.
+  g.setColor(1, 1, 1, 1)
+  g.print(str, x, y)
 end
 
 function Calibrator.install(mod, modelModule, forms, presentation, atlas, opts)
@@ -28,6 +38,7 @@ function Calibrator.install(mod, modelModule, forms, presentation, atlas, opts)
   local exportName = opts.exportName or OUTPUT
   local bg = opts.background or tryModule("src.core.game3.battle.bg")
   local G = opts.graphics or (love and love.graphics)
+  local font = opts.font or tryModule("src.ui.game3.frlg_font")
   -- API2's generic mod.ui.push targets old Gen1 Screens; the existing
   -- Gen3 bridge is explicitly required for a Gen3 registered screen.
   local screenBridge = opts.screenBridge or tryModule("src.ui.game3.mod_ui")
@@ -69,7 +80,7 @@ function Calibrator.install(mod, modelModule, forms, presentation, atlas, opts)
     local self = setmetatable({
       game = game,
       gbaCanvas = true, kind = "mega_calibrator",
-      isMenu = true, isOpaque = true, mode = "browse",
+      isMenu = true, isOpaque = true,
       model = modelModule.new(forms, presentation),
       seconds = 0, message = "", messageTimer = 0,
     }, Screen)
@@ -80,36 +91,42 @@ function Calibrator.install(mod, modelModule, forms, presentation, atlas, opts)
   function Screen:update(dt)
     self.seconds = self.seconds + math.max(0, dt or 1/60)
     if self.messageTimer > 0 then self.messageTimer = self.messageTimer - (dt or 1/60) end
-    local key = self.game and self.game.input
-    if not (key and key.wasPressed) then return end
+    local input = self.game and self.game.input
+    if not (input and input.wasPressed) then return end
     local m = self.model
-    local function pressed(k) return key:wasPressed(k) end
+    local function pressed(k) return input:wasPressed(k) end
+    local heldB = type(input.isDown) == "function" and input:isDown("b")
 
     if pressed("start") then
       local ok, err = export(self.game, m)
-      self.message = ok and ("EXPORTED: " .. exportName)
-        or ("EXPORT FAILED: " .. tostring(err or "storage unavailable"))
-      self.messageTimer = 7
+      if ok then
+        -- Start saves the COMPLETE table then leaves the screen. A failed
+        -- write keeps it open so unexported edits aren't lost.
+        m.saved = true
+        if self.game and self.game.stack then self.game.stack:pop() end
+      else
+        self.message = "SAVE FAILED - TRY AGAIN"
+        self.messageTimer = 7
+        if mod.log then mod.log:warn("Mega tuner export failed: %s", tostring(err)) end
+      end
       return
     end
-    if pressed("select") then m:toggleSide(); return end
-    if m.mode == "browse" then
-      if pressed("left") then m:moveForm(-1)
-      elseif pressed("right") then m:moveForm(1)
-      elseif pressed("up") then m:moveForm(-10)
-      elseif pressed("down") then m:moveForm(10)
-      elseif pressed("a") then m.mode = "tune"
-      elseif pressed("b") and self.game and self.game.stack then
-        self.game.stack:pop()
-      end
+    -- GBA shoulder buttons L/R browse; d-pad never changes species.
+    if pressed("l") then m:moveForm(-1); return end
+    if pressed("r") then m:moveForm(1); return end
+    if pressed("a") then m:toggleSide(); return end
+    if pressed("select") then m:toggleShiny(); return end
+
+    -- B is a held modifier. B+Up/Down scales, otherwise D-pad moves.
+    -- Consuming B alone does not exit the calibration session.
+    if heldB then
+      if pressed("up") then m:scale(1)
+      elseif pressed("down") then m:scale(-1) end
     else
-      if pressed("up") then m:nextField(-1)
-      elseif pressed("down") then m:nextField(1)
-      elseif pressed("left") then m:adjust(-1)
-      elseif pressed("right") then m:adjust(1)
-      elseif pressed("a") then m:toggleShiny()
-      elseif pressed("b") then m.mode = "browse"
-      end
+      if pressed("left") then m:move(-1, 0)
+      elseif pressed("right") then m:move(1, 0)
+      elseif pressed("up") then m:move(0, -1)
+      elseif pressed("down") then m:move(0, 1) end
     end
   end
 
@@ -164,31 +181,27 @@ function Calibrator.install(mod, modelModule, forms, presentation, atlas, opts)
       drawFrame(slug, side, m.shiny, m.index, self.seconds, row)
     end
 
-    -- Native-sized battle playfield + developer controls overlay.
-    G.setColor(0.07, 0.13, 0.23, .94)
-    G.rectangle("fill", 0, 0, 240, 25)
-    G.rectangle("fill", 0, 112, 240, 48)
-    G.setColor(.96,.83,.36,1)
-    G.rectangle("line", 0.5, 0.5, 239, 24)
-    G.rectangle("line", 0.5, 112.5, 239, 47)
-    drawText(G, ("%02d/%02d  %s"):format(m.index,#m.forms,label(slug)), 5, 3, .8)
+    -- Integer-aligned, high-contrast HUD with the native Gen 3 pixel
+    -- font. Never scale text fractionally or print over the animation.
+    G.setColor(0.065, 0.11, 0.20, 0.98)
+    G.rectangle("fill", 0, 0, 240, 31)
+    G.rectangle("fill", 0, 116, 240, 44)
+    G.setColor(0.92, 0.77, 0.30, 1)
+    G.rectangle("fill", 0, 30, 240, 2)
+    G.rectangle("fill", 0, 114, 240, 2)
     local selected = sides[m.side .. (m.shiny and "_shiny" or "")] or sides[m.side]
-    drawText(G, ("EDIT %s %s  %s"):format(m.side:upper(),
-      m.shiny and "SHINY" or "NORMAL",m.mode:upper()), 5, 15, .68)
-    if m.mode == "browse" then
-      drawText(G, "D-PAD: CHOOSE MEGA   A: ADJUST", 6, 115, .72)
-      drawText(G, "SELECT: SIDE   START: EXPORT", 6, 128, .72)
-      drawText(G, "B: EXIT       MODIFIED: " .. m:countChanged(), 6, 141, .72)
-    else
-      local field = m:fieldName()
-      drawText(G, field:upper() .. " = " .. tostring(selected[field]), 6, 115, .86)
-      drawText(G, "UP/DOWN FIELD  LEFT/RIGHT +/-", 6, 128, .69)
-      drawText(G, "A SHINY  SELECT SIDE  START SAVE", 6, 141, .65)
-    end
+    drawText(G, font, ("%02d/%02d  %s"):format(m.index,#m.forms,label(slug)), 4, 0)
+    drawText(G, font, ("%s  %s  X:%+d Y:%+d  Z:%.2f"):format(
+      m.side:upper(),m.shiny and "SHINY" or "NORMAL",
+      tonumber(selected.dx) or 0,tonumber(selected.dy) or 0,
+      tonumber(selected.scale) or 1), 4, 15)
+    drawText(G, font, "L/R: POKEMON     A: SWITCH SIDE", 4, 116)
+    drawText(G, font, "D-PAD: MOVE      B+UP/DN: SCALE", 4, 130)
+    drawText(G, font, "SELECT: SHINY      START: SAVE", 4, 144)
     if self.messageTimer > 0 then
-      G.setColor(.1,.2,.13,.98)
-      G.rectangle("fill",4,91,232,19)
-      drawText(G,self.message,7,95,.69)
+      G.setColor(0.24, 0.07, 0.07, 0.99)
+      G.rectangle("fill", 0, 96, 240, 18)
+      drawText(G, font, self.message, 4, 96)
     end
     G.pop()
   end
