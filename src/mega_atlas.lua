@@ -322,6 +322,31 @@ function Atlas.new(mod, index, graphics, timer, presentation)
     return entry
   end
 
+  -- A Mega icon is a distinct 32x32 party/summary asset. NEVER expose a
+  -- battle-sized canvas in a menu: menu draws do not use battle pivots.
+  local iconCache = {}
+  function self.icon(slug)
+    if iconCache[slug] then return iconCache[slug] end
+    local pic = self.picture(slug, "icon", false, 0, false)
+    if not pic or not pic.image or not G then return nil end
+    local ok,canvas = pcall(G.newCanvas, 32, 32)
+    if not ok or not canvas then return nil end
+    if canvas.setFilter then canvas:setFilter("nearest", "nearest") end
+    G.push("all")
+    local drawn = pcall(function()
+      if G.origin then G.origin() end
+      G.setCanvas(canvas)
+      if G.clear then G.clear(0,0,0,0) end
+      if G.setColor then G.setColor(1,1,1,1) end
+      G.draw(pic.image, 0, 0, 0, 0.5, 0.5)
+    end)
+    G.pop()
+    if not drawn then return nil end
+    local result = {image=canvas,w=32,h=32,frames=1}
+    iconCache[slug]=result
+    return result
+  end
+
   function self.stats()
     return { forms = (function() local n = 0; for _ in pairs(index.forms) do n = n + 1 end; return n end)(),
              cachedPages = #pageOrder, cachedFrames = #frameOrder }
