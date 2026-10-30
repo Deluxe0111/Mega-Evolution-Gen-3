@@ -1,5 +1,5 @@
 -- First playable, battle-only Mega form. No Pokemon record or species slot edits.
--- Uses Gen 3 opt-in battle hooks from the matching engine PR.
+-- Supports standalone wrapping of existing stock Gen 3 battle functions.
 local Venusaur = {}
 
 local BASE = { attack = 100, defense = 123, spAtk = 122, spDef = 120, speed = 80 }
@@ -121,6 +121,30 @@ function Venusaur.new(selection, eligibility, art)
     calculated[mon] = stats
     attach(battler)
     return true
+  end
+
+  -- Stock Gen 3 planners omit move metadata in singles. Reconcile an actual
+  -- resolveMove call against the exact pending command instead of depending
+  -- on a custom engine hook or a table pointer that turn planning has copied.
+  function self.beforeResolved(st, battler, move, slot, planned)
+    if not self.begin(st) or not battler or not battler.mon then return false end
+    local selected = selection.pendingAction("player", battler.mon)
+    if not selected or selected.kind ~= "move" or selected.move ~= move
+        or selected.slot ~= slot then return false end
+    if planned and (planned.kind ~= "move"
+        or planned.move ~= move or planned.slot ~= slot) then return false end
+    local action = {
+      kind = "move", move = move, slot = slot,
+      megaEvolution = selected.megaEvolution,
+    }
+    return self.beforeMove(st, action, battler)
+  end
+
+  function self.monPicture(st, mon, back, shiny, fallback)
+    if st ~= battle or not mon or selection.activeForm(mon) ~= "mega_venusaur" then
+      return fallback
+    end
+    return art.picture("mega_venusaur", back and "back" or "front", shiny) or fallback
   end
 
   function self.switchedIn(battler)
