@@ -72,7 +72,8 @@ return function(mod)
     })
   end
   -- This flag means gameplay Mega Evolution is active. Artwork alone is NOT gameplay.
-  exports.isActive = function() return false end
+  local gameplayReady = false
+  exports.isActive = function() return gameplayReady end
 
   local provider, failed = nil, false
   local function getProvider()
@@ -129,8 +130,77 @@ return function(mod)
     return p and p.stats() or nil
   end
 
-  -- No Pokemon mutation and no graphics function hooks. A later battle
-  -- adapter will consume the explicit provider once ownership is resolved.
+  -- Battle form state is entirely temporary. These are Gen 3-specific,
+  -- cooperative hooks; on older engines registration fails closed.
+  local Selection = loadSibling(mod, "src/mega_selection.lua")
+  local Venusaur = loadSibling(mod, "src/mega_venusaur.lua")
+  local game = Selection and Venusaur and Venusaur.new(Selection.new(),
+    function(st, b) return exports.checkMegaEligibility(st, b) end,
+    { hasSprite = exports.hasSprite, picture = exports.picture }) or nil
+
+  if game and mod.hooks and type(mod.hooks.wrap) == "function" then
+    local subscriptions, failure = {}, nil
+    local function bind(name, fn)
+      if failure then return end
+      local ok, unsub = pcall(function() return mod.hooks:wrap(name, fn) end)
+      if not ok then failure = tostring(unsub); return end
+      subscriptions[#subscriptions + 1] = unsub
+    end
+
+    bind("battle.move_menu_input", function(next, st, b, input)
+      if game.input(st, b, input) then return true end
+      return next(st, b, input)
+    end)
+    bind("battle.move_command", function(next, st, b, command)
+      return game.command(st, b, next(st, b, command))
+    end)
+    bind("battle.before_move", function(next, st, action, b)
+      game.beforeMove(st, action, b)
+      return next(st, action, b)
+    end)
+    bind("battle.stat_value", function(next, b, stat, value)
+      return game.stat(b, stat, next(b, stat, value))
+    end)
+    bind("battle.battler_picture", function(next, b, back, shiny, entry)
+      return game.picture(b, back, shiny, next(b, back, shiny, entry))
+    end)
+    bind("battle.overlay", function(next, st)
+      next(st)
+      if not (st and love and love.graphics) then return end
+      local ok, Ui = pcall(require, "src.core.game3.battle.ui")
+      if not ok or not Ui or Ui._mode ~= "moves" or Ui._swap then return end
+      local id = tonumber(Ui._active) or 0
+      local b = (id == 0 and st.player) or (st.battlers and st.battlers[id])
+      local label = game.status(st, b)
+      if not label then return end
+      local g = love.graphics
+      g.setColor(0.08, 0.13, 0.23, 0.92)
+      g.rectangle("fill", 155, 102, 82, 14, 2, 2)
+      g.setColor(1.0, 0.88, 0.38, 1)
+      g.print(label, 159, 103)
+      g.setColor(1, 1, 1, 1)
+    end)
+
+    if failure then
+      for _, unsubscribe in ipairs(subscriptions) do
+        if type(unsubscribe) == "function" then pcall(unsubscribe) end
+      end
+      if mod.log then mod.log:warn("Mega gameplay requires Gen 3 battle seams: %s", failure) end
+    else
+      gameplayReady = true
+      if mod.events and mod.events.on then
+        mod.events:on("battle.turn_ended", function() game.turnEnded() end)
+        mod.events:on("battle.ended", function() game.finish() end)
+        mod.events:on("battle.fainted", function(ev)
+          local mon = ev and (ev.mon or (ev.battler and ev.battler.mon))
+          if mon then game.fainted(mon) end
+        end)
+      end
+      if mod.log then mod.log:info("Mega Venusaur battle integration installed (START in FIGHT menu)") end
+    end
+  end
+
+  exports.megaFormOf = function(mon) return gameplayReady and game.activeForm(mon) or nil end
   if mod.events and mod.events.on then
     mod.events:on("game.ready", function() getProvider() end, 0)
   end
