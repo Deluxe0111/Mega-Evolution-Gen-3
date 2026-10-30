@@ -22,7 +22,7 @@ return {
     front = { scale = 1, feet = 139, baseline = 62, dx = 4, dy = 20 }, -- 3px of original airborne clearance
   },
   mega_blastoise = {
-    back = { scale = 1, feet = 122, baseline = 57, dx = -10, dy = 39 }, -- alpha bottom 122 (frame 122px)
+    back = { scale = 1, feet = 122, baseline = 57, dx = 5, dy = 24 }, -- alpha bottom 122 (frame 122px)
     front = { scale = 1, feet = 117, baseline = 62, dx = -10, dy = 2 }, -- alpha bottom 117 (frame 117px)
   },
   mega_beedrill = {
