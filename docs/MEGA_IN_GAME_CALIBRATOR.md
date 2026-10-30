@@ -14,8 +14,9 @@ consumes items or touches the saved game.
 2. Open the Mod Manager/options for **Mega Evolution Gen 3** and turn on
    **MEGA TUNER** (off by default), or start Gen1Recomp in developer mode.
 3. Enter the overworld, open the game **Start menu**, choose **MEGA TUNER**.
-4. Browse Megas and press **A** to edit the selected form. Both front (enemy)
-   and back (player) are visible on the preview stage.
+4. Use **L/R shoulder buttons** to browse Megas. The D-pad immediately
+   moves the selected sprite. Both front (enemy) and back (player) are
+   visible on the preview stage.
 
 This screen uses a *battle-style rendering preview*, not a real playable test
 fight. That makes iteration fast, safe and available without a save full of
@@ -24,30 +25,31 @@ G9 Battle Sprites and Gen 3 HD Sprites enabled.
 
 ## Controls
 
-| Screen | Button | Action |
-| --- | --- | --- |
-| Browse | LEFT / RIGHT | Previous / next Mega |
-| Browse | UP / DOWN | Jump backward / forward 10 Megas |
-| Browse | A | Enter adjustment mode |
-| Browse | B | Close tuner |
-| Either | SELECT | Choose player **BACK** / enemy **FRONT** |
-| Either | START | Export full tuning file |
-| Adjust | UP / DOWN | Select scale, dx, dy, feet, baseline |
-| Adjust | LEFT / RIGHT | Decrease / increase selected value |
-| Adjust | A | Toggle normal / shiny animation |
-| Adjust | B | Return to Browse |
+| Button | Action |
+| --- | --- |
+| **L / R shoulders** | Previous / next Mega |
+| **D-pad Left / Right** | Move the selected sprite horizontally by one game pixel |
+| **D-pad Up / Down** | Move the selected sprite vertically by one game pixel |
+| **Hold B + Up / Down** | Increase / decrease scale by 0.05 |
+| **A** | Switch between player **BACK** and enemy **FRONT** |
+| **Select** | Toggle normal / shiny |
+| **Start** | Export **all 98** settings, then exit (only if export succeeds) |
 
-Scale changes in **0.05** increments; other values move by **one logical
-game pixel**. Increase `dy` to move **down**, decrease to move **up**.
-`feet` is an anchor in the original frame's coordinate space, and may
-intentionally lie below the Pokémon's visible pixels for hovering Megas.
-All frames in one animation continue sharing their position: **the tool does
-not automatically ground or re-centre individual animation frames**.
+There is **one direct editing mode**, with no extra field selector. `dx`,
+`dy` and `scale` are the only adjustable values. `feet` and
+`baseline` are still preserved in the full Lua export but are deliberately
+not editable here: both overlap with vertical positioning. Increasing
+`dy` moves down, decreasing moves up. `B` alone does nothing; it's the
+held scaling modifier. All frames in the animation retain their relative
+positions and hovering motion. The HUD uses the game's native pixel font
+at integer coordinates for legibility.
 
 ## Exporting the adjustments
 
-Press **START** from either screen. The tuner writes the **entire**
-`mega_presentation_export.lua` file — not just the last Pokémon.
+Press **START**. The tuner writes the **entire**
+`mega_presentation_export.lua` file — not just the last Pokémon — and
+**exits the tuner on successful export**. If no export backend is available,
+it stays open and displays an error so your edits are not silently lost.
 
 Export goes to the mod's installation-scoped storage:
 `mod_cache/mega-evolution-gen3/exports/mega_presentation_export.lua`.
