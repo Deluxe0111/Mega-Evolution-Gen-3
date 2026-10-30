@@ -139,9 +139,37 @@ function Standalone.install(mod, game, modules, battleVisual)
   if type(Damage.calc)=="function" and MegaAbilities
       and MegaAbilities.finalDamage then
     wrap(Damage, "calc", function(next, attacker, defender, move, opts)
-      local amount,info=next(attacker,defender,move,opts)
-      if not enabled() then return amount,info end
+      if not enabled() then return next(attacker,defender,move,opts) end
+      local effective=opts
+      if MegaAbilities.moveOptions then
+        effective=MegaAbilities.moveOptions(game,attacker,move,opts)
+      end
+      local amount,info=next(attacker,defender,move,effective)
       return MegaAbilities.finalDamage(game,attacker,defender,amount,info)
+    end)
+  end
+
+  -- Gen 3 publishes an accuracy callback after Protect and the native
+  -- semi-invulnerable checks. No Guard controls this roll only; do NOT
+  -- overwrite Protect, invulnerability or absorption logic.
+  local accuracyUnhook
+  if mod.hooks and type(mod.hooks.wrap)=="function"
+      and MegaAbilities and MegaAbilities.accuracy then
+    accuracyUnhook=mod.hooks:wrap("battle.accuracy",function(next,ctx)
+      if not enabled() then return next(ctx) end
+      local st=Battle._st or Ui._st
+      local function resolve(public)
+        if type(public)~="table" then return nil end
+        if public.id~=nil then
+          local found=current(st,public.id)
+          if found then return found end
+        end
+        return public.mon and public or nil
+      end
+      if MegaAbilities.accuracy(game,ctx,resolve) then
+        ctx.accuracy=100 -- guaranteed to pass the native 1..100 roll
+      end
+      return next(ctx)
     end)
   end
 
@@ -197,6 +225,7 @@ function Standalone.install(mod, game, modules, battleVisual)
     active = false
     game.finish()
     if battleVisual and battleVisual.resetTransform then battleVisual:resetTransform() end
+    if type(accuracyUnhook)=="function" then accuracyUnhook() end
     -- Undo only if our wrapper is still on top; later mods must keep the
     -- chain they installed. Otherwise our closure remains a pass-through.
     for i = #wrapped, 1, -1 do

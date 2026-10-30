@@ -1,5 +1,5 @@
 -- Battle-only mechanics for abilities on actively Mega-Evolved Pokémon.
--- Only data-local damage modifiers in this first batch. No global ability
+-- Data-local damage and move-interaction modifiers. No global ability
 -- IDs, move database edits, save mutation or type-chart replacement.
 local Abilities = {}
 
@@ -48,6 +48,64 @@ local function activeAbility(game,b)
 end
 Abilities.activeAbility=activeAbility
 
+-- The type chart is registered by another mod. Its numeric assignments can
+-- change after our mod loads, so resolve a requested type at hit time.
+-- Never fabricate a Fairy ID or change the global battle type chart.
+local function typeId(key,typeProvider)
+  if typeProvider and typeProvider[key]~=nil then return typeProvider[key] end
+  local ok,Progression=pcall(require,"src.core.game3.progression")
+  if ok and Progression and type(Progression.typeIndexFor)=="function" then
+    local okId,id=pcall(Progression.typeIndexFor,key)
+    if okId and id~=nil then return id end
+  end
+  local okTypes,Types=pcall(require,"src.core.game3.battle.types")
+  return okTypes and Types and Types.ID and Types.ID[key] or nil
+end
+
+local CONVERSION={ PIXILATE="FAIRY", AERILATE="FLYING",
+  REFRIGERATE="ICE" }
+
+-- Only a damaging Normal move changes type. The engine's Damage.calc will
+-- then perform category/STAB/type effectiveness using the provider's type ID.
+-- Scrappy retains Normal/Fighting typing but uses the native Foresight chart
+-- path, which removes only Ghost immunity (not other resistances/immunities).
+function Abilities.moveOptions(game,attacker,move,opts,typeProvider)
+  local ab=activeAbility(game,attacker)
+  if not ab or type(move)~="table" then return opts end
+  local originalType=tonumber(opts and opts.moveType)
+    or tonumber(move.type)
+  local power=tonumber(opts and opts.power) or tonumber(move.power) or 0
+  if power<=0 then return opts end
+  local replacement=CONVERSION[ab]
+  local changes={}
+  if replacement and originalType==0 then
+    local id=typeId(replacement,typeProvider)
+    if id==nil then return opts end -- Fairy dependency absent: fail closed
+    changes.moveType=id
+    changes.megaConverted=true
+  elseif ab=="SCRAPPY" and (originalType==0 or originalType==1) then
+    changes.foresight=true
+  else
+    return opts
+  end
+  local copy={}
+  for k,v in pairs(opts or {}) do copy[k]=v end
+  for k,v in pairs(changes) do copy[k]=v end
+  return copy
+end
+
+-- Gen 3's accuracy check invokes this hook AFTER Protect and semi-invulnerable
+-- checks. Increase the final accuracy roll, but keep those upstream mechanics
+-- untouched. A separate context-level implementation will be required for
+-- No Guard hitting airborne/digging/diving targets.
+function Abilities.accuracy(game,ctx,resolveBattler)
+  if type(ctx)~="table" then return false end
+  local user=resolveBattler and resolveBattler(ctx.user,ctx.battle)
+  local target=resolveBattler and resolveBattler(ctx.target,ctx.battle)
+  return activeAbility(game,user)=="NO_GUARD"
+    or activeAbility(game,target)=="NO_GUARD"
+end
+
 local function effectivePower(move,opts)
   local explicit=opts and tonumber(opts.power)
   return explicit or (type(move)=="table" and tonumber(move.power)) or 0
@@ -74,6 +132,12 @@ function Abilities.baseOptions(game,attacker,move,opts)
   elseif ability=="STRONG_JAW" and BITE[moveName] then n,d=3,2
   elseif ability=="MEGA_LAUNCHER" and PULSE[moveName] then n,d=3,2
   elseif ability=="SHARPNESS" and SLICING[moveName] then n,d=3,2
+  elseif CONVERSION[ability] and type(move)=="table"
+      and tonumber(move.type)==0 and opts
+      and tonumber(opts.moveType)==typeId(CONVERSION[ability]) then
+    -- Damage.calc constructs new options for Damage.base, so it cannot
+    -- carry our marker across. Re-identify the converted move by type.
+    n,d=6,5 -- Modern (Gen VII+) -ate ability damage boost
   elseif ability=="SAND_FORCE"
       and opts and opts.weatherKind=="SAND"
       and ({[4]=true,[5]=true,[8]=true})[tonumber(opts.moveType)

@@ -44,6 +44,18 @@ function Mega.new(selection, eligibility, art, catalogue, typeIds)
     forms[row.slug]=row
   end
   typeIds=type(typeIds)=="table" and typeIds or {}
+  local function resolveType(key)
+    if typeIds[key]~=nil then return typeIds[key] end
+    -- Custom types can be registered after mod init by a content provider.
+    -- Use that provider's actual numeric ID at the point of transformation;
+    -- never allocate a competing Fairy ID or modify the global type table.
+    local ok,P=pcall(require,"src.core.game3.progression")
+    if ok and P and type(P.typeIndexFor)=="function" then
+      local success,id=pcall(P.typeIndexFor,key)
+      if success then return id end
+    end
+    return nil
+  end
   local battle
   local changes,calculated={},{}
   -- The Gen3 battle uses a moves-only proxy while PartyMenu uses the
@@ -92,8 +104,8 @@ function Mega.new(selection, eligibility, art, catalogue, typeIds)
     local old=changes[b]
     b.ability=row.ability~="" and row.ability or old.ability
     if #row.types>0 then
-      local primary=typeIds[row.types[1]]
-      local secondary=row.types[2] and typeIds[row.types[2]]
+      local primary=resolveType(row.types[1])
+      local secondary=row.types[2] and resolveType(row.types[2])
       -- Stock Gen 3 has no Fairy type. Never inject an unknown type ID:
       -- the unsupported type remains the original until a type-expansion
       -- provider is available. Don't partially change dual types.
