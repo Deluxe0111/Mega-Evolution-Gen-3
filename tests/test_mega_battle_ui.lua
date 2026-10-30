@@ -30,8 +30,8 @@ G.newImage=function(file)
   local wh=dimensions[key]
   return {key=key,getDimensions=function()return wh[1],wh[2] end,
     setFilter=function(_,x,y)
-      local expected=key=="badge" and "linear" or "nearest"
-      assert(x==expected and y==expected)
+      assert(x=="nearest" and y=="nearest",
+        "Mega artwork must use crisp nearest-neighbour sampling")
     end}
 end
 G.newQuad=function(x,y,w,h,iw,ih)
@@ -102,12 +102,19 @@ assert(#drawn>=1 and drawn[#drawn].img.key=="button",
 active=true
 assert(Health.draw("player",b,{st=st})=="vanilla-box")
 local hit=drawn[#drawn]
-assert(hit.img.key=="badge" and hit.params[1]==138 and hit.params[2]==77)
-assert(hit.params[4]>0.68,"badge should be visibly larger")
+assert(hit.img.key=="badge" and hit.params[1]==140 and hit.params[2]==86)
+assert(hit.params[4]==0.5 and hit.params[5]==0.5,
+  "symMega must keep a uniform pixel-perfect 1:2 scale")
+local badgeW,badgeH=dimensions.badge[1]*hit.params[4],
+  dimensions.badge[2]*hit.params[5]
+assert(badgeW==13 and badgeH==17,"badge must render 13x17, never stretched")
+assert(hit.params[2]>=85,"badge must sit below name and gender glyphs")
+assert(hit.params[1]+badgeW<158,"badge must stay left of player HP bar")
 local enemy={mon=mon,side="enemy"}
 assert(Health.draw("enemy",enemy,{st=st})=="vanilla-box")
 hit=drawn[#drawn]
-assert(hit.img.key=="badge" and hit.params[1]==16 and hit.params[2]==19)
+assert(hit.img.key=="badge" and hit.params[1]==18 and hit.params[2]==28)
+assert(hit.params[4]==0.5 and hit.params[5]==0.5)
 -- Native double-battle positions and stage animation offsets are resolved,
 -- not hardcoded to single-battle locations.
 st.double=true
@@ -117,7 +124,7 @@ local visual2=Visual.new(mod,game,{graphics=G,time=function()return clock end})
 assert(visual2:drawHealthBadge(2,b,{st=st,ox=5,oy=-3},
   {Healthbox=doubles,Anim={stage=function()return {healthbox={[2]={ox=2,oy=4}}}end}}))
 hit=drawn[#drawn]
-assert(hit.params[1]==158 and hit.params[2]==90)
+assert(hit.params[1]==160 and hit.params[2]==99)
 -- The original stays visible while its alpha shape whitens. It is replaced
 -- by a full-white Mega silhouette before the Mega's colours return.
 local base={image={key="original"}}
@@ -181,4 +188,4 @@ assert(Health.draw==original)
 assert(files.button:find("megaButton.png",1,true))
 assert(files.badge:find("symMega.png",1,true))
 assert(files.flash:find("mega_sym.png",1,true))
-print("PASS: Mega UI: clear enlarged badge, 1.36s original-white->Mega-white->colour swap, scoped shader and error restoration")
+print("PASS: Mega UI: crisp 13x17 correctly positioned badge, 1.36s original-white->Mega-white->colour swap, scoped shader")

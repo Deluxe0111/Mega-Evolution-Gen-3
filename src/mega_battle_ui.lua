@@ -49,13 +49,9 @@ function MegaUI.new(mod, game, opts)
     local file = (mod.path or "") .. "/" .. ASSETS[key]
     local ok, img = pcall(G.newImage, file)
     if ok and img then
-      -- The HP emblem is a 26x34 source asset. Downscaling it with nearest
-      -- caused very coarse pixel stair-steps. Linear only for this emblem;
-      -- preserve sharp pixels for the move button and transformation symbol.
-      if img.setFilter then
-        if key == "badge" then img:setFilter("linear", "linear")
-        else img:setFilter("nearest", "nearest") end
-      end
+      -- Keep the original EBDX pixel artwork sharp. In particular, linear
+      -- minification on symMega blurred individual sprite pixels.
+      if img.setFilter then img:setFilter("nearest", "nearest") end
       images[key] = img
       return img
     end
@@ -303,12 +299,16 @@ function MegaUI.new(mod, game, opts)
     local barX=c.x+ox+(isPlayer and 0 or -8)
     local barY=c.y+oy
     local w,h=img:getDimensions()
-    -- Previously ~10x13: unreadably small. Present at ~18x24 with
-    -- bilinear minification, and keep the symbol left of the actual HP bar.
-    local s=math.min(18/w,24/h)
+    -- The EBDX source is 26x34. Use exact 1/2 scale on both axes:
+    -- a crisp 13x17 badge, not an independently stretched 18x24 one.
+    -- Keep its full height BELOW the HP box's name/gender row, in the
+    -- lower-left area to the left of the HP bar (single & double battles).
+    local s=0.5
+    local x=math.floor(barX-18)
+    local y=math.floor(barY-2)
     G.push("all")
     G.setColor(1,1,1,1)
-    G.draw(img,math.floor(barX-20),math.floor(barY-11),0,s,s)
+    G.draw(img,x,y,0,s,s)
     G.pop()
     return true
   end
