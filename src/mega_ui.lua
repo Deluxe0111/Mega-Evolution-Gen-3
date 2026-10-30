@@ -135,7 +135,7 @@ function Ui.install(mod, game, art, modules)
       if not result[1] then error(result[2],0) end
       return (table.unpack or unpack)(result,2,result.n)
     end)
-  end)
+  end
 
   -- Summary menus read stats and ability directly from a saved party-mon.
   -- Temporarily replace ONLY its party-array reference with a view copy for
