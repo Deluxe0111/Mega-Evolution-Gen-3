@@ -104,6 +104,29 @@ function Selection.new()
     return chosen.slug, "activated"
   end
 
+  -- Turn planning shallow-copies selected move actions. Match the copied
+  -- metadata and exact selected move, not the original Lua table identity.
+  function self.activatePlanned(side, monKey, planned, success)
+    side = sideKey(side)
+    if not side or monKey == nil or not isMove(planned) then
+      return nil, "not_a_move"
+    end
+    local chosen = committed[side]
+    local tag = planned.megaEvolution
+    if not chosen or not tag or chosen.mon ~= monKey
+        or tag.mon ~= monKey or tag.side ~= side or tag.form ~= chosen.slug
+        or planned.slot ~= chosen.action.slot
+        or planned.move ~= chosen.action.move
+        or used[side] then
+      return nil, "not_committed"
+    end
+    if success ~= true then return nil, "transformation_not_completed" end
+    used[side] = monKey
+    active[monKey] = chosen.slug
+    committed[side] = nil
+    return chosen.slug, "activated"
+  end
+
   -- Switching out preserves the active form. Fainting clears form but never
   -- refunds this side's single Mega Evolution for that battle.
   function self.faint(monKey)
