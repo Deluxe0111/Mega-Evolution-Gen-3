@@ -203,7 +203,49 @@ return function(mod)
       g.rectangle("line", 128, 99, 109, 20, 3, 3)
       g.setColor(1, 1, 1, 1)
       -- Use a small font so the diagnostic labels fit within the panel.
-      g.print(label, 131, 105)
+      local font = g.getFont and g.getFont()
+      local width = font and font.getWidth and font:getWidth(label) or 0
+      local scale = width > 102 and 102 / width or 1
+      g.print(label, 131, 105, 0, scale, scale)
+    end)
+
+    -- The visual Mega button is also clickable with mouse/touch. Convert the
+    -- viewport-local pointer into the GBA's 240x160 UI coordinates; never
+    -- swallow unrelated input or clicks on disabled diagnostic labels.
+    mod.hooks:wrap("input.pointer", function(next, host, ev)
+      if not bridge or not ev or ev.phase ~= "pressed" or not ev.insideGame then
+        return next(host, ev)
+      end
+      local okUi, Ui = pcall(require, "src.core.game3.battle.ui")
+      if not okUi or not Ui or Ui._mode ~= "moves" or Ui._swap then
+        return next(host, ev)
+      end
+      local okDisplay, Display = pcall(require, "src.core.game3.display")
+      local okViewport, Viewport = pcall(require, "src.render.GameViewport")
+      if not (okDisplay and Display and Display.fit and okViewport and Viewport) then
+        return next(host, ev)
+      end
+      local w, h = Viewport.dimensions()
+      local sx, ox, oy, _, _, sy = Display.fit(w, h)
+      if not sx or not sy or sx <= 0 or sy <= 0 then return next(host, ev) end
+      local x, y = (ev.gameX - ox) / sx, (ev.gameY - oy) / sy
+      if x < 128 or x > 237 or y < 99 or y > 119 then
+        return next(host, ev)
+      end
+      local st = Ui._st
+      local id = tonumber(Ui._active) or 0
+      local b = st and (st.battlers and st.battlers[id]
+        or (id == 0 and st.player) or (id == 1 and st.enemy))
+      local selectable = false
+      if b then
+        local _label, canPress = game.status(st, b)
+        selectable = canPress == true
+      end
+      if not selectable then return next(host, ev) end
+      if game.input(st, b, { wasPressed = function(_, name) return name == "start" end }) then
+        return true
+      end
+      return next(host, ev)
     end)
   end
 
