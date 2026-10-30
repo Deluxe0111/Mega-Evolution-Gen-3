@@ -7,7 +7,9 @@ local game={view=function(m) return m==mon and mega or nil end}
 local Pokemon={
   monFrontPic=function() return {image="normal-front",w=64,h=64} end,
   monIcon=function() return {image="normal-icon",w=32,h=32} end,
-  isShiny=function() return false end,
+  isShiny=function(m) return m==mon and mon.isShiny == true end,
+  speciesOf=function(m) return m.species end,
+  gender=function(_,personality) return personality==99 and "F" or "M" end,
   abilityName=function() return "OVERGROW" end,
 }
 local SummaryData={abilityDescription=function()return "Overgrow ability" end}
@@ -30,9 +32,14 @@ local OriginalSummaryDraw=function()
   return "drawn"
 end
 Summary.draw=OriginalSummaryDraw
+local iconsSeen={}
 local bridge=assert(UI.install({},game,{
   picture=sourcePicture,
-  icon=function()return {image="mega-party-icon",w=32,h=32} end
+  icon=function(slug,shiny,female)
+    iconsSeen[#iconsSeen+1]={slug,shiny,female}
+    return {image="mega-party-icon",w=32,h=32,frames=2,
+      quads={[0]="frame0",[1]="frame1"}}
+  end
 },{Pokemon=Pokemon,Summary=Summary,SummaryData=SummaryData}))
 local oldAbility=Pokemon.abilityName
 local oldDesc=SummaryData.abilityDescription
@@ -40,6 +47,16 @@ assert(Summary.draw()=="drawn")
 assert(Summary._party[1]==mon and mon.attack==20 and mon.ability==65 and mon.abilityId==65)
 assert(Pokemon.abilityName==oldAbility and SummaryData.abilityDescription==oldDesc)
 assert(Pokemon.monIcon(mon).image=="mega-party-icon")
+assert(iconsSeen[#iconsSeen][1]=="mega_venusaur" and not iconsSeen[#iconsSeen][2]
+  and not iconsSeen[#iconsSeen][3])
+mon.isShiny=true
+mon.personality=99
+local changedIcon=Pokemon.monIcon(mon)
+assert(changedIcon.image=="mega-party-icon" and changedIcon.quads[1])
+assert(iconsSeen[#iconsSeen][2]==true and iconsSeen[#iconsSeen][3]==true,
+  "shiny female party icon must use appropriate variant")
+mon.isShiny=nil
+mon.personality=nil
 assert(Pokemon.monIcon(other).image=="normal-icon")
 assert(Pokemon.monFrontPic(other).image=="normal-front")
 Summary._cursor=2
@@ -57,7 +74,8 @@ Summary.draw=function()
   error("expected draw failure")
 end
 local bad=assert(UI.install({},game,{
-  picture=sourcePicture,icon=function()return {image="icon",w=32,h=32} end
+  picture=sourcePicture,icon=function()return {
+    image="icon",w=32,h=32,quads={[0]=0,[1]=1}} end
 },{Pokemon=Pokemon,Summary=Summary,SummaryData=SummaryData}))
 local ok=pcall(Summary.draw)
 assert(not ok)
