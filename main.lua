@@ -39,6 +39,13 @@ return function(mod)
     end
   end
   local presentation = loadSibling(mod, "data/mega_presentation.lua")
+  -- Opt-in development tool; stays out of ordinary player menus by default.
+  if mod.options and type(mod.options.define) == "function" then
+    mod.options:define({
+      { key = "mega_tuner_enabled", label = "MEGA TUNER", type = "toggle",
+        default = false },
+    })
+  end
   local registeredById = {}
   for _, row in ipairs(registered) do registeredById[row.id] = row.index end
 
@@ -339,6 +346,36 @@ return function(mod)
       keyStoneItem = registeredById.KEY_STONE,
       venusauriteItem = registeredById.VENUSAURITE,
     }
+  end
+
+  -- Register a standalone battle-stage preview; it never begins a real fight
+  -- or changes game.save/party Pokémon. Adjustments are exported as a complete
+  -- Lua presentation file for manual review before importing into the mod.
+  local TunerModel = loadSibling(mod, "src/mega_tuner_model.lua")
+  local Tuner = loadSibling(mod, "src/mega_calibrator.lua")
+  if Tuner and TunerModel and presentation and formCatalog then
+    local ok, tuner, err = pcall(Tuner.install, mod, TunerModel, formCatalog,
+      presentation, {
+        frame = function(slug, kind, frame)
+          local p = getProvider()
+          return p and p.frame(slug, kind, frame) or nil
+        end,
+      }, {
+        isVisible = function()
+          return mod.developer == true or (mod.options
+            and type(mod.options.get) == "function"
+            and mod.options:get("mega_tuner_enabled") == true)
+        end,
+      })
+    if ok and tuner then
+      exports.openMegaTuner = tuner.open
+      exports.exportMegaTuning = tuner.export
+      exports.megaTuningText = tuner.text
+      if mod.log then mod.log:info("Mega battle calibration screen registered") end
+    elseif mod.log then
+      mod.log:warn("Mega battle calibrator unavailable: %s",
+        tostring(ok and err or tuner))
+    end
   end
 
   exports.megaFormOf = function(mon) return gameplayReady and game.activeForm(mon) or nil end
