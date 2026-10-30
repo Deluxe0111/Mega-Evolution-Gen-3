@@ -88,7 +88,9 @@ function Weather.terrainBlocksSleep(st,b,adapter)
 end
 
 local function weatherIsSun(st,adapter,opts)
-  if opts and opts.weatherKind=="SUN" then return true end
+  if opts and opts.weatherKind~=nil then
+    return opts.weatherKind=="SUN"
+  end
   if not st then return false end
   local ok,Rules=pcall(require,"src.core.game3.battle.rules")
   if ok and Rules and Rules.weather and Rules.weather.effective then
