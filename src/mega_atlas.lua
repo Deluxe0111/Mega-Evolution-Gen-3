@@ -366,7 +366,7 @@ function Atlas.new(mod, index, graphics, timer, presentation)
           if iw == ih*2 and ih >= 32 then
             return {
               image=img, quad=G.newQuad((frame%2)*ih,0,ih,ih,iw,ih),
-              w=ih,h=ih,cropX=0,cropY=0,
+              w=ih,h=ih,cropX=0,cropY=0,source="ebdx",
             }
           end
         end
@@ -418,7 +418,7 @@ function Atlas.new(mod, index, graphics, timer, presentation)
       [1] = G.newQuad(0,32,32,32,32,64),
     }
     local result={image=canvas,quads=quads,w=32,h=32,frames=2,
-      sheetH=64,source="ebdx"}
+      sheetH=64,source=frames[1].source or "atlas"}
     iconCache[key]=result
     return result
   end
