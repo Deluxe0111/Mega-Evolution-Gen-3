@@ -83,6 +83,8 @@ function Eligibility.new(forms, items)
     if battler.transformed or (battler.mon and battler.mon.transformed) then
       return nil, "transformed_pokemon"
     end
+    if ctx.species == nil then return nil, "unknown_species" end
+    if not bySpecies[normalize(ctx.species)] then return nil, "species_not_supported" end
     if ctx.keyStone ~= true then return nil, "key_stone_required" end
     -- The current battler's held item is authoritative (Knock Off etc.).
     -- A supplied battle item 0 is not replaced by the original party item.
