@@ -112,7 +112,7 @@ local tag=tagged[1].spec
 assert(tag.texture and tag.quad and tag.quad.w==121)
 assert(tag.scale==1 and tag.side=="player")
 assert(tag.pivot[1]==60.5 and tag.pivot[2]==100)
-assert(tag.lowPivot[1]==32 and tag.lowPivot[2]==57)
+assert(tag.lowPivot[1]==17 and tag.lowPivot[2]==83)
 assert(a.picture("mega_venusaur","back",false,0,true)==full)
 -- HD must never run a temporary graphics.draw shim, even if a Mega is
 -- visible and a battle picture is requested by the full-resolution provider.
