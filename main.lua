@@ -201,6 +201,7 @@ return function(mod)
   local BattleVisual = loadSibling(mod, "src/mega_battle_ui.lua")
   local battleVisual = game and BattleVisual and BattleVisual.new(mod,game) or nil
   local Standalone = loadSibling(mod, "src/mega_standalone.lua")
+  local MegaAbilities = loadSibling(mod, "src/mega_abilities.lua")
   local ItemIcons = loadSibling(mod, "src/mega_item_icons.lua")
   local MegaUI = loadSibling(mod, "src/mega_ui.lua")
   local uiBridge, uiError
@@ -213,7 +214,8 @@ return function(mod)
       bridgeError = "Mega battle module not loaded"
       return false
     end
-    local ok, installed, err = pcall(Standalone.install, mod, game, nil, battleVisual)
+    local ok, installed, err = pcall(Standalone.install, mod, game,
+      { MegaAbilities=MegaAbilities }, battleVisual)
     if not ok then bridgeError = tostring(installed)
     elseif installed then bridge, bridgeError = installed, nil
     else bridgeError = err end
