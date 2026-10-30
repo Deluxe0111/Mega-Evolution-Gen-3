@@ -67,7 +67,7 @@ The source artwork has **already been imported**. `1_IMPORT_EBDX_ASSETS.bat` is 
 
 See [Roadmap](docs/ROADMAP.md), [Animation pipeline](docs/ANIMATION_PIPELINE.md), [Asset import](docs/ASSET_IMPORT.md), [Implementation notes](docs/IMPLEMENTATION_NOTES.md) and [Development guide](docs/DEVELOPMENT.md).
 
-To generate animated Mega Venusaur GIF previews on Windows, run **4_PREVIEW_MEGA_VENUSAUR.bat**; the originals are left untouched.
+To generate animated Mega Venusaur GIF previews on Windows, run **4_PREVIEW_MEGA_VENUSAUR.bat**. To pack **all 98 Mega forms / 588 source sheets**, run **5_BUILD_ALL_MEGA_ATLASES.bat** (or `py -3 tools/build_mega_atlas.py`). Both preserve the originals. The full atlas is source-conversion output, not yet an in-game rendering integration.
 
 ## Credits and rights
 
