@@ -1,0 +1,43 @@
+name: Motion-safe normalized Mega atlas proof
+
+on:
+  pull_request:
+    paths:
+      - 'tools/build_mega_atlas.py'
+      - 'tests/test_mega_atlas.py'
+      - 'tests/check_full_mega_atlas.py'
+      - 'src/mega_atlas.lua'
+      - '.github/workflows/motion-safe-atlas.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  normalized-roster:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Pillow
+        run: python -m pip install --only-binary=:all: Pillow==13.0.0
+      - name: Verify hover and bounce survive the common crop
+        run: python -m unittest discover -s tests -p 'test_mega_atlas.py'
+      - name: Build all 98 normalised Mega forms from their source strips
+        run: python tools/build_mega_atlas.py --normalize-padding
+      - name: Validate every generated index frame and image boundary
+        run: python tests/check_full_mega_atlas.py
+      - name: Upload complete normalized battle pages and matching index
+        uses: actions/upload-artifact@v4
+        with:
+          name: mega-motion-safe-normalized-runtime
+          path: |
+            assets/runtime/atlas/
+            assets/runtime/mega_atlas_index.json
+            assets/runtime/mega_atlas_index.lua
+          retention-days: 7
+          if-no-files-found: error
+          compression-level: 6

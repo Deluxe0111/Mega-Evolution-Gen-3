@@ -31,6 +31,27 @@ def inspect_png(path):
         return {"width": w, "height": h, "fs": h, "frames": w // h}
 
 
+def common_frame_bounds(img, fs, total):
+    """One alpha crop for the ENTIRE animation, never individual frames.
+
+    The original frame origin is retained in the index, so intentional
+    per-frame movement, flying height and bouncing are not re-anchored.
+    Alpha is the only basis for removal: transparent RGB is irrelevant.
+    """
+    alpha = img.getchannel("A")
+    box = None
+    for n in range(total):
+        local = alpha.crop((n * fs, 0, (n + 1) * fs, fs)).getbbox()
+        if local is None:
+            continue
+        if box is None:
+            box = local
+        else:
+            box = (min(box[0], local[0]), min(box[1], local[1]),
+                   max(box[2], local[2]), max(box[3], local[3]))
+    return box or (0, 0, fs, fs)
+
+
 def load_forms(root, only):
     forms = json.loads((root / "mega_forms.json").read_text(encoding="utf-8"))["forms"]
     by_slug = {form["slug"]: form for form in forms}
@@ -137,7 +158,7 @@ def lua_literal(obj, depth=0):
     return "{\n" + "\n".join(lines) + "\n" + prefix + "}" if lines else "{}"
 
 
-def build(root, dest, forms, valid, page_size, fps, icon_fps):
+def build(root, dest, forms, valid, page_size, fps, icon_fps, normalize_padding=False):
     geometry = {(row["mega"], row["kind"]): row for row in valid}
     atlas_root = dest / "atlas"
     atlas_root.mkdir(parents=True, exist_ok=True)
@@ -163,23 +184,34 @@ def build(root, dest, forms, valid, page_size, fps, icon_fps):
             fs, total = row["fs"], row["frames"]
             if fs > page_size:
                 raise ValueError(f"{slug}/{kind} frame size {fs} exceeds page {page_size}")
-            max_cols = page_size // fs
-            capacity = max_cols * max_cols
             segments = []
             with Image.open(root / row["path"]) as source:
                 img = source.convert("RGBA")
+                # Shared bounds are calculated across ALL frames, including
+                # airborne extremes and animation poses. Never centre or
+                # ground individual frames. Their displacement is original.
+                cx, cy, right, bottom = (
+                    common_frame_bounds(img, fs, total)
+                    if normalize_padding else (0, 0, fs, fs)
+                )
+                fw, fh = right - cx, bottom - cy
+                max_cols = page_size // fw
+                capacity = max_cols * (page_size // fh)
                 for first in range(0, total, capacity):
                     count = min(total - first, capacity)
                     cols = min(max_cols, max(1, math.ceil(math.sqrt(count))))
                     rows = math.ceil(count / cols)
-                    sheet, ox, oy = pages.place(cols * fs, rows * fs)
+                    sheet, ox, oy = pages.place(cols * fw, rows * fh)
                     for i in range(count):
-                        frame = img.crop(((first + i) * fs, 0,
-                                          (first + i + 1) * fs, fs))
-                        pages.image.paste(frame, (ox + (i % cols) * fs,
-                                                  oy + (i // cols) * fs))
-                    segments.append({"sheet": sheet, "first": first, "frames": count,
-                                     "ox": ox, "oy": oy, "cols": cols, "fs": fs})
+                        x = (first + i) * fs
+                        frame = img.crop((x + cx, cy, x + right, bottom))
+                        pages.image.paste(frame, (ox + (i % cols) * fw,
+                                                  oy + (i // cols) * fh))
+                    segment = {"sheet": sheet, "first": first, "frames": count,
+                               "ox": ox, "oy": oy, "cols": cols, "fs": fs}
+                    if normalize_padding:
+                        segment.update({"fw": fw, "fh": fh, "cx": cx, "cy": cy})
+                    segments.append(segment)
                 img.close()
             index["forms"][slug]["variants"][kind] = {
                 "fs": fs, "frames": total,
@@ -205,11 +237,18 @@ def get_frame(dest, index, slug, kind, frame):
         if seg["first"] <= frame < seg["first"] + seg["frames"]:
             index_in_segment = frame - seg["first"]
             size = seg["fs"]
-            x = seg["ox"] + (index_in_segment % seg["cols"]) * size
-            y = seg["oy"] + (index_in_segment // seg["cols"]) * size
+            fw, fh = seg.get("fw", size), seg.get("fh", size)
+            cx, cy = seg.get("cx", 0), seg.get("cy", 0)
+            x = seg["ox"] + (index_in_segment % seg["cols"]) * fw
+            y = seg["oy"] + (index_in_segment // seg["cols"]) * fh
             page = dest / "atlas" / f"battle_{kind}_{seg['sheet']}.png"
             with Image.open(page) as image:
-                return image.crop((x, y, x + size, y + size)).convert("RGBA")
+                cropped = image.crop((x, y, x + fw, y + fh)).convert("RGBA")
+                if fw == size and fh == size and cx == 0 and cy == 0:
+                    return cropped
+                original = Image.new("RGBA", (size, size))
+                original.paste(cropped, (cx, cy))
+                return original
     raise ValueError(f"frame {frame} missing from {slug}/{kind}")
 
 
@@ -245,6 +284,8 @@ def main():
     parser.add_argument("--fps", type=int, default=8)
     parser.add_argument("--icon-fps", type=int, default=2)
     parser.add_argument("--preview", action="store_true")
+    parser.add_argument("--normalize-padding", action="store_true",
+                        help="Pack common transparent margins only; keep all frame-to-frame motion")
     args = parser.parse_args()
     if args.page_size < 256 or args.page_size > 4096 or args.page_size % 64:
         parser.error("page size must be 256..4096, divisible by 64")
@@ -262,7 +303,8 @@ def main():
         if args.audit_only:
             return 0
         index = build(args.source, args.out, forms, valid,
-                      args.page_size, args.fps, args.icon_fps)
+                      args.page_size, args.fps, args.icon_fps,
+                      normalize_padding=args.normalize_padding)
         if args.preview:
             preview(args.out, index, forms[0]["slug"])
         print(f"Packed {len(forms)} forms into {args.out}")

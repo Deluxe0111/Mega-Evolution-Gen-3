@@ -56,6 +56,49 @@ class MegaAtlasTests(unittest.TestCase):
                       (self.out / "mega_atlas_index.lua").read_text())
         self.assertTrue((self.out / "mega_atlas_index.json").exists())
 
+    def test_normalized_shared_crop_preserves_flying_and_bouncing_motion(self):
+        # Every frame has a different vertical pose. A per-frame crop would
+        # move them all to y=0 and erase the hover/bounce animation.
+        fs, count = 32, 10
+        path = self.source / "megas/mega_small/back.png"
+        sheet = Image.new("RGBA", (fs * count, fs))
+        for i in range(count):
+            top = 4 + (i % 4) * 3  # independent source-frame motion
+            sheet.paste(Image.new("RGBA", (9, 6), (30 + i, 80, 200, 255)),
+                        (i * fs + 6 + (i % 3), top))
+        sheet.save(path)
+        valid, bad = atlas.scan(self.source, self.forms)
+        self.assertFalse(bad)
+        index = atlas.build(self.source, self.out, self.forms, valid,
+                            256, 8, 2, normalize_padding=True)
+        cell = index["forms"]["mega_small"]["variants"]["back"]
+        segment = cell["segments"][0]
+        self.assertEqual(segment["fs"], fs)
+        self.assertGreater(segment["cx"], 0)
+        self.assertGreater(segment["cy"], 0)
+        self.assertLess(segment["fw"], fs)
+        self.assertLess(segment["fh"], fs)
+        positions = []
+        for i in range(count):
+            original = sheet.crop((i * fs, 0, (i + 1) * fs, fs))
+            packed = atlas.get_frame(self.out, index, "mega_small", "back", i)
+            self.assertEqual(original.tobytes(), packed.tobytes(),
+                             "normalising must not move a single opaque pixel")
+            positions.append(packed.getchannel("A").getbbox()[1])
+        self.assertEqual(positions, [4 + (i % 4) * 3 for i in range(count)])
+        self.assertGreater(len(set(positions)), 1)
+
+    def test_fully_transparent_animation_keeps_safe_frame_geometry(self):
+        path = self.source / "megas/mega_small/front.png"
+        Image.new("RGBA", (32 * 10, 32)).save(path)
+        valid, bad = atlas.scan(self.source, self.forms)
+        self.assertFalse(bad)
+        index = atlas.build(self.source, self.out, self.forms, valid,
+                            256, 8, 2, normalize_padding=True)
+        seg = index["forms"]["mega_small"]["variants"]["front"]["segments"][0]
+        self.assertEqual((seg["fw"], seg["fh"], seg["cx"], seg["cy"]),
+                         (32, 32, 0, 0))
+
     def test_invalid_geometry_is_not_guessed(self):
         Image.new("RGBA", (63, 32)).save(
             self.source / "megas/mega_small/front.png")
