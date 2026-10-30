@@ -34,9 +34,10 @@ local Ui={
   _st=st, _active=0, _mode="moves",
   waitingForCommand=function() return true end,
   handleInput=function() calls.vanillaInput=(calls.vanillaInput or 0)+1; return false end,
-  takeCommand=function() local c=Ui.command; Ui.command=nil; return c end,
+  takeCommand=function() return nil end,
   sidePic=function() calls.vanillaPicture=(calls.vanillaPicture or 0)+1; return {image="g9-base"} end,
 }
+Ui.takeCommand=function() local cmd=Ui.command; Ui.command=nil; return cmd end
 local Damage={
   base=function(a,d,m,opts)
     calls.seenAttack=a.mon.attack
