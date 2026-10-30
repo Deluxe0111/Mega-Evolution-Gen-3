@@ -44,13 +44,44 @@ local xmin=math.floor(ox)
 local ymin=math.floor(oy)
 local wantPivotX=32-xmin
 local wantPivotY=32-ymin
-G.draw(wide.image,52,48,0,1,1,32,32)
-local call=drawCalls[#drawCalls]
-assert(call[7]==wantPivotX and call[8]==wantPivotY,
-  "G9-wide canvas pivot should keep Mega Venusaur on its feet")
-G.draw(public.image,52,48,0,1,1,32,32)
-call=drawCalls[#drawCalls]
-assert(call[7]==32 and call[8]==32,"ordinary art untouched")
+assert(G.draw==originalDraw, "atlas must never install a global draw wrapper")
+-- Simulate a G9/HD wrapper that inspects exact draw arguments; enemy sprites
+-- MUST keep the exact call shape, with no extra padded nils or pivot changes.
+local enemy = {path="g9/rockruff",getDimensions=function() return 64,64 end}
+local enemyQuad = {type="quad"}
+local seen = {}
+G.draw = function(image, ...)
+  seen[#seen+1]={image=image,n=select("#",...),args={...}}
+  return originalDraw(image, ...)
+end
+local hdOrG9Draw = G.draw
+local scopedRan = false
+a.withBattleDraw(function()
+  scopedRan = true
+  assert(G.draw~=hdOrG9Draw)
+  G.draw(enemy, 120, 34, 0, 1, 1, 32, 32)
+  G.draw(enemy, enemyQuad, 120, 34, 0, 1, 1, 32, 32)
+  G.draw(wide.image,52,48,0,1,1,32,32)
+  G.draw(public.image,52,48,0,1,1,32,32)
+end)
+assert(scopedRan and G.draw==hdOrG9Draw,
+  "original G9/HD draw wrapper must be restored after each frame")
+assert(seen[1].image==enemy and seen[1].n==7,
+  "opponent sprite should keep original argument count")
+assert(seen[1].args[6]==32 and seen[1].args[7]==32)
+assert(seen[2].image==enemy and seen[2].n==8,
+  "opponent quad rendering must be forwarded with the same arguments")
+assert(seen[2].args[7]==32 and seen[2].args[8]==32)
+assert(seen[3].image==wide.image and seen[3].args[6]==wantPivotX
+  and seen[3].args[7]==wantPivotY,
+  "only Mega canvas must receive its feet-aligned pivot")
+assert(seen[4].image==public.image and seen[4].args[6]==32
+  and seen[4].args[7]==32, "ordinary picture remains unchanged")
+local ok=pcall(function()
+  a.withBattleDraw(function() G.draw(enemy,120,34); error("intentional draw error") end)
+end)
+assert(not ok and G.draw==hdOrG9Draw, "must restore G9 drawing even after an error")
+G.draw=originalDraw
 local front=assert(a.picture("mega_venusaur","front",false,0,true))
 assert(front.image.w>64,"enemy Mega fronts are wide as well")
 -- An installed HD module should receive the atlas SOURCE (not a 64px crop),
@@ -67,4 +98,4 @@ assert(tag.scale==0.80 and tag.side=="player")
 assert(tag.pivot[1]==60.5 and tag.pivot[2]==111)
 assert(tag.lowPivot[1]==32 and tag.lowPivot[2]==57)
 assert(a.picture("mega_venusaur","back",false,0,true)==full)
-print("PASS: fitted public art, large G9-style back/front, feet pivot, and full-res HD sprite tag")
+print("PASS: G9 enemy draw untouched, scoped Mega pivot, error restoration, and full-res HD tag")

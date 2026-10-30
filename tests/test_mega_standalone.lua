@@ -36,6 +36,7 @@ local Ui={
   handleInput=function() calls.vanillaInput=(calls.vanillaInput or 0)+1; return false end,
   takeCommand=function() return nil end,
   sidePic=function() calls.vanillaPicture=(calls.vanillaPicture or 0)+1; return {image="g9-base"} end,
+  draw=function() calls.uiDraw=(calls.uiDraw or 0)+1; return "vanilla-draw" end,
 }
 Ui.takeCommand=function() local cmd=Ui.command; Ui.command=nil; return cmd end
 local Damage={
@@ -57,12 +58,20 @@ local Battle={
   start=function() calls.starts=(calls.starts or 0)+1; return true end,
   reset=function() calls.resets=(calls.resets or 0)+1; return true end,
 }
-local original={uiInput=Ui.handleInput, uiCommand=Ui.takeCommand, uiPic=Ui.sidePic,
+local original={uiInput=Ui.handleInput, uiCommand=Ui.takeCommand, uiPic=Ui.sidePic, uiDraw=Ui.draw,
                 resolver=Engine.resolveMove, base=Damage.base,
                 start=Battle.start, reset=Battle.reset}
 local mod={enabled=true}
+local drawScopes=0
+local rawScope=game.withBattleDraw
+game.withBattleDraw=function(fn,...)
+  drawScopes=drawScopes+1
+  return rawScope(fn,...)
+end
 local bridge, err=Bridge.install(mod,game,{Ui=Ui,Damage=Damage,Engine=Engine,Battle=Battle})
 assert(bridge, tostring(err))
+assert(Ui.draw()=="vanilla-draw")
+assert(drawScopes==1 and calls.uiDraw==1)
 local key=function(name)
   return {wasPressed=function(_, value) return value==name end}
 end
@@ -113,6 +122,7 @@ bridge.uninstall()
 assert(Ui.sidePic~=original.uiPic)
 assert(Ui.handleInput==original.uiInput)
 assert(Ui.takeCommand==original.uiCommand)
+assert(Ui.draw==original.uiDraw)
 assert(Engine.resolveMove==original.resolver)
 assert(Damage.base==original.base)
 assert(Battle.start==original.start and Battle.reset==original.reset)

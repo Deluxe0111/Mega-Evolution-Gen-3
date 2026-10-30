@@ -137,7 +137,14 @@ return function(mod)
   local Venusaur = loadSibling(mod, "src/mega_venusaur.lua")
   local game = Selection and Venusaur and Venusaur.new(Selection.new(),
     function(st, b) return exports.checkMegaEligibility(st, b) end,
-    { hasSprite = exports.hasSprite, picture = exports.picture }) or nil
+    { hasSprite = exports.hasSprite, picture = exports.picture,
+      withBattleDraw = function(drawFn, ...)
+        local p = getProvider()
+        if p and p.withBattleDraw then
+          return p.withBattleDraw(drawFn, ...)
+        end
+        return drawFn(...)
+      end }) or nil
 
   local Standalone = loadSibling(mod, "src/mega_standalone.lua")
   local ItemIcons = loadSibling(mod, "src/mega_item_icons.lua")

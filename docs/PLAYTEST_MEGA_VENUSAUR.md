@@ -55,6 +55,24 @@ without blur. Repeat with HD enabled and disabled, and on a shiny Venusaur.
 The initial 0.80 / 0.74 presentation values are test defaults and may need
 fine adjustment from gameplay screenshots.
 
+## Opponent sprite regression — scoped drawing
+
+The previous large-Mega-canvas fix left a global `love.graphics.draw`
+wrapper installed. Player screenshots show Mega Venusaur at the intended size
+but unrelated enemy Pokémon (Zigzagoon and Rockruff) enlarged off-screen.
+
+The corrected adapter installs its Mega-only pivot translation **only while
+stock `Ui.draw` paints a battle frame**, restores the existing G9/HD draw
+handler afterwards (even after an exception), and passes all non-Mega draws
+through with the original argument count and exact values.
+
+**Restart Gen1Recomp fully before testing this branch**, because the earlier
+global graphics wrapper may still be active in an already-running process.
+First test an ordinary wild battle **without Mega Evolution**, then toggle
+Mega Venusaur and verify both sprites. Repeat in Emerald and FireRed with
+G9 and HD enabled; test at least one enemy with a different sprite size.
+These screenshots are a reported regression, not a validated fix yet.
+
 ## Negative tests
 
 - No Key Stone, no Venusaurite, wrong stone, fainted or transformed Pokémon,

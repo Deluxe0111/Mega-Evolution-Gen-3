@@ -140,6 +140,11 @@ function Venusaur.new(selection, eligibility, art)
     return self.beforeMove(st, action, battler)
   end
 
+  function self.withBattleDraw(drawFn, ...)
+    if art.withBattleDraw then return art.withBattleDraw(drawFn, ...) end
+    return drawFn(...)
+  end
+
   function self.monPicture(st, mon, back, shiny, fallback)
     if st ~= battle or not mon or selection.activeForm(mon) ~= "mega_venusaur" then
       return fallback

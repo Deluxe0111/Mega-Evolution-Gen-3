@@ -101,6 +101,16 @@ function Standalone.install(mod, game, modules)
     return next(cloneBattler(attacker, game), cloneBattler(defender, game), move, opts)
   end)
 
+  -- Ui.draw is the narrowest exported boundary around battle sprite draws.
+  -- Any Mega pivot rewrite exists only inside this call, not across frames
+  -- or ordinary G9 / HD sprite drawing elsewhere in the engine.
+  if type(Ui.draw) == "function" then
+    wrap(Ui, "draw", function(next, ...)
+      if not enabled() then return next(...) end
+      return game.withBattleDraw(next, ...)
+    end)
+  end
+
   wrap(Ui, "sidePic", function(next, back, ignoreDeoxys, picSp, form, shiny, personality, mon)
     local ordinary = next(back, ignoreDeoxys, picSp, form, shiny, personality, mon)
     if not enabled() or not mon then return ordinary end
