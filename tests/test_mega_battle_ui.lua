@@ -29,15 +29,29 @@ G.newImage=function(file)
   files[key]=file
   local wh=dimensions[key]
   return {key=key,getDimensions=function()return wh[1],wh[2] end,
-    setFilter=function(_,x,y)assert(x=="nearest" and y=="nearest")end}
+    setFilter=function(_,x,y)
+      local expected=key=="badge" and "linear" or "nearest"
+      assert(x==expected and y==expected)
+    end}
 end
 G.newQuad=function(x,y,w,h,iw,ih)
   local q={x=x,y=y,w=w,h=h,iw=iw,ih=ih}
   quads[#quads+1]=q
   return q
 end
+local currentShader
+G.newShader=function(source)
+  assert(source:find("whiten",1,true))
+  return {whiten=0,send=function(self,name,v)
+    assert(name=="whiten")
+    self.whiten=v
+  end}
+end
+G.setShader=function(sh)currentShader=sh end
+G.getShader=function()return currentShader end
 G.draw=function(img,...)
-  drawn[#drawn+1]={img=img,params={...}}
+  drawn[#drawn+1]={img=img,params={...},
+    shader=currentShader,white=currentShader and currentShader.whiten or 0}
 end
 G.push=function()end
 G.pop=function()end
@@ -88,11 +102,12 @@ assert(#drawn>=1 and drawn[#drawn].img.key=="button",
 active=true
 assert(Health.draw("player",b,{st=st})=="vanilla-box")
 local hit=drawn[#drawn]
-assert(hit.img.key=="badge" and hit.params[1]==146 and hit.params[2]==83)
+assert(hit.img.key=="badge" and hit.params[1]==138 and hit.params[2]==77)
+assert(hit.params[4]>0.68,"badge should be visibly larger")
 local enemy={mon=mon,side="enemy"}
 assert(Health.draw("enemy",enemy,{st=st})=="vanilla-box")
 hit=drawn[#drawn]
-assert(hit.img.key=="badge" and hit.params[1]==24 and hit.params[2]==25)
+assert(hit.img.key=="badge" and hit.params[1]==16 and hit.params[2]==19)
 -- Native double-battle positions and stage animation offsets are resolved,
 -- not hardcoded to single-battle locations.
 st.double=true
@@ -102,18 +117,68 @@ local visual2=Visual.new(mod,game,{graphics=G,time=function()return clock end})
 assert(visual2:drawHealthBadge(2,b,{st=st,ox=5,oy=-3},
   {Healthbox=doubles,Anim={stage=function()return {healthbox={[2]={ox=2,oy=4}}}end}}))
 hit=drawn[#drawn]
-assert(hit.params[1]==166 and hit.params[2]==96)
--- Transformation flourish uses the dedicated 30x30 symbol, then expires.
+assert(hit.params[1]==158 and hit.params[2]==90)
+-- The original stays visible while its alpha shape whitens. It is replaced
+-- by a full-white Mega silhouette before the Mega's colours return.
+local base={image={key="original"}}
+local mega={image={key="mega"}}
+local other={key="opponent"}
 visual:onMegaEvolved(b)
-clock=10.3
+clock=10.24
+local function render()
+  local chosen
+  visual:withTransitionDraw(function()
+    chosen=visual:choosePicture(mon,true,base,mega)
+    G.draw(chosen.image,72,68)
+    G.draw(other,176,40)
+  end)
+  assert(G.getShader()==nil,"scoped shader leaked onto other sprites")
+  return chosen,drawn[#drawn-1],drawn[#drawn]
+end
+local chosen,paint,opponent=render()
+assert(chosen==base and paint.shader and paint.white>0 and paint.white<1)
+assert(opponent.shader==nil and opponent.white==0)
+clock=10.58
+chosen,paint=render()
+assert(chosen==base and math.abs(paint.white-1)<0.0001)
+-- The HP badge does not appear while the ORIGINAL form is still visible.
+local beforeBadge=#drawn
+Health.draw("player",b,{st=st})
+assert(#drawn==beforeBadge)
+clock=10.73
+chosen,paint=render()
+assert(chosen==mega and paint.white>0.9)
+local afterSwap=#drawn
+Health.draw("player",b,{st=st})
+assert(#drawn==afterSwap+1 and drawn[#drawn].img.key=="badge")
+clock=11.04
+chosen,paint=render()
+assert(chosen==mega and paint.white>0 and paint.white<1)
 visual:drawOverlay(st,ui)
-assert(drawn[#drawn].img.key=="flash")
-clock=10.9
+assert(drawn[#drawn].img.key=="flash","longer symbol animation must persist")
+clock=11.37
+chosen,paint=render()
+assert(chosen==mega and paint.shader==nil)
 visual:drawOverlay(st,ui)
+assert(visual.lastFlash==nil)
+-- Rendering errors must restore G.draw and the shader without touching the
+-- already installed G9/HD renderer.
+visual:onMegaEvolved(b)
+clock=11.6
+local previousDraw=G.draw
+local okDraw=pcall(function()
+  visual:withTransitionDraw(function()
+    visual:choosePicture(mon,true,base,mega)
+    G.draw(base.image,72,68)
+    error("simulated battle render failure")
+  end)
+end)
+assert(not okDraw and G.draw==previousDraw and G.getShader()==nil)
+visual:resetTransform()
 assert(visual.lastFlash==nil)
 visual:uninstall()
 assert(Health.draw==original)
 assert(files.button:find("megaButton.png",1,true))
 assert(files.badge:find("symMega.png",1,true))
 assert(files.flash:find("mega_sym.png",1,true))
-print("PASS: EBDX two-state button, D-pad/A & mouse/START toggles, healthbox badge, cosmetic transform flash")
+print("PASS: Mega UI: clear enlarged badge, 1.36s original-white->Mega-white->colour swap, scoped shader and error restoration")
