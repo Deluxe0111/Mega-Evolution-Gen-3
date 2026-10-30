@@ -1,6 +1,6 @@
 # Mega Venusaur playtest (experimental PR #8)
 
-This is the **first single-form gameplay proof**, not a 98-form release.
+This is the **first single-form gameplay proof**, not a 98-form release. User gameplay testing confirmed that the Key Stone unlocks the Mega toggle; visual sizing remains under review.
 It is intended for **unmodified, stock Gen1Recomp**: the mod itself wraps
 existing Gen 3 Lua battle functions. No custom battle hooks, patches or
 upstream PRs are needed. This is still **experimental** and must pass an actual
@@ -36,6 +36,24 @@ Emerald session before being promoted from Draft.
   limit. Battle end removes all temporary form state.
 - Saved species, original calculated stats, nickname, moves, PP, encounter
   history and Nuzlocke identity must remain unchanged.
+
+## Mega Venusaur sprite sizing regression
+
+The original playable build fitted every Mega back sprite into a 64×64 canvas,
+making it **smaller** than the already large G9 normal Venusaur. In the
+follow-up fix, battle-only frames use `data/mega_presentation.lua`: Venusaur's
+121px Mega back frame is drawn at 0.80 source scale, aligned by its feet to
+the G9 player back baseline. Its 117px front frame has separate tuning.
+The battle renderer uses a wider logical canvas (with the native
+32px draw origin translated), or the Gen 3 HD Sprites `tag` API when HD
+battle mode is enabled. Standard exports and icons still fit 64×64.
+
+**Test Emerald and FireRed separately**: compare original Venusaur to Mega
+Venusaur on the same pad, check that Mega is similarly sized (not shrunk),
+remains feet-aligned, is not clipped at the top/left, and retains animation
+without blur. Repeat with HD enabled and disabled, and on a shiny Venusaur.
+The initial 0.80 / 0.74 presentation values are test defaults and may need
+fine adjustment from gameplay screenshots.
 
 ## Negative tests
 
