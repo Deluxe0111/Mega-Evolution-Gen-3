@@ -37,6 +37,7 @@ return function(mod)
       mod.log:warn("Mega item registration issue: %s", itemErrors[i])
     end
   end
+  local presentation = loadSibling(mod, "data/mega_presentation.lua")
   local registeredById = {}
   for _, row in ipairs(registered) do registeredById[row.id] = row.index end
 
@@ -91,7 +92,7 @@ return function(mod)
     local timer = function()
       return love and love.timer and love.timer.getTime and love.timer.getTime() or 0
     end
-    local value, err = engine.new(mod, index, graphics, timer)
+    local value, err = engine.new(mod, index, graphics, timer, presentation)
     if not value then
       if not failed and mod.log then mod.log:warn("Mega atlas is invalid: %s", tostring(err)) end
       failed = true
@@ -121,9 +122,9 @@ return function(mod)
     local p = getProvider()
     return p and p.frame(slug, variant, frame) or nil
   end
-  exports.picture = function(slug, side, shiny, frame)
+  exports.picture = function(slug, side, shiny, frame, battle)
     local p = getProvider()
-    return p and p.picture(slug, side, shiny, frame) or nil
+    return p and p.picture(slug, side, shiny, frame, battle) or nil
   end
   exports.cacheStats = function()
     local p = getProvider()
@@ -139,66 +140,157 @@ return function(mod)
     { hasSprite = exports.hasSprite, picture = exports.picture }) or nil
 
   local Standalone = loadSibling(mod, "src/mega_standalone.lua")
+  local ItemIcons = loadSibling(mod, "src/mega_item_icons.lua")
   local bridge, bridgeError
-  if game and Standalone and type(Standalone.install) == "function" then
+  local iconBridge, iconError
+  local failedBridgeMessage
+  local function tryInstall()
+    if bridge then return true end
+    if not (game and Standalone and type(Standalone.install) == "function") then
+      bridgeError = "Mega battle module not loaded"
+      return false
+    end
     local ok, installed, err = pcall(Standalone.install, mod, game)
-    if ok then bridge, bridgeError = installed, err
-    else bridgeError = tostring(installed) end
-  else
-    bridgeError = "Mega battle module unavailable"
+    if not ok then bridgeError = tostring(installed)
+    elseif installed then bridge, bridgeError = installed, nil
+    else bridgeError = err end
+    gameplayReady = bridge ~= nil
+    if bridge then
+      if mod.log then mod.log:info("Mega battle bridge installed (stock Gen1Recomp)") end
+      return true
+    end
+    if mod.log and failedBridgeMessage ~= bridgeError then
+      failedBridgeMessage = bridgeError
+      mod.log:warn("Mega battle bridge unavailable: %s", tostring(bridgeError))
+    end
+    return false
+  end
+  local function tryIcons()
+    if iconBridge or not (ItemIcons and ItemIcons.install and itemCatalog) then return end
+    local ok, installed, err = pcall(ItemIcons.install, mod, itemCatalog)
+    if ok and installed then iconBridge, iconError = installed, nil
+    else iconError = ok and err or tostring(installed) end
   end
 
-  if bridge then
-    gameplayReady = true
-    -- This is only a DRAW hook. All gameplay uses stock Gen 3 Lua modules.
-    if mod.hooks and type(mod.hooks.wrap) == "function" then
-      mod.hooks:wrap("battle.overlay", function(next, st)
-        next(st)
-        if not (st and love and love.graphics) then return end
-        local ok, Ui = pcall(require, "src.core.game3.battle.ui")
-        if not ok or not Ui or Ui._mode ~= "moves" or Ui._swap then return end
-        local id = tonumber(Ui._active) or 0
-        local b = st.battlers and st.battlers[id] or
-          ((id == 0 and st.player) or (id == 1 and st.enemy))
-        local label = game.status(st, b)
-        if not label then return end
-        local g = love.graphics
-        g.setColor(0.08, 0.13, 0.23, 0.92)
-        g.rectangle("fill", 155, 102, 82, 14, 2, 2)
-        g.setColor(1.0, 0.88, 0.38, 1)
-        g.print(label, 159, 103)
-        g.setColor(1, 1, 1, 1)
-      end)
-    end
+  -- The normal mod entry executes before some game graphics and battle
+  -- modules finish initialising. Retry at both game.ready and battle.started
+  -- instead of permanently failing after the first early require().
+  tryInstall()
+  tryIcons()
 
-    if mod.events and mod.events.on then
-      mod.events:on("battle.turn_ended", function() game.turnEnded() end)
-      mod.events:on("battle.ended", function() game.finish() end)
-      mod.events:on("battle.battler_switched", function(ev)
-        local ok, Battle = pcall(require, "src.core.game3.battle")
-        local st = ok and Battle and Battle.getState and Battle.getState()
-        local id = ev and tonumber(ev.battlerId)
-        local b = st and id and (st.battlers and st.battlers[id]
-          or (id == 0 and st.player) or (id == 1 and st.enemy))
-        if b then game.switchedIn(b) end
-      end)
-      mod.events:on("battle.fainted", function(ev)
-        local ok, Battle = pcall(require, "src.core.game3.battle")
-        local st = ok and Battle and Battle.getState and Battle.getState()
-        local id = ev and tonumber(ev.battlerId)
-        local b = st and id and (st.battlers and st.battlers[id]
-          or (id == 0 and st.player) or (id == 1 and st.enemy))
-        if b and b.mon then game.fainted(b.mon) end
-      end)
-    end
-    if mod.log then mod.log:info("Standalone Mega Venusaur enabled; no engine patch required") end
-  elseif mod.log then
-    mod.log:warn("Mega gameplay unavailable; vanilla Gen 3 signatures changed: %s",
-      tostring(bridgeError))
+  if mod.hooks and type(mod.hooks.wrap) == "function" then
+    mod.hooks:wrap("battle.overlay", function(next, st)
+      next(st)
+      if not (st and love and love.graphics) then return end
+      local ok, Ui = pcall(require, "src.core.game3.battle.ui")
+      if not ok or not Ui or Ui._mode ~= "moves" or Ui._swap then return end
+      local id = tonumber(Ui._active) or 0
+      local b = st.battlers and st.battlers[id] or
+        ((id == 0 and st.player) or (id == 1 and st.enemy))
+      if not b then return end
+      local label, selectable
+      if bridge then
+        label, selectable = game.status(st, b)
+      elseif tonumber(b.species or (b.mon and b.mon.species)) == 3 then
+        label, selectable = "MEGA BRIDGE OFFLINE", false
+      else
+        return
+      end
+      if not label then return end
+      local g = love.graphics
+      g.setColor(0.08, 0.13, 0.23, 0.96)
+      g.rectangle("fill", 128, 99, 109, 20, 3, 3)
+      g.setColor(selectable and 1 or 0.65, selectable and 0.86 or 0.64, 0.35, 1)
+      g.rectangle("line", 128, 99, 109, 20, 3, 3)
+      g.setColor(1, 1, 1, 1)
+      -- Use a small font so the diagnostic labels fit within the panel.
+      local font = g.getFont and g.getFont()
+      local width = font and font.getWidth and font:getWidth(label) or 0
+      local scale = width > 102 and 102 / width or 1
+      g.print(label, 131, 105, 0, scale, scale)
+    end)
+
+    -- The visual Mega button is also clickable with mouse/touch. Convert the
+    -- viewport-local pointer into the GBA's 240x160 UI coordinates; never
+    -- swallow unrelated input or clicks on disabled diagnostic labels.
+    mod.hooks:wrap("input.pointer", function(next, host, ev)
+      if not bridge or not ev or ev.phase ~= "pressed" or not ev.insideGame then
+        return next(host, ev)
+      end
+      local okUi, Ui = pcall(require, "src.core.game3.battle.ui")
+      if not okUi or not Ui or Ui._mode ~= "moves" or Ui._swap then
+        return next(host, ev)
+      end
+      local okDisplay, Display = pcall(require, "src.core.game3.display")
+      local okViewport, Viewport = pcall(require, "src.render.GameViewport")
+      if not (okDisplay and Display and Display.fit and okViewport and Viewport) then
+        return next(host, ev)
+      end
+      local w, h = Viewport.dimensions()
+      local sx, ox, oy, _, _, sy = Display.fit(w, h)
+      if not sx or not sy or sx <= 0 or sy <= 0 then return next(host, ev) end
+      local x, y = (ev.gameX - ox) / sx, (ev.gameY - oy) / sy
+      if x < 128 or x > 237 or y < 99 or y > 119 then
+        return next(host, ev)
+      end
+      local st = Ui._st
+      local id = tonumber(Ui._active) or 0
+      local b = st and (st.battlers and st.battlers[id]
+        or (id == 0 and st.player) or (id == 1 and st.enemy))
+      local selectable = false
+      if b then
+        local _label, canPress = game.status(st, b)
+        selectable = canPress == true
+      end
+      if not selectable then return next(host, ev) end
+      if game.input(st, b, { wasPressed = function(_, name) return name == "start" end }) then
+        return true
+      end
+      return next(host, ev)
+    end)
+  end
+
+  if mod.events and mod.events.on then
+    mod.events:on("game.ready", function()
+      tryInstall()
+      tryIcons()
+      getProvider()
+    end, 0)
+    mod.events:on("battle.started", function()
+      tryInstall()
+      tryIcons()
+    end)
+    mod.events:on("battle.turn_ended", function() if bridge then game.turnEnded() end end)
+    mod.events:on("battle.ended", function() if bridge then game.finish() end end)
+    mod.events:on("battle.battler_switched", function(ev)
+      if not bridge then return end
+      local ok, Battle = pcall(require, "src.core.game3.battle")
+      local st = ok and Battle and Battle.getState and Battle.getState()
+      local id = ev and tonumber(ev.battlerId)
+      local b = st and id and (st.battlers and st.battlers[id]
+        or (id == 0 and st.player) or (id == 1 and st.enemy))
+      if b then game.switchedIn(b) end
+    end)
+    mod.events:on("battle.fainted", function(ev)
+      if not bridge then return end
+      local ok, Battle = pcall(require, "src.core.game3.battle")
+      local st = ok and Battle and Battle.getState and Battle.getState()
+      local id = ev and tonumber(ev.battlerId)
+      local b = st and id and (st.battlers and st.battlers[id]
+        or (id == 0 and st.player) or (id == 1 and st.enemy))
+      if b and b.mon then game.fainted(b.mon) end
+    end)
+  end
+
+  exports.megaDiagnostics = function()
+    return {
+      bridge = bridge and "installed" or ("offline: " .. tostring(bridgeError)),
+      icons = iconBridge and "installed" or ("offline: " .. tostring(iconError)),
+      supportedForm = "mega_venusaur",
+      keyStoneItem = registeredById.KEY_STONE,
+      venusauriteItem = registeredById.VENUSAURITE,
+    }
   end
 
   exports.megaFormOf = function(mon) return gameplayReady and game.activeForm(mon) or nil end
-  if mod.events and mod.events.on then
-    mod.events:on("game.ready", function() getProvider() end, 0)
-  end
 end

@@ -144,7 +144,7 @@ function Venusaur.new(selection, eligibility, art)
     if st ~= battle or not mon or selection.activeForm(mon) ~= "mega_venusaur" then
       return fallback
     end
-    return art.picture("mega_venusaur", back and "back" or "front", shiny) or fallback
+    return art.picture("mega_venusaur", back and "back" or "front", shiny, nil, true) or fallback
   end
 
   function self.switchedIn(battler)
@@ -169,11 +169,27 @@ function Venusaur.new(selection, eligibility, art)
   end
 
   function self.status(st, battler)
-    if not self.begin(st) or not battler or not battler.mon then return nil end
+    if not self.begin(st) or not battler or not battler.mon
+        or battler.side ~= "player" then return nil end
     local state = selection.status("player", battler.mon)
     if not state or state.used or state.pending then return nil end
-    if eligibility(st, battler) ~= "mega_venusaur" then return nil end
-    return state.armed and "MEGA READY" or "START: MEGA"
+    -- This first gameplay milestone only implements Venusaur. Explicitly
+    -- show the reason instead of presenting a dead/invisible button.
+    if tonumber(battler.species or battler.mon.species) ~= 3 then
+      return "MEGA: VENUSAUR TEST ONLY", false
+    end
+    local form, reason = eligibility(st, battler)
+    if form ~= "mega_venusaur" then
+      if reason == "key_stone_required" then return "KEY STONE NEEDED", false end
+      if reason == "mega_stone_required" or reason == "wrong_mega_stone" then
+        return "VENUSAURITE NEEDED", false
+      end
+      return "MEGA UNAVAILABLE", false
+    end
+    if not art.hasSprite(form, "back") or not art.hasSprite(form, "front") then
+      return "MEGA SPRITES MISSING", false
+    end
+    return state.armed and "MEGA READY" or "START: MEGA", true
   end
 
   function self.turnEnded()
