@@ -2,7 +2,8 @@
 -- The export is a complete, deterministic replacement mega_presentation.lua.
 local Tuner = {}
 
-local SIDE = { "back", "front" }
+-- feet/baseline remain in each presentation record and in exports, but
+-- the in-game controls change only screen-space dx/dy and scale.
 local FIELDS = { "scale", "dx", "dy", "feet", "baseline" }
 
 local function copy(source)
@@ -27,8 +28,7 @@ function Tuner.new(forms, presentation)
   assert(#slugs > 0, "empty Mega roster")
   local self = {
     forms = slugs, index = 1, side = "back", shiny = false,
-    field = 1, mode = "browse", edits = copy(presentation),
-    changed = {}, step = 0, saved = false
+    edits = copy(presentation), changed = {}, saved = false
   }
 
   function self:slug() return self.forms[self.index] end
@@ -37,8 +37,7 @@ function Tuner.new(forms, presentation)
     local kind = self.side .. (self.shiny and "_shiny" or "")
     return sides[kind] or sides[self.side]
   end
-  function self:fieldName() return FIELDS[self.field] end
-  function self:countChanged()
+   function self:countChanged()
     local n = 0
     for _ in pairs(self.changed) do n = n + 1 end
     return n
@@ -46,35 +45,37 @@ function Tuner.new(forms, presentation)
   function self:moveForm(direction)
     local n = #self.forms
     self.index = (self.index - 1 + direction) % n + 1
-    self.field = 1
     return self:slug()
   end
   function self:toggleSide()
     self.side = self.side == "back" and "front" or "back"
-    self.field = 1
   end
   function self:toggleShiny() self.shiny = not self.shiny end
-  function self:nextField(direction)
-    self.field = (self.field - 1 + direction) % #FIELDS + 1
-  end
-  function self:adjust(direction)
+
+  local function setValue(self, field, value)
     local row = self:row()
-    local field = self:fieldName()
-    local current = tonumber(row[field]) or 0
-    local value
-    if field == "scale" then
-      -- 0.05 steps, numeric rounding prevents accumulated floating point drift
-      value = math.floor((current + direction * 0.05) * 100 + 0.5) / 100
-      value = math.max(0.20, math.min(2.50, value))
-    else
-      value = math.max(-512, math.min(512, math.floor(current + direction)))
-      if field == "feet" then value = math.max(0, value) end
-    end
-    if current == value then return false end
+    if row[field] == value then return false end
     row[field] = value
     self.changed[self:slug()] = true
     self.saved = false
     return true
+  end
+
+  function self:move(dx, dy)
+    assert(type(dx) == "number" and type(dy) == "number")
+    local row = self:row()
+    local x = math.max(-512, math.min(512, (tonumber(row.dx) or 0) + dx))
+    local y = math.max(-512, math.min(512, (tonumber(row.dy) or 0) + dy))
+    local changedX = setValue(self, "dx", x)
+    local changedY = setValue(self, "dy", y)
+    return changedX or changedY
+  end
+
+  function self:scale(direction)
+    local row = self:row()
+    local current = tonumber(row.scale) or 1
+    local nextValue = math.floor((current + direction * 0.05) * 100 + 0.5) / 100
+    return setValue(self, "scale", math.max(0.20, math.min(2.50, nextValue)))
   end
   function self:resetCurrent(original)
     local slug = self:slug()
