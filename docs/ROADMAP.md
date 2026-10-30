@@ -25,11 +25,11 @@
 - [x] Implement a standalone, tested Mega request/commit/cancel state controller (not yet wired to gameplay)
 - [x] Register 92 fixed-ID Mega Stones and a Key Stone through the native Gen 3 item registry
 - [x] Implement read-only live eligibility checks against held item, species and actual Bag Key Stone possession
-- [ ] Add a visible Mega button inside the FIGHT move menu with eligibility and input controls
-- [ ] Attach the request to the move after selection, then transform immediately before that move executes
-- [ ] Expose a Mega command for one eligible Pokémon holding its Mega Stone
-- [ ] Apply temporary stats, typing, ability, artwork and battle display name
-- [ ] Return to normal form at battle end and keep save species identity unchanged
+- [x] Implement the experimental START Mega toggle and move selection bridge (requires engine hook PR)
+- [x] Preserve the request through planning and transform before selected move execution in the hook build
+- [x] Implement Mega Venusaur's temporary stats, types, Thick Fat and animated battle art (headless tests)
+- [ ] Replace placeholder indicator with native-looking battle control and full transformation animation/name
+- [ ] Verify battle end, switching and saved species identity in an actual Emerald session
 - [ ] Test switching, fainting, capture, reconnect, shiny status and save/load
 
 ## Milestone 3 — Complete Mega roster
