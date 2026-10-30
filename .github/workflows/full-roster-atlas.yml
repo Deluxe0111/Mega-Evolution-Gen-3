@@ -1,0 +1,40 @@
+name: Full Mega atlas build
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'tools/build_mega_atlas.py'
+      - 'tests/check_full_mega_atlas.py'
+      - '5_BUILD_ALL_MEGA_ATLASES.bat'
+      - '.github/workflows/full-roster-atlas.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  full-mega-roster:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.15'
+      - name: Install prebuilt Pillow
+        run: |
+          python -m pip install --only-binary=:all: Pillow==13.0.0
+      - name: Build all 98 forms / 588 sprite variants
+        run: python -u tools/build_mega_atlas.py
+      - name: Validate full atlas index and page bounds
+        run: python tests/check_full_mega_atlas.py
+      - name: Upload index and geometry report
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-mega-atlas-index
+          path: |
+            assets/runtime/mega_atlas_index.json
+            assets/runtime/mega_atlas_index.lua
+            reports/mega_sheet_geometry.csv
+          if-no-files-found: error
+          retention-days: 14
