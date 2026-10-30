@@ -188,6 +188,7 @@ set(a,"SNOW_WARNING")
 st.weather="SUN"
 assert(Engine.switchInEffects(st,adapter,a)==true and st.weather=="HAIL")
 set(a,"ELECTRIC_SURGE")
+a.type1,a.type2=10,10 -- restore a grounded battler after Delta Stream test
 assert(Engine.switchInEffects(st,adapter,a)==true)
 assert(st.megaElectricTerrainTurns==5)
 local context={adapter=adapter}
