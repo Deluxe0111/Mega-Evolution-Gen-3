@@ -143,6 +143,54 @@ function Mega.new(selection, eligibility, art, catalogue, typeIds)
       kind="move",move=move,slot=slot,megaEvolution=chosen.megaEvolution
     },b)
   end
+  function self.withSpeedPlanning(st, drawFn, ...)
+    -- Battle turn-order functions read battler.mon.speed directly rather than
+    -- calling Damage.base. Temporarily provide copied stat views only for
+    -- Pokémon which Mega Evolved in an EARLIER turn; activation-turn order
+    -- remains based on pre-Mega Speed as in Gen VI.
+    local touched={}
+    local seen={}
+    local function stage(b)
+      if not b or seen[b] or not b.mon then return end
+      seen[b]=true
+      local stats=calculated[b.mon]
+      if not stats then return end
+      local original=b.mon
+      local copy={}
+      for k,v in pairs(original) do copy[k]=v end
+      copy.speed=stats.speed
+      copy.spe=stats.speed
+      b.mon=copy
+      touched[#touched+1]={b=b,mon=original}
+    end
+    if st then
+      stage(st.player)
+      stage(st.enemy)
+      for _,b in pairs(st.battlers or {}) do stage(b) end
+    end
+    local function packed(...) return {n=select("#",...),...} end
+    local result=packed(pcall(drawFn,...))
+    for i=#touched,1,-1 do
+      local rec=touched[i]
+      if rec.b.mon~=rec.mon then rec.b.mon=rec.mon end
+    end
+    if not result[1] then error(result[2],0) end
+    return (table.unpack or unpack)(result,2,result.n)
+  end
+
+  function self.onMegaEvolved(st,b,adapter)
+    if not adapter then return end
+    -- Only dispatch stock-Gen3 ability switch-in effects when the ability
+    -- has a real native ID. Never pass newer abilities to vanilla handlers
+    -- that assert on unknown names.
+    local okA,Abilities=pcall(require,"src.core.game3.battle.abilities")
+    if not okA or not Abilities or not Abilities.id
+        or not Abilities.switchIn then return end
+    local ability=b and b.ability
+    local supported=pcall(Abilities.id,ability)
+    if supported then pcall(Abilities.switchIn,adapter,b) end
+  end
+
   function self.withBattleDraw(drawFn,...)
     if art.withBattleDraw then return art.withBattleDraw(drawFn,...) end
     return drawFn(...)
