@@ -132,7 +132,11 @@ function Abilities.baseOptions(game,attacker,move,opts)
   elseif ability=="STRONG_JAW" and BITE[moveName] then n,d=3,2
   elseif ability=="MEGA_LAUNCHER" and PULSE[moveName] then n,d=3,2
   elseif ability=="SHARPNESS" and SLICING[moveName] then n,d=3,2
-  elseif CONVERSION[ability] and opts and opts.megaConverted then
+  elseif CONVERSION[ability] and type(move)=="table"
+      and tonumber(move.type)==0 and opts
+      and tonumber(opts.moveType)==typeId(CONVERSION[ability]) then
+    -- Damage.calc constructs new options for Damage.base, so it cannot
+    -- carry our marker across. Re-identify the converted move by type.
     n,d=6,5 -- Modern (Gen VII+) -ate ability damage boost
   elseif ability=="SAND_FORCE"
       and opts and opts.weatherKind=="SAND"
