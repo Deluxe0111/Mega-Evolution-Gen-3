@@ -19,18 +19,16 @@ local pokemon={
 local calls={}
 local order={[1]=2,[2]=1}
 local party={copied,other}
-local PartyMenu={
-  open=true,_battle=true,_order=order,_party=party,
-  draw=function()
-    calls[#calls+1]={
-      [1]=pokemon.monIcon(PartyMenu._party[1]).image,
-      [2]=pokemon.monIcon(PartyMenu._party[2]).image,
-      seenCopy=PartyMenu._party[1]~=copied,
-      seenMega=PartyMenu._party[1].__megaUiView,
-    }
-    return "party drawn"
-  end,
-}
+local PartyMenu={open=true,_battle=true,_order=order,_party=party}
+PartyMenu.draw=function()
+  calls[#calls+1]={
+    [1]=pokemon.monIcon(PartyMenu._party[1]).image,
+    [2]=pokemon.monIcon(PartyMenu._party[2]).image,
+    seenCopy=PartyMenu._party[1]~=copied,
+    seenMega=PartyMenu._party[1].__megaUiView,
+  }
+  return "party drawn"
+end
 local game={
   view=function(mon) return mon==original and mega or nil end,
   partyView=function(slot) return slot==2 and mega or nil end,
