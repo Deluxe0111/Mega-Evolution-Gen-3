@@ -219,7 +219,7 @@ def preview(dest, index, slug):
     for kind in KINDS:
         cell = index["forms"][slug]["variants"][kind]
         frames = []
-        for n in range(min(24, cell["frames"])):
+        for n in range(min(96, cell["frames"])):
             image = get_frame(dest, index, slug, kind, n)
             scale = min(3, max(1, 256 // image.width))
             if scale > 1:
