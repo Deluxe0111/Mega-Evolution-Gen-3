@@ -201,6 +201,7 @@ assert(Engine.switchInEffects(st,adapter,hero,{spikes=true})==false)
 assert(adapter.abilityOf==originalAbility)
 set(hero,nil)
 assert(Engine.switchInEffects(st,adapter,hero,{spikes=true})==true)
+foe.mon.hp=100 -- restore after the previous Innards Out faint test
 set(foe,"THERMAL_EXCHANGE")
 assert(Engine.resolveMove(hero,foe,"WILL_O_WISP",1,adapter,st)==false)
 assert(adapter.canApplyStatus==originalBurn)
