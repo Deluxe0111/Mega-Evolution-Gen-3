@@ -28,7 +28,7 @@ local function cloneBattler(b, game)
   return copy
 end
 
-function Standalone.install(mod, game, modules)
+function Standalone.install(mod, game, modules, battleVisual)
   if type(game) ~= "table" then return nil, "missing Mega controller" end
   local req = modules and modules.require or require
   local function required(name)
@@ -72,6 +72,8 @@ function Standalone.install(mod, game, modules)
         and Ui.waitingForCommand() and not Ui._swap then
       local st = Ui._st
       local b = current(st, Ui._active or 0)
+      if battleVisual and battleVisual.handleInput
+          and battleVisual:handleInput(Ui, st, b, input) then return true end
       if b and game.input(st, b, input) then return true end
     end
     return next(input)
@@ -92,6 +94,9 @@ function Standalone.install(mod, game, modules)
       -- The turn planner may force Encore/Choice/etc. Recheck the exact
       -- *resolved* move and slot, never spend the Mega on a changed move.
       if battler and game.beforeResolved(st, battler, move, slot) then
+        if battleVisual and battleVisual.onMegaEvolved then
+          battleVisual:onMegaEvolved(battler)
+        end
         if game.onMegaEvolved then game.onMegaEvolved(st, battler, adapter) end
       end
     end
