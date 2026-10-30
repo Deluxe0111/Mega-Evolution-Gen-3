@@ -2,6 +2,11 @@
 local Selection = dofile("src/mega_selection.lua")
 local Venusaur = dofile("src/mega_venusaur.lua")
 local flow = Selection.new()
+local stone
+for _, row in ipairs(dofile("data/mega_items.lua")) do
+  if row.id == "VENUSAURITE" then stone = row.index end
+end
+assert(stone)
 local art = {
   hasSprite = function(slug, variant)
     return slug == "mega_venusaur" and (variant == "back" or variant == "front")
@@ -11,7 +16,7 @@ local art = {
   end,
 }
 local eligibility = function(_, b)
-  if b.item == 1500 and b.mon and b.mon.species == 3 then return "mega_venusaur" end
+  if b.item == stone and b.mon and b.mon.species == 3 then return "mega_venusaur" end
   return nil
 end
 local game = Venusaur.new(flow, eligibility, art)
@@ -23,7 +28,7 @@ local mon = {
   moves = {"RAZOR_LEAF"}, pp = {10},
   attack = 102, defense = 103, spAtk = 120, spDef = 120, speed = 100,
 }
-local b = { mon=mon, species=3, side="player", item=1500,
+local b = { mon=mon, species=3, side="player", item=stone,
             ability="OVERGROW", type1=12, type2=3 }
 local oldStats = { attack=mon.attack, defense=mon.defense,
                    spAtk=mon.spAtk, spDef=mon.spDef, speed=mon.speed }
@@ -55,12 +60,12 @@ assert(game.activeForm(mon) == "mega_venusaur")
 assert(game.picture(b, true, false, nil).image == "sprite:mega_venusaur:back:false")
 assert(game.picture(b, false, true, nil).image == "sprite:mega_venusaur:front:true")
 -- A newly made live battler for the SAME party mon retains the temporary form.
-local switchedIn = {mon=mon, species=3, side="player", item=1500, ability="OVERGROW"}
+local switchedIn = {mon=mon, species=3, side="player", item=stone, ability="OVERGROW"}
 assert(game.stat(switchedIn, "defense", 1) == 143)
 assert(switchedIn.ability == "THICK_FAT")
 -- A second Venusaur remains ordinary and cannot Mega while the allowance is used.
 local second = {species=3, level=50}
-local secondB = {mon=second, species=3, side="player", item=1500, ability="OVERGROW"}
+local secondB = {mon=second, species=3, side="player", item=stone, ability="OVERGROW"}
 assert(game.stat(secondB, "defense", 99) == 99)
 assert(not game.input(st, secondB, key("start")))
 assert(mon.species == 3 and mon.attack == 102)
