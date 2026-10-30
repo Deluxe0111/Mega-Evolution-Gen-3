@@ -12,7 +12,9 @@ The build **does not resize source art, change alpha, edit original files, regis
 
 Install Python 3.11+ and Pillow 11.3.0:
 
-    py -3 -m pip install Pillow==11.3.0
+    py -3 -m pip install --only-binary=:all: Pillow==13.0.0
+
+On Windows, double-click `4_PREVIEW_MEGA_VENUSAUR.bat`; it uses your installed Python 3 and downloads the compatible prebuilt Pillow package without attempting a source compile.
 
 From the repository root:
 
