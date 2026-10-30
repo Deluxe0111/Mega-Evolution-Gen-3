@@ -93,8 +93,10 @@ function Champions.withPiercingProtect(game,M,body)
     and bit(move.flags,1) and bit(move.flags,2)
     and type(M.isProtected)=="function" and M:isProtected()
   if not qualified then return body(M) end
-  local old=M.isProtected
-  local oldMarker=M._megaQuarterProtect
+  -- Native contexts inherit isProtected from their metatable. Restore
+  -- the original *raw* field so the temporary override leaves no residue.
+  local old=rawget(M,"isProtected")
+  local oldMarker=rawget(M,"_megaQuarterProtect")
   M.isProtected=function()return false end
   M._megaQuarterProtect=true
   local result={pcall(body,M)}
