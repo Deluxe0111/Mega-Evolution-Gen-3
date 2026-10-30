@@ -6,7 +6,7 @@ if not errorlevel 1 (
   if errorlevel 1 goto fail
   py -3 tools\build_mega_atlas.py --only mega_venusaur --preview
 ) else (
-  python -m pip install Pillow==13.0.0
+  python -m pip install --only-binary=:all: Pillow==13.0.0
   if errorlevel 1 goto fail
   python tools\build_mega_atlas.py --only mega_venusaur --preview
 )
