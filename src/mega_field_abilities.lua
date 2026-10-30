@@ -138,12 +138,19 @@ function Field.innardsOut(game,M,before,after,hadSub)
       and ability(game,b)=="INNARDS_OUT"
       and not hadSub and not M.hitSubstitute
       and tonumber(before) and tonumber(before)>0
-      and tonumber(after) and tonumber(after)<=0
+      and tonumber(after) and tonumber(after)<tonumber(before)
       and ad and type(ad.applyHpLoss)=="function") then return false end
   M._megaInnardsOut=M._megaInnardsOut or {}
+  M._megaInnardsOutHP=M._megaInnardsOutHP or {}
   if M._megaInnardsOut[b] then return false end
+  -- Consecutive hits (including Parental Bond) counter *all* HP lost
+  -- during this move, not only HP remaining before its final strike.
+  local taken=math.max(0,math.floor(before-after))
+  local total=(M._megaInnardsOutHP[b] or 0)+taken
+  M._megaInnardsOutHP[b]=total
+  if after>0 then return false end
   M._megaInnardsOut[b]=true
-  ad:applyHpLoss(user,math.floor(before))
+  ad:applyHpLoss(user,total)
   if type(M.tryFaintUser)=="function" then M:tryFaintUser() end
   return true
 end
