@@ -23,6 +23,8 @@
 
 - [x] Audit Gen1Recomp's normal move selection, double-battle targeting and action-resolution seams
 - [x] Implement a standalone, tested Mega request/commit/cancel state controller (not yet wired to gameplay)
+- [x] Register 92 fixed-ID Mega Stones and a Key Stone through the native Gen 3 item registry
+- [x] Implement read-only live eligibility checks against held item, species and actual Bag Key Stone possession
 - [ ] Add a visible Mega button inside the FIGHT move menu with eligibility and input controls
 - [ ] Attach the request to the move after selection, then transform immediately before that move executes
 - [ ] Expose a Mega command for one eligible Pokémon holding its Mega Stone
