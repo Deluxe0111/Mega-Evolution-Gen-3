@@ -93,7 +93,9 @@ Damage.calc=function(a,d,move,opts)
   opts=opts or {}
   local optsBase={moveType=opts.moveType or move.type,power=opts.power or move.power}
   local amount=Damage.base(a,d,move,optsBase)
-  local eff=opts.foresight and 1 or 0
+  -- Model a Ghost target: only Normal/Fighting need Scrappy/Foresight.
+  local isGhostImmune=(optsBase.moveType==0 or optsBase.moveType==1)
+  local eff=isGhostImmune and (opts.foresight and 1 or 0) or 1
   return amount*eff,{stab=1,effectiveness=eff,moveType=optsBase.moveType}
 end
 local oldBase,oldCalc=Damage.base,Damage.calc
