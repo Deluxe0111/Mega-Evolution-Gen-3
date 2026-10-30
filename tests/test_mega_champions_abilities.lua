@@ -168,6 +168,8 @@ local Battle={_st={battlers={[0]=p,[1]=foe}},start=function()end,
 local Ui={_st=Battle._st,handleInput=function()return false end,
   takeCommand=function()return nil end,sidePic=function()return {}end}
 local calls={}
+local Secondary={changeStat=function()return "blocked"end,
+  withChance=function()return false end}
 local mod={enabled=true,hooks={wrap=function(_,name,callback)
   calls[name]=callback
   return function()calls[name]=nil end
@@ -177,6 +179,7 @@ local original={base=nativeDamage.base,calc=nativeDamage.calc,
 local bridge=assert(Bridge.install(mod,game,{
   Damage=nativeDamage,Hit=Hit,Engine=Engine,Battle=Battle,Ui=Ui,
   MegaAbilities=A,MegaChampions=C,MegaPrecision=Precision,Types=Types,
+  Secondary=Secondary,
 }))
 set(p,"FIRE_MANE")
 assert(nativeDamage.base(p,foe,fire,{power=90,moveType=10})==135)
