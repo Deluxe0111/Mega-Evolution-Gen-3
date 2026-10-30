@@ -114,6 +114,36 @@ for _,pair in ipairs({
 end
 assert(checker.resolve("RAYQUAZA",0,0,true)=="mega_rayquaza")
 assert(checker.resolve("RAYQUAZA",0,0,false)==nil)
--- Super-effective Fairy type cannot be fabricated in the stock Gen III chart.
-assert(typeIds.FAIRY==nil)
-print("PASS: 98 Mega forms, stat calculations, exact stones/forms, Rayquaza, per-mon art and save isolation")
+-- A separate type expansion may register Fairy AFTER our mod was created.
+-- Mega typing must look up the live ID at activation, not cache a fake 18.
+local oldProgression=package.loaded["src.core.game3.progression"]
+local providerIndex=nil
+package.loaded["src.core.game3.progression"]={
+  typeIndexFor=function(name)
+    if name=="FAIRY" then return providerIndex end
+  end,
+}
+local expandedMon={
+  species=3,level=50,personality=0,form=0,hp=155,maxHp=155,
+  attack=102,defense=103,spAtk=120,spDef=120,speed=100,
+  ivs={atk=31,def=31,spa=31,spd=31,spe=31},
+  evs={atk=0,def=0,spa=0,spd=0,spe=0},
+}
+local expandedBattler={mon=expandedMon,side="player",species=3,
+  item=byStone.ALTARIANITE,ability="OVERGROW",type1=12,type2=3}
+local expanded=Mega.new(Selection.new(),function()return "mega_altaria" end,
+  art,Forms,typeIds)
+local expandedSt={player=expandedBattler}
+providerIndex=42
+assert(expanded.input(expandedSt,expandedBattler,key("start")))
+expanded.command(expandedSt,expandedBattler,{
+  kind="move",move="RAZOR_LEAF",slot=1,battler=0})
+assert(expanded.beforeResolved(expandedSt,expandedBattler,"RAZOR_LEAF",1))
+assert(expandedBattler.type1==16 and expandedBattler.type2==42,
+  "Mega Altaria must use the external Fairy provider ID")
+expanded.finish()
+assert(expandedBattler.type1==12 and expandedBattler.type2==3,
+  "un-Mega must restore previous types after provider lookup")
+package.loaded["src.core.game3.progression"]=oldProgression
+assert(typeIds.FAIRY==nil,"Mega mod cannot overwrite native type IDs")
+print("PASS: 98 Mega forms, live Fairy provider, stat calculations, exact stones/forms, Rayquaza and save isolation")
