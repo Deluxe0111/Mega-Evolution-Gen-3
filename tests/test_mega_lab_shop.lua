@@ -73,7 +73,7 @@ function world:npc(mapId,id)
 end
 local mod = {
   id="mega-evolution-gen3",
-  world=world,
+  world=nil, -- verify the mod can install before the native game exists
   hooks={wrap=function(_,name,cb)hooks[name]=cb end},
   events={on=function(_,name,cb) eventHandlers[name]=cb end},
   log={info=function()end,warn=function(_,fmt,...)error(string.format(fmt,...))end},
@@ -88,6 +88,7 @@ local shop=assert(Shop.install(mod,catalog,registered,{
 }))
 assert(eventHandlers["map.entered"] and eventHandlers["world.stepped"]
   and hooks["world.talk"])
+mod.world=world -- game.ready: lazy WorldAPI becomes available
 -- World not in a lab means no accidental NPC.
 eventHandlers["map.entered"]({mapId="FR_ROUTE1"})
 assert(#npcs==0)
