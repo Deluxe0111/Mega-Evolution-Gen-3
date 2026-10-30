@@ -34,8 +34,8 @@ function Atlas.locate(index, slug, kind, frame)
           or fw + cx > fs or fh + cy > fs then return nil end
       return {
         file = string.format("battle_%s_%d.png", kind, seg.sheet),
-        x = seg.ox + (localFrame % cols) * fw,
-        y = seg.oy + math.floor(localFrame / cols) * fh,
+        x = seg.ox + (localFrame % cols) * (tonumber(seg.stepX) or fw),
+        y = seg.oy + math.floor(localFrame / cols) * (tonumber(seg.stepY) or fh),
         fs = fs, fw = fw, fh = fh, cx = cx, cy = cy,
         frame = n, frames = count,
         fps = tonumber(cell.fps) or 8, slug = slug, kind = kind,
