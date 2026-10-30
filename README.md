@@ -2,8 +2,8 @@
 
 **Standalone Mega Evolution project for Gen1Recomp's Generation 3 games:** FireRed, LeafGreen, Ruby, Sapphire and Emerald.
 
-> **Status: all Mega atlases imported, artwork provider implemented / gameplay not implemented (v0.1.0).**
-> The mod now offers a non-invasive Mega-art API; it does not hook Pokémon rendering. Mega Evolution, battle transformation, Mega Stones, battle sprites and items are **not currently playable**.
+> **Status: experimental Mega Venusaur gameplay on the matching Gen 3 engine hook branch (v0.1.0; not a stock-engine playable release).**
+> PR #8 introduces a battle-only START toggle, selected-move activation, temporary Venusaur stats/Thick Fat and animated front/back/shiny art. It requires a **separate upstream Gen1Recomp hook PR**; on stock builds gameplay fails closed while item registration and opt-in art remain available.
 
 ## Project goal
 
@@ -21,7 +21,8 @@ Build an optional Mega Evolution mod that works with the original Gen 3 games an
 - Pinned EBDX source definitions and metrics, a generated Mega roster and the original upstream credits.
 - An asset import/checker tool, the **156-page converted atlas and its Lua/JSON indexes**, and a safe Gen1Recomp Mod API 2 art provider.
 - Explicit APIs for checking Mega forms, locating animation frames and rendering an isolated 64×64 picture entry, without changing G9 Battle Sprites' hooks.
-- **92 Mega Stones and one Key Stone** registered through the public Gen 3 item registry, with fixed numeric IDs, and a strict read-only eligibility checker. These items are **not distributed to players**, and there is not yet a battle button or transformation.
+- **92 Mega Stones and one Key Stone** registered through the public Gen 3 item registry, with fixed numeric IDs, and a strict read-only eligibility checker. These items are **not distributed to players**.
+- Experimental Mega Venusaur battle integration in PR #8: explicit START toggle in the FIGHT menu, per-battler form, true Mega stats, Thick Fat and animated battle art without editing saved Pokémon. **Requires matching engine hooks**; other forms are not yet playable.
 
 **The original EBDX strips and converted PNG atlas pages are both committed.** The atlas has 24,018 frames across 156 pages; the provider loads only the requested pages. Having renderable art does **not** mean an in-game Mega transformation is implemented.
 
@@ -62,12 +63,12 @@ The source artwork has **already been imported**. `1_IMPORT_EBDX_ASSETS.bat` is 
 
 ## Next milestones
 
-1. Verify the opt-in Mega atlas provider in an actual Gen1Recomp session, checking art playback and visual positioning.
-2. Add a per-battler temporary Mega state and a cooperative integration with G9 Battle Sprites/HD Sprites.
-3. Implement the battle transformation for Mega Venusaur, with accurate stats, ability and safe reversion.
-4. Expand to all Mega forms and test all Gen 3 games and optional mods.
+1. Merge and validate the companion generic Gen 3 battle hook PR, then test Mega Venusaur in a disposable Emerald save.
+2. Review the full move-menu behaviour and per-battler G9/HD sprite positioning, including switch/faint save safety.
+3. Add the ORAS transformation cinematic/audio and complete in-game compatibility testing.
+4. Expand the battle mechanics and per-form data to the remaining Mega roster.
 
-See [ORAS-style Mega battle command design](docs/MEGA_BATTLE_COMMAND.md), [Roadmap](docs/ROADMAP.md), [Four-mod rendering integration research](docs/RENDERING_INTEGRATION.md), [Animation pipeline](docs/ANIMATION_PIPELINE.md), [Asset import](docs/ASSET_IMPORT.md), [Implementation notes](docs/IMPLEMENTATION_NOTES.md) and [Development guide](docs/DEVELOPMENT.md).
+See [Mega Venusaur playtest](docs/PLAYTEST_MEGA_VENUSAUR.md), [ORAS-style Mega battle command design](docs/MEGA_BATTLE_COMMAND.md), [Roadmap](docs/ROADMAP.md), [Four-mod rendering integration research](docs/RENDERING_INTEGRATION.md), [Animation pipeline](docs/ANIMATION_PIPELINE.md), [Asset import](docs/ASSET_IMPORT.md), [Implementation notes](docs/IMPLEMENTATION_NOTES.md) and [Development guide](docs/DEVELOPMENT.md).
 
 ## Credits and rights
 
