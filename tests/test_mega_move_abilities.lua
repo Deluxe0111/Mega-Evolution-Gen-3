@@ -101,9 +101,10 @@ end
 local oldBase,oldCalc=Damage.base,Damage.calc
 local hooks={}
 local mod={enabled=true,hooks={wrap=function(_,name,fn)
-  assert(name=="battle.accuracy")
-  hooks.accuracy=fn
-  return function()hooks.accuracy=nil end
+  assert(name=="battle.accuracy" or name=="battle.charge_required")
+  local key=name=="battle.accuracy" and "accuracy" or "solar"
+  hooks[key]=fn
+  return function()hooks[key]=nil end
 end}}
 local bridge=assert(Standalone.install(mod,game,{
   Ui=Ui,Engine=Engine,Damage=Damage,Battle=Battle,MegaAbilities=Ability,
