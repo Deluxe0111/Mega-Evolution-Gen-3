@@ -15,7 +15,7 @@ for _, form in ipairs(forms) do
     local spec = assert(config[side], slug .. ": missing " .. side)
     assert(spec.scale == 1, slug .. ":" .. side .. " must start at 1x")
     assert(spec.baseline == (side == "back" and 57 or 62))
-    assert(spec.dx == 0 and type(spec.dy) == "number")
+    assert(type(spec.dx) == "number" and type(spec.dy) == "number")
     for _, suffix in ipairs({"", "_shiny"}) do
       local kind = side .. suffix
       local cell = assert(art.variants[kind], slug .. ": no " .. kind .. " art")
@@ -33,7 +33,7 @@ for _, form in ipairs(forms) do
       end
       chosen = chosen or spec
       assert(chosen.scale == 1 and chosen.baseline == spec.baseline)
-      assert(chosen.dx == 0 and type(chosen.dy) == "number")
+      assert(type(chosen.dx) == "number" and type(chosen.dy) == "number")
       local bottom = (tonumber(seg.cy) or 0) + (tonumber(seg.fh) or tonumber(seg.fs))
       assert(chosen.feet >= bottom, slug .. ":" .. kind .. " below visible animation")
       assert(chosen.feet <= seg.fs, slug .. ":" .. kind .. " beyond frame")
@@ -49,7 +49,9 @@ assert(n == 98, "expected 98 Mega forms, found " .. n)
 assert(presentation.mega_venusaur.back.feet == 100)
 assert(presentation.mega_venusaur.front.feet == 98)
 assert(presentation.mega_mewtwo_x.back.feet == 86)
-assert(presentation.mega_mewtwo_x.back.dy == 4)
+assert(presentation.mega_mewtwo_x.back.dy == 29)
+assert(presentation.mega_venusaur.back.dx == -15 and presentation.mega_venusaur.back.dy == 26)
+assert(presentation.mega_charizard_x.front.dy == 5)
 assert(presentation.mega_pyroar.front_shiny.feet == 92)
 assert(presentation.mega_zygarde_form_5.back_shiny.feet == 124)
-print("PASS: 98 complete front/back 1x Mega presentations + geometry-specific shiny anchors")
+print("PASS: 98 user-calibrated 1x front/back positions, correct source feet and shiny anchors")

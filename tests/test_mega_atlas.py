@@ -88,6 +88,43 @@ class MegaAtlasTests(unittest.TestCase):
         self.assertEqual(positions, [4 + (i % 4) * 3 for i in range(count)])
         self.assertGreater(len(set(positions)), 1)
 
+    def test_opaque_neighbour_frames_have_two_transparent_texels(self):
+        # A coloured frame directly alongside the next frame must never be
+        # sampled through a Quad edge, even on the left/top atlas boundaries.
+        fs, frames = 32, 10
+        path = self.source / "megas/mega_small/front.png"
+        img = Image.new("RGBA", (fs * frames, fs))
+        for i in range(frames):
+            colour = (255, 0, 0, 255) if i % 2 else (0, 255, 0, 255)
+            img.paste(Image.new("RGBA", (fs, fs), colour), (i * fs, 0))
+        img.save(path)
+        valid, bad = atlas.scan(self.source, self.forms)
+        self.assertFalse(bad)
+        index = atlas.build(self.source, self.out, self.forms, valid,
+                            256, 8, 2, normalize_padding=True)
+        seg = index["forms"]["mega_small"]["variants"]["front"]["segments"][0]
+        self.assertEqual(seg["gutter"], 2)
+        self.assertEqual(seg["stepX"], fs + 4)
+        self.assertEqual(seg["stepY"], fs + 4)
+        page_path = self.out / "atlas" / f"battle_front_{seg['sheet']}.png"
+        with Image.open(page_path) as page:
+            page = page.convert("RGBA")
+            for i in range(min(frames, seg["frames"])):
+                x = seg["ox"] + i % seg["cols"] * seg["stepX"]
+                y = seg["oy"] + i // seg["cols"] * seg["stepY"]
+                source = img.crop((i * fs, 0, (i+1)*fs, fs))
+                self.assertEqual(source.tobytes(),
+                                 page.crop((x,y,x+fs,y+fs)).tobytes())
+                for distance in (1,2):
+                    self.assertEqual(page.getpixel((x-distance,y+8))[3], 0)
+                    self.assertEqual(page.getpixel((x+fs-1+distance,y+8))[3], 0)
+                    self.assertEqual(page.getpixel((x+8,y-distance))[3], 0)
+                    self.assertEqual(page.getpixel((x+8,y+fs-1+distance))[3], 0)
+        for i in range(frames):
+            self.assertEqual(
+                img.crop((i*fs,0,(i+1)*fs,fs)).tobytes(),
+                atlas.get_frame(self.out,index,"mega_small","front",i).tobytes())
+
     def test_fully_transparent_animation_keeps_safe_frame_geometry(self):
         path = self.source / "megas/mega_small/front.png"
         Image.new("RGBA", (32 * 10, 32)).save(path)

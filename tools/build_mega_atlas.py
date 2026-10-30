@@ -19,6 +19,9 @@ except ImportError as exc:
 
 KINDS = ("front", "front_shiny", "back", "back_shiny", "icon", "icon_shiny")
 ICON_KINDS = {"icon", "icon_shiny"}
+# Each sampled frame has at least two transparent texels between it and its
+# neighbours, preventing quad edge filtering from exposing adjacent poses.
+FRAME_GUTTER = 2
 
 
 def inspect_png(path):
@@ -195,20 +198,28 @@ def build(root, dest, forms, valid, page_size, fps, icon_fps, normalize_padding=
                     if normalize_padding else (0, 0, fs, fs)
                 )
                 fw, fh = right - cx, bottom - cy
-                max_cols = page_size // fw
-                capacity = max_cols * (page_size // fh)
+                # GPU texture sampling (and fractional draw transforms) can
+                # sample one texel outside a Quad. Pack independent frames
+                # with transparent gutters; DO NOT inset the actual artwork.
+                step_x, step_y = fw + 2 * FRAME_GUTTER, fh + 2 * FRAME_GUTTER
+                max_cols = page_size // step_x
+                capacity = max_cols * (page_size // step_y)
                 for first in range(0, total, capacity):
                     count = min(total - first, capacity)
                     cols = min(max_cols, max(1, math.ceil(math.sqrt(count))))
                     rows = math.ceil(count / cols)
-                    sheet, ox, oy = pages.place(cols * fw, rows * fh)
+                    sheet, block_x, block_y = pages.place(
+                        cols * step_x, rows * step_y)
+                    ox, oy = block_x + FRAME_GUTTER, block_y + FRAME_GUTTER
                     for i in range(count):
                         x = (first + i) * fs
                         frame = img.crop((x + cx, cy, x + right, bottom))
-                        pages.image.paste(frame, (ox + (i % cols) * fw,
-                                                  oy + (i // cols) * fh))
+                        pages.image.paste(frame, (ox + (i % cols) * step_x,
+                                                  oy + (i // cols) * step_y))
                     segment = {"sheet": sheet, "first": first, "frames": count,
-                               "ox": ox, "oy": oy, "cols": cols, "fs": fs}
+                               "ox": ox, "oy": oy, "cols": cols, "fs": fs,
+                               "stepX": step_x, "stepY": step_y,
+                               "gutter": FRAME_GUTTER}
                     if normalize_padding:
                         segment.update({"fw": fw, "fh": fh, "cx": cx, "cy": cy})
                     segments.append(segment)
@@ -239,8 +250,8 @@ def get_frame(dest, index, slug, kind, frame):
             size = seg["fs"]
             fw, fh = seg.get("fw", size), seg.get("fh", size)
             cx, cy = seg.get("cx", 0), seg.get("cy", 0)
-            x = seg["ox"] + (index_in_segment % seg["cols"]) * fw
-            y = seg["oy"] + (index_in_segment // seg["cols"]) * fh
+            x = seg["ox"] + (index_in_segment % seg["cols"]) * seg.get("stepX", fw)
+            y = seg["oy"] + (index_in_segment // seg["cols"]) * seg.get("stepY", fh)
             page = dest / "atlas" / f"battle_{kind}_{seg['sheet']}.png"
             with Image.open(page) as image:
                 cropped = image.crop((x, y, x + fw, y + fh)).convert("RGBA")

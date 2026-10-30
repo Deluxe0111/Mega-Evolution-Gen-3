@@ -1,0 +1,56 @@
+name: Rebuild Mega art with isolated frame gutters
+
+on:
+  push:
+    branches:
+      - fix/atlas-frame-gutters-and-calibration-import
+    paths:
+      - 'tools/build_mega_atlas.py'
+      - 'src/mega_atlas.lua'
+      - '.github/workflows/repack-mega-gutters.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Pillow
+        run: python -m pip install --only-binary=:all: Pillow==13.0.0
+      - name: Test frame bleed guard and motion-safe alpha unions
+        run: python -m unittest discover -s tests -p 'test_mega_atlas.py'
+      - name: Build all 98 Mega forms with two transparent pixels per frame
+        run: python tools/build_mega_atlas.py --normalize-padding
+      - name: Validate all packed frames, page bounds and index metadata
+        run: python tests/check_full_mega_atlas.py
+      - name: Publish rebuild as downloadable backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mega-frame-gutter-artifacts
+          path: |
+            assets/runtime/atlas/
+            assets/runtime/mega_atlas_index.lua
+            assets/runtime/mega_atlas_index.json
+          retention-days: 10
+          compression-level: 6
+          if-no-files-found: error
+      - name: Commit matching PNG pages and index to the fix branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A assets/runtime/atlas assets/runtime/mega_atlas_index.lua assets/runtime/mega_atlas_index.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Rebuild 98 Mega atlas variants with two-pixel transparent gutters"
+            git push origin HEAD:fix/atlas-frame-gutters-and-calibration-import
+          fi

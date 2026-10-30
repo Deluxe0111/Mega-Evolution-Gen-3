@@ -64,8 +64,13 @@ def main():
                     page_dims[page] = dimensions(page)
                 width, height = page_dims[page]
                 row_count = (seg["frames"] + seg["cols"] - 1) // seg["cols"]
-                assert seg["ox"] + min(seg["frames"], seg["cols"]) * fw <= width, (slug, kind)
-                assert seg["oy"] + row_count * fh <= height, (slug, kind)
+                step_x, step_y = seg.get("stepX", fw), seg.get("stepY", fh)
+                gutter = seg.get("gutter", 0)
+                assert step_x >= fw and step_y >= fh and gutter >= 0
+                assert step_x >= fw + 2 * gutter and step_y >= fh + 2 * gutter
+                cols_used = min(seg["frames"], seg["cols"])
+                assert seg["ox"] + (cols_used - 1) * step_x + fw <= width, (slug, kind)
+                assert seg["oy"] + (row_count - 1) * step_y + fh <= height, (slug, kind)
                 next_first += seg["frames"]
             assert next_first == count, (slug, kind)
             nframes += count
