@@ -68,7 +68,12 @@ function Special.withMoldBreaker(game,M,body)
   target._megaIgnoreDefensiveAbility=true
   ad.abilityOf=function(self,b,...)
     local ability=old(self,b,...)
-    if b==target and IGNORABLE[ability] then return nil end
+    -- Damage.base can receive a copied stat-view battler, so object
+    -- identity alone isn't sufficient. Battler IDs are unique per flank.
+    local same=b==target or (type(b)=="table"
+      and b.id~=nil and target.id~=nil and b.id==target.id
+      and b.side==target.side)
+    if same and IGNORABLE[ability] then return nil end
     return ability
   end
   local result=table.pack and table.pack(pcall(body,M))
