@@ -30,10 +30,11 @@ Shop.labFor = configFor
 
 function Shop.install(mod, catalog, registered, deps)
   deps = deps or {}
-  if not (mod and mod.world and type(mod.world.spawnNpc) == "function"
-      and mod.events and type(mod.events.on) == "function"
+  -- mod.world is a lazy engine provider, and may be nil before game.ready.
+  -- Register the hooks now; resolve the actual world when entering a map.
+  if not (mod and mod.events and type(mod.events.on) == "function"
       and mod.hooks and type(mod.hooks.wrap) == "function") then
-    return nil, "Gen 3 runtime NPC/shop services unavailable"
+    return nil, "Gen 3 NPC event and talk hooks unavailable"
   end
   local function optional(path)
     if deps[path] then return deps[path] end
@@ -107,17 +108,19 @@ function Shop.install(mod, catalog, registered, deps)
   local function spawnFor(mapId)
     local cfg=configFor(mapId)
     if not cfg then return false end
-    if not mod.world.current then return false end
-    local current=mod.world:current()
+    local world=mod.world
+    if not (world and type(world.spawnNpc)=="function"
+        and type(world.current)=="function") then return false end
+    local current=world:current()
     if not (current and current.mapId==mapId) then return false end
     local old=idsByMap[mapId]
-    if old and mod.world.npc and mod.world:npc(mapId,old) then return true end
+    if old and world.npc and world:npc(mapId,old) then return true end
     local x,y=findPosition(mapId,cfg)
     if not x then
       logFailure("placement","no free lab position: "..mapId)
       return false
     end
-    local id,err=mod.world:spawnNpc(mapId,{
+    local id,err=world:spawnNpc(mapId,{
       name="MEGA_LAB_FUNDRAISER", x=x,y=y,
       graphicsId=cfg.graphicsId, elevation=3,
       movement="STAY", facing="down", range="DOWN",
@@ -168,15 +171,20 @@ function Shop.install(mod, catalog, registered, deps)
     if ev and ev.mapId then spawnFor(ev.mapId) end
   end)
   mod.events:on("game.ready",function()
-    local current=mod.world.current and mod.world:current()
+    local world=mod.world
+    local current=world and world.current and world:current()
     if current then spawnFor(current.mapId) end
   end)
   -- Some versions announce an entered map before Field.running becomes
   -- available. Retry on movement; never spawn a second copy in the same map.
   mod.events:on("world.stepped",function(ev)
-    local current=mod.world.current and mod.world:current()
-    if current and configFor(current.mapId) and not idsByMap[current.mapId] then
-      spawnFor(current.mapId)
+    local world=mod.world
+    local current=world and world.current and world:current()
+    if current and configFor(current.mapId) then
+      local id=idsByMap[current.mapId]
+      if not id or (world.npc and not world:npc(current.mapId,id)) then
+        spawnFor(current.mapId)
+      end
     end
   end)
 
