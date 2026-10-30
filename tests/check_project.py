@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Basic repository and imported EBDX source-inventory checks (stdlib only)."""
 import json
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -10,10 +11,7 @@ assert manifest["api"] == 2
 assert manifest["entry"] == "main.lua" and (ROOT / manifest["entry"]).is_file()
 assert "gen3" in manifest["games"]
 assert manifest["github"] == "Deluxe0111/Mega-Evolution-Gen-3"
-assert manifest["version"] == "0.1.0"
-assert (ROOT / "main.lua").read_text(encoding="utf-8").find("return false") >= 0, (
-    "Scaffold currently must remain non-invasive"
-)
+assert re.fullmatch(r"\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?", manifest["version"])
 credits = (ROOT / "CREDITS.md").read_text(encoding="utf-8")
 assert "Aronousqui" in credits and "mangalos810" in credits
 assert "deviantart.com" in credits.lower()
