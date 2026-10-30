@@ -43,7 +43,7 @@ assert(Pokemon.monIcon(mon).image=="mega-party-icon")
 assert(Pokemon.monIcon(other).image=="normal-icon")
 assert(Pokemon.monFrontPic(other).image=="normal-front")
 Summary._cursor=2
-assert(Summary.draw()==nil or true)
+assert(Pokemon.monIcon(other).image=="normal-icon")
 -- A summary drawing exception must restore the real party record too.
 Summary._cursor=1
 local origDraw=Summary.draw
