@@ -68,7 +68,7 @@ local function typeId(key,typeProvider)
 end
 
 local CONVERSION={ PIXILATE="FAIRY", AERILATE="FLYING",
-  REFRIGERATE="ICE" }
+  REFRIGERATE="ICE", DRAGONIZE="DRAGON" }
 
 -- Only a damaging Normal move changes type. The engine's Damage.calc will
 -- then perform category/STAB/type effectiveness using the provider's type ID.
