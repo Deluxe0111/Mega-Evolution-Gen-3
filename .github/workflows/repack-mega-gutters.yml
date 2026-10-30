@@ -1,13 +1,6 @@
 name: Rebuild Mega art with isolated frame gutters
 
 on:
-  push:
-    branches:
-      - fix/atlas-frame-gutters-and-calibration-import
-    paths:
-      - 'tools/build_mega_atlas.py'
-      - 'src/mega_atlas.lua'
-      - '.github/workflows/repack-mega-gutters.yml'
   workflow_dispatch:
 
 permissions:
@@ -45,12 +38,13 @@ jobs:
           retention-days: 10
           compression-level: 6
           if-no-files-found: error
-      - name: Commit matching PNG pages and index to the fix branch
+      - name: Commit matching PNG pages and indexes to the selected branch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A assets/runtime/atlas assets/runtime/mega_atlas_index.lua assets/runtime/mega_atlas_index.json
+          # Files under assets/runtime are ignored by .gitignore; force-add them.
+          git add -f -A -- assets/runtime/atlas/ assets/runtime/mega_atlas_index.lua assets/runtime/mega_atlas_index.json
           if ! git diff --cached --quiet; then
             git commit -m "Rebuild 98 Mega atlas variants with two-pixel transparent gutters"
-            git push origin HEAD:fix/atlas-frame-gutters-and-calibration-import
+            git push origin "HEAD:${GITHUB_REF_NAME}"
           fi
