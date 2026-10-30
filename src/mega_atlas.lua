@@ -206,12 +206,11 @@ function Atlas.new(mod, index, graphics, timer, presentation)
 
     local logicalW, logicalH, ox, oy, xmin, ymin, s = PIC_BOX, PIC_BOX
     if spec then
-      local bx, by
-      s, bx, by, xmin, _, ymin = battleLayout(source, spec)
+      local bx, by, xmax, ymax
+      s, bx, by, xmin, xmax, ymin, ymax = battleLayout(source, spec)
       if wide then
-        local _, _, _, wx0, wx1, wy0, wy1 = battleLayout(source, spec)
-        logicalW, logicalH = wx1 - wx0, wy1 - wy0
-        ox, oy = bx - wx0, by - wy0
+        logicalW, logicalH = xmax - xmin, ymax - ymin
+        ox, oy = bx - xmin, by - ymin
       end
     end
     if not wide then
