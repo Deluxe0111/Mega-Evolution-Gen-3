@@ -21,7 +21,7 @@ function Items.register(mod, catalog)
       -- evolution item (which would permanently mutate a saved Pokemon).
       local ok, err = pcall(function()
         registry:register(id, {
-          id = id, name = row.name, index = idx, price = 0,
+          id = id, name = row.name, index = idx, price = id == "KEY_STONE" and 10000 or 5000,
           pocket = row.pocket or "ITEMS", description = row.description,
           fieldUse = "none",
           importance = id == "KEY_STONE" and 1 or 0,
