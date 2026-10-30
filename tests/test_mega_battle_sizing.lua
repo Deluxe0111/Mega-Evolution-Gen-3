@@ -22,6 +22,7 @@ end
 local idx = {schema=1,forms={mega_venusaur={variants={
   back={frames=1,fps=8,segments={{first=0,frames=1,cols=2,fs=121,ox=0,oy=0,sheet=0}}},
   front={frames=1,fps=8,segments={{first=0,frames=1,cols=2,fs=117,ox=0,oy=0,sheet=0}}},
+  icon={frames=1,fps=2,segments={{first=0,frames=1,cols=2,fs=64,ox=0,oy=0,sheet=0}}},
 }}}}
 local created, drawCalls, draws, tagged = {}, {}, {}, {}
 local G = {
@@ -31,7 +32,7 @@ local G = {
   end,
   newQuad=function(x,y,w,h) return {x=x,y=y,w=w,h=h} end,
   newCanvas=function(w,h,opts)
-    local c={w=w,h=h,dpi=opts.dpiscale,setFilter=function() end}
+    local c={w=w,h=h,dpi=opts and opts.dpiscale or 1,setFilter=function() end}
     created[#created+1]=c
     return c
   end,
@@ -113,4 +114,15 @@ assert(tag.scale==0.85 and tag.side=="player")
 assert(tag.pivot[1]==60.5 and tag.pivot[2]==100)
 assert(tag.lowPivot[1]==32 and tag.lowPivot[2]==57)
 assert(a.picture("mega_venusaur","back",false,0,true)==full)
+-- HD must never run a temporary graphics.draw shim, even if a Mega is
+-- visible and a battle picture is requested by the full-resolution provider.
+local hdDraw = G.draw
+a.withBattleDraw(function()
+  assert(G.draw==hdDraw,"Mega shim must not interfere with HD Battle Fit")
+end)
+assert(G.draw==hdDraw)
+-- Menu icons must be independently constrained to 32 logical pixels.
+local icon=assert(a.icon("mega_venusaur"))
+assert(icon.w==32 and icon.h==32 and icon.image.w==32 and icon.image.h==32)
+assert(a.icon("mega_venusaur")==icon)
 print("PASS: G9 enemy draw untouched, scoped Mega pivot, error restoration, and full-res HD tag")
