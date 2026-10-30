@@ -58,6 +58,10 @@ local oldLookup=adapter.abilityOf
 local ctx={user=hero,target=foe,adapter=adapter}
 assert(S.withMoldBreaker(game,ctx,function(M)
   assert(adapter:abilityOf(foe)==nil)
+  local statClone={id=foe.id,side=foe.side,mon={hp=100},
+    ability="LEVITATE"}
+  assert(adapter:abilityOf(statClone)==nil,
+    "native Damage.base cloned defenders must also be suppressed")
   assert(adapter:abilityOf(third)=="WONDER_GUARD")
   assert(foe._megaIgnoreDefensiveAbility)
   assert(A.activeAbility(game,foe)==nil)
