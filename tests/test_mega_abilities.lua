@@ -1,6 +1,10 @@
 local Ability = dofile("src/mega_abilities.lua")
 local active={}
-local game={view=function(mon)return active[mon] end}
+local game={
+  view=function(mon)return active[mon] end,
+  stat=function()return nil end,
+  finish=function()end,
+}
 local attacker={mon={hp=150,maxHp=150},side="player"}
 local defender={mon={hp=200,maxHp=200},side="enemy"}
 local function setA(ab)active[attacker.mon]={ability=ab} end
@@ -113,4 +117,4 @@ assert(result==99)
 bridge.uninstall()
 assert(Damage.base==origBase and Damage.calc==origCalc,"hooks must uninstall")
 assert(Damage.calc(attacker,defender,move,{})==100,"vanilla damage restored")
-print("PASS: 9 Mega damage abilities, eligibility, status/fixed bypass, native calc integration and cleanup")
+print("PASS: 10 Mega damage abilities, eligibility, status/fixed bypass, native calc integration and cleanup")
