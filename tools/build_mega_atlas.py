@@ -15,7 +15,7 @@ from pathlib import Path
 try:
     from PIL import Image
 except ImportError as exc:
-    raise SystemExit("Install Pillow first: py -3 -m pip install Pillow==13.0.0") from exc
+    raise SystemExit("Install Pillow first: py -3 -m pip install --only-binary=:all: Pillow==13.0.0") from exc
 
 KINDS = ("front", "front_shiny", "back", "back_shiny", "icon", "icon_shiny")
 ICON_KINDS = {"icon", "icon_shiny"}
