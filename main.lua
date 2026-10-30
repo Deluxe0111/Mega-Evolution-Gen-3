@@ -320,6 +320,7 @@ return function(mod)
       bridge = bridge and "installed" or ("offline: " .. tostring(bridgeError)),
       icons = iconBridge and "installed" or ("offline: " .. tostring(iconError)),
       menus = uiBridge and "installed" or ("offline: " .. tostring(uiError)),
+      partyIcons = uiBridge and uiBridge.diagnostics and uiBridge.diagnostics() or nil,
       megaButton = battleVisual and "EBDX artwork installed" or "unavailable",
       supportedForms = battleForms and #battleForms or 0,
       keyStoneItem = registeredById.KEY_STONE,

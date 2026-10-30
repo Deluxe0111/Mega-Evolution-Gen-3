@@ -20,10 +20,24 @@ function Ui.install(mod, game, art, modules)
   local Summary=modules and modules.Summary or optional("src.ui.game3.summary_menu")
   local RS=modules and modules.RS or optional("src.ui.game3.rs.summary_menu")
   local RSE=modules and modules.RSE or optional("src.ui.game3.rse.summary_menu")
+  local PartyMenu=modules and modules.PartyMenu or optional("src.ui.game3.party_menu")
   if not Pokemon or not art or not art.picture then
     return nil,"Pokemon or Mega image provider not available"
   end
   local replacements={}
+  local diagnostics={
+    partySlotOverrides=0, megaIconAttempts=0, megaIconSuccess=0,
+    megaIconFailures=0, lastIcon=nil, lastFailure=nil,
+  }
+  local warned={}
+  local function warnOnce(slug,why)
+    local key=tostring(slug)..":"..tostring(why)
+    if warned[key] then return end
+    warned[key]=true
+    if mod and mod.log and mod.log.warn then
+      mod.log:warn("Mega party icon %s: %s",tostring(slug),tostring(why))
+    end
+  end
   local function wrap(holder,key,callback)
     if not holder or type(holder[key])~="function" then return end
     local original=holder[key]
@@ -69,12 +83,64 @@ function Ui.install(mod, game, art, modules)
   wrap(Pokemon,"monIcon",function(next,mon)
     local v=viewOf(mon)
     if v and art.icon then
-      local icon=art.icon(v.slug,shiny(mon),female(mon))
-      if icon and icon.image and icon.quads and icon.quads[0]
-          and icon.quads[1] then return icon end
+      diagnostics.megaIconAttempts=diagnostics.megaIconAttempts+1
+      diagnostics.lastIcon=v.slug
+      local ok, icon=pcall(art.icon,v.slug,shiny(mon),female(mon))
+      if ok and icon and icon.image and icon.quads and icon.quads[0]
+          and icon.quads[1] then
+        diagnostics.megaIconSuccess=diagnostics.megaIconSuccess+1
+        return icon
+      end
+      diagnostics.megaIconFailures=diagnostics.megaIconFailures+1
+      diagnostics.lastFailure=ok and "missing/invalid two-frame Mega artwork"
+        or tostring(icon)
+      warnOnce(v.slug,diagnostics.lastFailure)
     end
     return next(mon)
   end)
+
+  -- Battle-switch roster can contain COPIES and a reordered view of the
+  -- original player party. Patch only its synchronous draw, replacing
+  -- references with temporary Mega-marked display copies. The actual
+  -- saved party, battle state and menu array are restored after EVERY draw.
+  -- Both FRLG OAM and RSE Chrome call Pokemon.monIcon on these copies.
+  local drawingParty=false
+  if PartyMenu and type(PartyMenu.draw)=="function"
+      and type(game.partyView)=="function" then
+    wrap(PartyMenu,"draw",function(next,...)
+      if drawingParty or not PartyMenu.open or not PartyMenu._battle
+          or type(PartyMenu._party)~="table" then return next(...) end
+      local party=PartyMenu._party
+      local replacements={}
+      for i,mon in ipairs(party) do
+        local sourceSlot=PartyMenu._order and PartyMenu._order[i] or i
+        local ok,v=pcall(game.partyView,sourceSlot)
+        if ok and v and type(mon)=="table" then
+          local mirror=copy(mon)
+          mirror.__megaUiView=v
+          party[i]=mirror
+          replacements[#replacements+1]={index=i,original=mon}
+          diagnostics.partySlotOverrides=diagnostics.partySlotOverrides+1
+          if diagnostics.partySlotOverrides==1 and mod and mod.log
+              and type(mod.log.info)=="function" then
+            mod.log:info("Mega party menu resolved %s in original slot %s",
+              tostring(v.slug),tostring(sourceSlot))
+          end
+        end
+      end
+      if #replacements==0 then return next(...) end
+      drawingParty=true
+      local function packed(...)return {n=select("#",...),...}end
+      local result=packed(pcall(next,...))
+      for i=#replacements,1,-1 do
+        local record=replacements[i]
+        party[record.index]=record.original
+      end
+      drawingParty=false
+      if not result[1] then error(result[2],0) end
+      return (table.unpack or unpack)(result,2,result.n)
+    end)
+  end
 
   -- Summary menus read stats and ability directly from a saved party-mon.
   -- Temporarily replace ONLY its party-array reference with a view copy for
@@ -166,6 +232,11 @@ function Ui.install(mod, game, art, modules)
   end
 
   local bridge={}
+  function bridge.diagnostics()
+    local result={}
+    for k,v in pairs(diagnostics) do result[k]=v end
+    return result
+  end
   function bridge.uninstall()
     for i=#replacements,1,-1 do
       local w=replacements[i]

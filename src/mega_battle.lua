@@ -236,6 +236,35 @@ function Mega.new(selection, eligibility, art, catalogue, typeIds)
     if not row or not stats then return nil end
     return { slug=slug, stats=stats, ability=row.ability, types=row.types }
   end
+  -- FireRed/Emerald build separate party-menu arrays (and can reorder them)
+  -- while the battle uses live battlers and move proxies. Read-only lookup
+  -- by ORIGINAL battle-party slot avoids depending on identical table refs.
+  function self.partyView(slot)
+    if not battle or not battle.playerParty then return nil end
+    slot=tonumber(slot)
+    if not slot or slot<1 or slot>#battle.playerParty then return nil end
+    -- Prefer the slot's original party identity; this also works for a
+    -- transformed Pokémon that has been switched off the active field.
+    local original=battle.playerParty[slot]
+    local view=self.view(original)
+    if view then return view end
+    local visited={}
+    local function tryBattler(b)
+      if not b or visited[b] or b.side~="player" or b.partyIndex~=slot then
+        return nil
+      end
+      visited[b]=true
+      return self.view(battlerIdentity(b))
+    end
+    view=tryBattler(battle.player)
+    if view then return view end
+    for _,b in pairs(battle.battlers or {}) do
+      view=tryBattler(b)
+      if view then return view end
+    end
+    return nil
+  end
+
   function self.monPicture(st,mon,back,shiny,fallback)
     if st~=battle or not mon then return fallback end
     local slug=selection.activeForm(identity(mon))

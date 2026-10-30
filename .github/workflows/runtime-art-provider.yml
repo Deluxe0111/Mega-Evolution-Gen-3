@@ -29,6 +29,7 @@ on:
       - 'tests/test_mega_ui.lua'
       - 'tests/test_mega_party_icons.lua'
       - 'tests/test_mega_party_proxy.lua'
+      - 'tests/test_mega_party_slot_menu.lua'
       - 'tests/test_mega_battle_ui.lua'
       - 'tests/test_mega_battle_sizing.lua'
       - 'tests/test_mega_presentation.lua'
@@ -52,7 +53,7 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y lua5.4
       - name: Check Lua syntax
-        run: luac -p main.lua src/mega_atlas.lua src/mega_selection.lua src/mega_venusaur.lua src/mega_standalone.lua src/mega_battle.lua src/mega_ui.lua src/mega_battle_ui.lua src/mega_tuner_model.lua src/mega_calibrator.lua src/mega_item_icons.lua src/mega_items.lua src/mega_eligibility.lua data/mega_items.lua data/mega_forms.lua data/mega_battle_forms.lua data/mega_presentation.lua assets/runtime/mega_atlas_index.lua tests/test_mega_provider.lua tests/test_mega_selection.lua tests/test_mega_items.lua tests/test_mega_venusaur.lua tests/test_mega_standalone.lua tests/test_mega_full_roster.lua tests/test_mega_ui.lua tests/test_mega_party_icons.lua tests/test_mega_party_proxy.lua tests/test_mega_battle_ui.lua tests/test_mega_battle_sizing.lua tests/test_mega_presentation.lua tests/test_mega_tuner_model.lua tests/test_mega_calibrator.lua tests/test_mega_item_icons.lua
+        run: luac -p main.lua src/mega_atlas.lua src/mega_selection.lua src/mega_venusaur.lua src/mega_standalone.lua src/mega_battle.lua src/mega_ui.lua src/mega_battle_ui.lua src/mega_tuner_model.lua src/mega_calibrator.lua src/mega_item_icons.lua src/mega_items.lua src/mega_eligibility.lua data/mega_items.lua data/mega_forms.lua data/mega_battle_forms.lua data/mega_presentation.lua assets/runtime/mega_atlas_index.lua tests/test_mega_provider.lua tests/test_mega_selection.lua tests/test_mega_items.lua tests/test_mega_venusaur.lua tests/test_mega_standalone.lua tests/test_mega_full_roster.lua tests/test_mega_ui.lua tests/test_mega_party_icons.lua tests/test_mega_party_proxy.lua tests/test_mega_party_slot_menu.lua tests/test_mega_battle_ui.lua tests/test_mega_battle_sizing.lua tests/test_mega_presentation.lua tests/test_mega_tuner_model.lua tests/test_mega_calibrator.lua tests/test_mega_item_icons.lua
       - name: Verify packed Mega provider and compatibility boundaries
         run: lua tests/test_mega_provider.lua
       - name: Test ORAS-style Mega selection state machine
@@ -71,6 +72,8 @@ jobs:
         run: lua tests/test_mega_party_icons.lua
       - name: Verify active Mega party menu resolves battle proxy and original Pokémon
         run: lua tests/test_mega_party_proxy.lua
+      - name: Reproduce native FireRed copied/reordered party draw with Mega icon
+        run: lua tests/test_mega_party_slot_menu.lua
       - name: Test art-backed Mega button, selectable states, HP symbols and transformation effect
         run: lua tests/test_mega_battle_ui.lua
       - name: Verify Mega battle sizing, G9-compatible canvas pivot and HD tagging
