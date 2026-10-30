@@ -23,7 +23,12 @@ for _,row in ipairs(Forms) do
   if row.stone~="" then assert(byStone[row.stone],row.slug) end
 end
 local checker=Eligibility.new(FormKeys,Items)
+local drawScopes=0
 local art={
+  withBattleDraw=function(fn,...)
+    drawScopes=drawScopes+1
+    return fn(...)
+  end,
   hasSprite=function(slug,kind) return bySlug[slug]~=nil end,
   picture=function(slug,side,shiny,frame,battle)
     return {image=slug..":"..side..":"..tostring(shiny)..":"..tostring(battle)}
@@ -51,14 +56,20 @@ for _,row in ipairs(Forms) do
     })
   end
   local game=Mega.new(Selection.new(),elig,art,Forms,typeIds)
-  local st={}
+  local st={player=b}
   assert(game.status(st,b)=="START: MEGA",row.slug)
+  local beforeScopes=drawScopes
+  assert(game.withBattleDraw(function()return "normal battle" end)=="normal battle")
+  assert(drawScopes==beforeScopes,
+    "ordinary battles MUST NOT wrap shared G9 graphics")
   assert(game.input(st,b,key("start")),row.slug)
   assert(game.status(st,b)=="MEGA READY")
   local action=game.command(st,b,{kind="move",move="RAZOR_LEAF",slot=1,battler=0})
   assert(action.megaEvolution and action.megaEvolution.form==row.slug,row.slug)
   assert(game.beforeResolved(st,b,"RAZOR_LEAF",1),row.slug)
   assert(game.activeForm(mon)==row.slug,row.slug)
+  assert(game.withBattleDraw(function()return "mega battle" end)=="mega battle")
+  assert(drawScopes==beforeScopes+1, "Mega image must retain scoped pivot support")
   local stats=Mega.megaStats(mon,bySlug[row.slug])
   for _,k in ipairs({"attack","defense","spAtk","spDef","speed"}) do
     assert(game.stat(b,k,0)==stats[k],row.slug..":"..k)

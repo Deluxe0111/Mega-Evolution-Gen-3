@@ -192,8 +192,32 @@ function Mega.new(selection, eligibility, art, catalogue, typeIds)
   end
 
   function self.withBattleDraw(drawFn,...)
-    if art.withBattleDraw then return art.withBattleDraw(drawFn,...) end
+    -- Critical: do not replace love.graphics.draw during ordinary battle
+    -- frames. G9 installs its own persistent draw adapter lazily; an early
+    -- Mega wrapper can become trapped beneath G9 and distort other sprites.
+    -- First ordinary frames let G9/HD finish their own setup untouched.
+    local showingMega = false
+    local function check(b)
+      if b and b.mon and selection.activeForm(b.mon) then
+        showingMega = true
+      end
+    end
+    if battle then
+      check(battle.player)
+      check(battle.enemy)
+      for _,b in pairs(battle.battlers or {}) do check(b) end
+    end
+    if showingMega and art.withBattleDraw then
+      return art.withBattleDraw(drawFn,...)
+    end
     return drawFn(...)
+  end
+  function self.view(mon)
+    local slug = mon and selection.activeForm(mon)
+    local row = slug and forms[slug]
+    local stats = mon and calculated[mon]
+    if not row or not stats then return nil end
+    return { slug=slug, stats=stats, ability=row.ability, types=row.types }
   end
   function self.monPicture(st,mon,back,shiny,fallback)
     if st~=battle or not mon then return fallback end

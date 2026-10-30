@@ -59,6 +59,7 @@ function Atlas.new(mod, index, graphics, timer, presentation)
   local pivots = setmetatable({}, { __mode = "k" })
   local inBattleDraw = false
   local unpackArgs = table.unpack or unpack
+  local hdBattle
 
   -- The game's G9/HD draw wrappers are shared by EVERY sprite. Our previous
   -- version permanently inserted a second global draw shim; this could upset
@@ -68,6 +69,9 @@ function Atlas.new(mod, index, graphics, timer, presentation)
   -- and argument types (including quad drawing), not a padded 9-arg list.
   function self.withBattleDraw(drawFn, ...)
     if type(drawFn) ~= "function" then return nil end
+    -- The HD provider handles its own full-size quad and screen-space pivot.
+    -- Never interpose a G.draw shim during HD rendering.
+    if hdBattle and hdBattle() then return drawFn(...) end
     if inBattleDraw or not G or type(G.draw) ~= "function" then
       return drawFn(...)
     end
@@ -102,7 +106,7 @@ function Atlas.new(mod, index, graphics, timer, presentation)
     return G and type(G.draw) == "function" and type(G.newCanvas) == "function"
   end
 
-  local function hdBattle()
+  hdBattle = function()
     if not mod or type(mod.find) ~= "function" then return nil end
     local ok, found = pcall(mod.find, mod, "gen3-hd-sprites")
     local hd = ok and found and found.exports or nil
@@ -231,7 +235,7 @@ function Atlas.new(mod, index, graphics, timer, presentation)
       -- flying/hovering sprites retain authored empty space below the body.
       -- A visually calibrated form like Venusaur overrides this metadata.
       local visible = tonumber(location.fh) or tonumber(location.fs) or 64
-      local target = side == "back" and 62 or 52
+      local target = side == "back" and 68 or 52
       spec = {
         scale = math.max(0.45, math.min(1.4, target / math.max(1, visible))),
         feet = location.fs,
@@ -320,6 +324,31 @@ function Atlas.new(mod, index, graphics, timer, presentation)
     local entry = { image = canvas, w = PIC_BOX, h = PIC_BOX }
     cache(frameCache, frameOrder, key, entry, 48)
     return entry
+  end
+
+  -- A Mega icon is a distinct 32x32 party/summary asset. NEVER expose a
+  -- battle-sized canvas in a menu: menu draws do not use battle pivots.
+  local iconCache = {}
+  function self.icon(slug)
+    if iconCache[slug] then return iconCache[slug] end
+    local pic = self.picture(slug, "icon", false, 0, false)
+    if not pic or not pic.image or not G then return nil end
+    local ok,canvas = pcall(G.newCanvas, 32, 32)
+    if not ok or not canvas then return nil end
+    if canvas.setFilter then canvas:setFilter("nearest", "nearest") end
+    G.push("all")
+    local drawn = pcall(function()
+      if G.origin then G.origin() end
+      G.setCanvas(canvas)
+      if G.clear then G.clear(0,0,0,0) end
+      if G.setColor then G.setColor(1,1,1,1) end
+      G.draw(pic.image, 0, 0, 0, 0.5, 0.5)
+    end)
+    G.pop()
+    if not drawn then return nil end
+    local result = {image=canvas,w=32,h=32,frames=1}
+    iconCache[slug]=result
+    return result
   end
 
   function self.stats()
