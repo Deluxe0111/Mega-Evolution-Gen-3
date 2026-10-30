@@ -123,6 +123,12 @@ function Venusaur.new(selection, eligibility, art)
     return true
   end
 
+  function self.switchedIn(battler)
+    -- Re-attach the temporary ability when State.makeBattler constructs
+    -- a new live battler for the same already-Mega party mon.
+    attach(battler)
+  end
+
   function self.stat(battler, key, vanilla)
     local mon = battler and battler.mon
     if not mon or selection.activeForm(mon) ~= "mega_venusaur" then return vanilla end
