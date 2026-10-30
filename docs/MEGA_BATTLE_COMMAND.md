@@ -26,7 +26,7 @@ Audited against bryanthaboi/gen1recomp (dev) on 2026-10-30:
 - src/core/game3/battle/init.lua: turn execution, double-battle action queue, pursuit/switch exceptions and battle cleanup. Must review all relevant resolve paths before installing hooks.
 - src/core/game3/battle/ui.lua also exposes a battle.overlay hook, which may assist visual display, but **not** input acceptance. An overlay by itself would be a dead button.
 
-This is an architecture and tested selection-state milestone, **not** an implemented on-screen control or a working transformation. We intentionally avoid installing an inert UI button.
+PR #8 adds an experimental **START: MEGA / MEGA READY** control for Mega Venusaur and executes its transformation through five new Gen 3 battle hooks. This is **not playable in the unmodified Gen1Recomp engine**; without the companion engine PR the mod fails closed. The default indicator and sprite swap are placeholders for the full ORAS presentation. See [Mega Venusaur playtest](PLAYTEST_MEGA_VENUSAUR.md).
 
 ## Code already implemented
 
