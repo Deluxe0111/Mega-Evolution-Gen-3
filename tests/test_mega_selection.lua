@@ -62,6 +62,23 @@ ok, why = flow.toggle("player", monB, "mega_charizard_x", true)
 assert(not ok and why == "already_mega_evolved")
 assert(not flow.faint(monA))
 
+-- Planner copies move rows, so the planned action must still activate.
+flow.finishBattle()
+assert(flow.toggle("player", monA, "mega_venusaur", true))
+local sent, sentOk = flow.commit("player", monA, validAction)
+assert(sentOk)
+local plannedCopy = {}
+for key, value in pairs(sent) do plannedCopy[key] = value end
+assert(flow.activatePlanned("player", monA, sent, false) == nil)
+local wrong = {}
+for key, value in pairs(plannedCopy) do wrong[key] = value end
+wrong.slot = 4
+assert(flow.activatePlanned("player", monA, wrong, true) == nil)
+assert(flow.activatePlanned("player", monB, plannedCopy, true) == nil)
+assert(not flow.status("player", monA).used)
+assert(flow.activatePlanned("player", monA, plannedCopy, true) == "mega_venusaur")
+assert(flow.status("player", monA).used)
+
 -- Cancellation of a committed request frees up that side before activation.
 flow.finishBattle()
 ok = flow.toggle("player", monA, "mega_venusaur", true)
