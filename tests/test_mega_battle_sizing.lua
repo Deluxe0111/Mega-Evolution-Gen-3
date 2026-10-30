@@ -123,7 +123,8 @@ end)
 assert(G.draw==hdDraw)
 -- Menu icons must be independently constrained to 32 logical pixels.
 local icon=assert(a.icon("mega_venusaur"))
-assert(icon.w==32 and icon.h==32 and icon.image.w==32 and icon.image.h==32)
+assert(icon.w==32 and icon.h==32 and icon.image.w==32 and icon.image.h==64)
+assert(icon.frames==2 and icon.quads[0] and icon.quads[1])
 assert(a.icon("mega_venusaur")==icon)
 -- Two imported Mega animations use DIFFERENT source frame dimensions for
 -- shiny art. Verify that the renderer uses the geometry-specific feet value
