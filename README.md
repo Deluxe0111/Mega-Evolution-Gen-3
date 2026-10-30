@@ -2,7 +2,7 @@
 
 **Standalone Mega Evolution project for Gen1Recomp's Generation 3 games:** FireRed, LeafGreen, Ruby, Sapphire and Emerald.
 
-> **Status: experimental standalone Mega Venusaur gameplay (PR #8; not yet verified in a live Emerald battle).**
+> **Status: experimental full 98-form Mega roster (PR #13). Mega Venusaur is gameplay tested; the other forms require in-game QA.**
 > Works against **stock Gen1Recomp** using scoped runtime wrappers on its existing Gen 3 Lua battle functions. No engine fork, binary patch, or custom Gen1Recomp hook PR is required. Engine internals can change between updates, so gameplay still needs in-game compatibility testing.
 
 ## Project goal
@@ -22,7 +22,7 @@ Build an optional Mega Evolution mod that works with the original Gen 3 games an
 - An asset import/checker tool, the **156-page converted atlas and its Lua/JSON indexes**, and a safe Gen1Recomp Mod API 2 art provider.
 - Explicit APIs for checking Mega forms, locating animation frames and rendering an isolated 64×64 picture entry, without changing G9 Battle Sprites' hooks.
 - **92 Mega Stones and one Key Stone** registered through the public Gen 3 item registry, with fixed numeric IDs, and a strict read-only eligibility checker. These items are **not distributed to players**.
-- Experimental standalone Mega Venusaur integration in PR #8: START toggle in the FIGHT menu, per-battler form, calculated Mega stats, Thick Fat and animated battle art without editing saved Pokémon. **No engine changes needed**; other forms are not yet playable.
+- Experimental **full-roster Mega gameplay** in PR #13: all 98 form variants from the pinned EBDX definitions can be selected with their required stones/Key Stone (Mega Rayquaza uses Dragon Ascent), and have temporary calculated stats, live battler type/ability overrides where supported, and animated battle art. **No engine changes needed.** Stock Gen 3 does not implement all newer abilities or Fairy typing, so exact mechanics still require compatibility work.
 
 **The original EBDX strips and converted PNG atlas pages are both committed.** The atlas has 24,018 frames across 156 pages; the provider loads only the requested pages. Having renderable art does **not** mean an in-game Mega transformation is implemented.
 
@@ -32,7 +32,9 @@ Build an optional Mega Evolution mod that works with the original Gen 3 games an
 manifest.json                 Gen1Recomp mod metadata
 main.lua                      Mega art API, item registration and standalone bridge setup
 src/mega_standalone.lua        Stock Gen 3 battle wrappers; no engine source changes
-src/mega_venusaur.lua         Temporary battle-only Mega Venusaur mechanics
+src/mega_battle.lua           Data-driven battle-only form controller for all 98 Megas
+data/mega_battle_forms.lua    Generated 98-form battle stat/type/ability catalogue
+src/mega_venusaur.lua        Legacy Mega Venusaur proof controller (tests only)
 src/mega_selection.lua        Per-battle toggle, move commitment and Mega allowance
 src/mega_atlas.lua            Lazy PNG atlas frame locator and picture renderer
 assets/
@@ -66,12 +68,12 @@ The source artwork has **already been imported**. `1_IMPORT_EBDX_ASSETS.bat` is 
 
 ## Next milestones
 
-1. Test the standalone mod directly on an unmodified Gen1Recomp build with a disposable Emerald save.
-2. Validate the move menu, G9/HD sprite positioning, switches, fainting and save safety, including doubles.
-3. Add the ORAS transformation cinematic/audio and complete in-game compatibility testing.
-4. Expand the battle mechanics and per-form data to the remaining Mega roster.
+1. Test the full-roster branch on an unmodified Gen1Recomp build, especially Charizard X/Y, Rayquaza, same-stone forms and post-Gen3 species.
+2. Validate G9/HD front/back/shiny presentation, switching, fainting, doubles and save isolation across the 98 forms.
+3. Implement and verify post-Gen3 typing/ability compatibility, including Fairy, for forms that need it.
+4. Add the full Mega transformation cinematic/audio, trainer Megas and individual form presentation calibration.
 
-See [Mega Venusaur playtest](docs/PLAYTEST_MEGA_VENUSAUR.md), [ORAS-style Mega battle command design](docs/MEGA_BATTLE_COMMAND.md), [Roadmap](docs/ROADMAP.md), [Four-mod rendering integration research](docs/RENDERING_INTEGRATION.md), [Animation pipeline](docs/ANIMATION_PIPELINE.md), [Asset import](docs/ASSET_IMPORT.md), [Implementation notes](docs/IMPLEMENTATION_NOTES.md) and [Development guide](docs/DEVELOPMENT.md).
+See [Full 98-form gameplay and limitations](docs/ALL_MEGA_ROSTER.md), [Mega Venusaur playtest](docs/PLAYTEST_MEGA_VENUSAUR.md), [ORAS-style Mega battle command design](docs/MEGA_BATTLE_COMMAND.md), [Roadmap](docs/ROADMAP.md), [Four-mod rendering integration research](docs/RENDERING_INTEGRATION.md), [Animation pipeline](docs/ANIMATION_PIPELINE.md), [Asset import](docs/ASSET_IMPORT.md), [Implementation notes](docs/IMPLEMENTATION_NOTES.md) and [Development guide](docs/DEVELOPMENT.md).
 
 ## Credits and rights
 

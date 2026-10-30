@@ -24,24 +24,43 @@ function Eligibility.new(forms, items)
     bySpecies[normalize(sp)] = list
   end
 
-  local function resolve(species, held)
+  local function resolve(species, held, formId, knowsMegaMove)
     local formsForSpecies = bySpecies[normalize(species)]
     if not formsForSpecies then return nil, "species_not_supported" end
     local stone = byItem[held] or byItem[normalize(held)]
-    if not stone or stone == "KEY_STONE" then return nil, "mega_stone_required" end
-    local chosen
+    local chosen = {}
     for _, form in ipairs(formsForSpecies) do
-      if form.stone ~= "" and form.stone == stone then
-        if chosen then return nil, "ambiguous_mega_form" end
-        chosen = form
+      local matches = (form.stone ~= "" and form.stone == stone)
+        or (form.stone == "" and form.move ~= "" and knowsMegaMove == true
+            and (not stone or stone == "KEY_STONE"))
+      if matches then chosen[#chosen + 1] = form end
+    end
+    if #chosen == 0 then
+      if not stone or stone == "KEY_STONE" then return nil, "mega_stone_required" end
+      return nil, "wrong_mega_stone"
+    end
+    if #chosen == 1 then
+      -- A form-specific Mega cannot be selected using a Pokémon in a different
+      -- base form, even when only one stone target exists.
+      local candidate = chosen[1]
+      if formId ~= nil and candidate.base_form and tonumber(candidate.base_form) ~= tonumber(formId) then
+        return nil, "wrong_base_form"
+      end
+      return candidate.slug, nil
+    end
+    if formId == nil then return nil, "ambiguous_mega_form" end
+    local found
+    for _, form in ipairs(chosen) do
+      if tonumber(form.base_form or 0) == tonumber(formId) then
+        if found then return nil, "ambiguous_mega_form" end
+        found = form
       end
     end
-    if chosen then return chosen.slug, nil end
-    return nil, "wrong_mega_stone"
+    return found and found.slug or nil, found and nil or "wrong_base_form"
   end
 
-  function Eligibility.resolve(species, held)
-    return resolve(species, held)
+  function Eligibility.resolve(species, held, formId, knowsMegaMove)
+    return resolve(species, held, formId, knowsMegaMove)
   end
 
   -- Context shape:
@@ -64,14 +83,21 @@ function Eligibility.new(forms, items)
     if battler.transformed or (battler.mon and battler.mon.transformed) then
       return nil, "transformed_pokemon"
     end
+    if ctx.species == nil then return nil, "unknown_species" end
+    if not bySpecies[normalize(ctx.species)] then return nil, "species_not_supported" end
     if ctx.keyStone ~= true then return nil, "key_stone_required" end
     -- The current battler's held item is authoritative (Knock Off etc.).
     -- A supplied battle item 0 is not replaced by the original party item.
     local held = battler.item
     if held == nil and battler.mon then held = battler.mon.item or battler.mon.heldItem end
-    if not held or held == 0 or held == "0" then return nil, "mega_stone_required" end
     if ctx.species == nil then return nil, "unknown_species" end
-    return resolve(ctx.species, held)
+    -- Ordinary Mega Stones require the exact held item. Rayquaza is the
+    -- one known exception: Dragon Ascent, and no competing held Mega Stone.
+    local monForm = ctx.baseForm
+    if monForm == nil and battler.mon then
+      monForm = battler.mon.form or battler.mon.formId
+    end
+    return resolve(ctx.species, held, monForm, ctx.knowsMegaMove)
   end
 
   return Eligibility

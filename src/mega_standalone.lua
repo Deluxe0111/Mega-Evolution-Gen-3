@@ -91,10 +91,28 @@ function Standalone.install(mod, game, modules)
       local battler = type(user) == "table" and user or current(st, user)
       -- The turn planner may force Encore/Choice/etc. Recheck the exact
       -- *resolved* move and slot, never spend the Mega on a changed move.
-      if battler then game.beforeResolved(st, battler, move, slot) end
+      if battler and game.beforeResolved(st, battler, move, slot) then
+        if game.onMegaEvolved then game.onMegaEvolved(st, battler, adapter) end
+      end
     end
     return next(user, target, move, slot, adapter, st, out, opts)
   end)
+
+  -- Native turn-order calculation reads mon.speed in both singles and
+  -- doubles. Supply a temporary copied speed view during planning only;
+  -- preserve the original mon pointer as soon as planning returns.
+  if type(game.withSpeedPlanning) == "function" then
+    for _, method in ipairs({ "planTurnActions", "planTurnFromActions" }) do
+      if type(Engine[method]) == "function" then
+        wrap(Engine, method, function(next, st, ...)
+          if not enabled() then return next(st, ...) end
+          return game.withSpeedPlanning(st, function(...)
+            return next(st, ...)
+          end, ...)
+        end)
+      end
+    end
+  end
 
   wrap(Damage, "base", function(next, attacker, defender, move, opts)
     if not enabled() then return next(attacker, defender, move, opts) end

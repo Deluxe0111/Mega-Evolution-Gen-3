@@ -20,6 +20,6 @@
     "nuzlocke"
   ],
   "conflicts": [],
-  "description": "98-form Mega atlas plus experimental standalone Mega Venusaur gameplay for stock Gen1Recomp.",
+  "description": "98 selectable Mega forms, temporary battle stats and art for stock Gen1Recomp (experimental; post-Gen3 ability/typing support varies).",
   "github": "Deluxe0111/Mega-Evolution-Gen-3"
 }
