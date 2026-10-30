@@ -6,7 +6,7 @@ the move-select overlay with the original EBDX art:
 | Asset | Source in this mod | Placement |
 | --- | --- | --- |
 | `megaButton.png` | `assets/source/ebdx/ui_reference/Graphics/EBDX/Pictures/UI/megaButton.png` | At game-space **(0,89)**, rendered **22×22** directly above the move panel and touching the **left screen edge** |
-| `symMega.png` | `assets/source/ebdx/ui_reference/Graphics/EBDX/Pictures/UI/symMega.png` | Small symbol **just left of the HP bar**, visible only while the Pokémon is Mega Evolved |
+| `symMega.png` | `assets/source/ebdx/ui_reference/Graphics/EBDX/Pictures/UI/symMega.png` | Crisp **13×17** symbol below the name/gender row and left of the HP bar, shown after Mega reveal |
 | `mega_sym.png` | `assets/source/ebdx/ui_reference/Graphics/EBDX/Pictures/mega_sym.png` | Short transparent emblem bloom over the player's Pokémon at the moment of Mega activation |
 
 `megaButton.png` is an **88×44** sheet: left **44×44 inactive** and right
@@ -30,6 +30,8 @@ Mega Stone. The symbol next to the HP bar means **currently Mega Evolved**,
 not merely eligible.
 
 The emblem's white-silhouette sequence is **render-only**: the original Pokémon fades to an alpha-preserving white silhouette (0–0.48s), holds white until 0.72s, then the **white Mega sprite** is revealed and its full colours return by 1.36s. The original Mega symbol keeps growing and fading throughout. The native engine still resolves Mega abilities, speed, types and the selected attack immediately; no artificial battle delay, save edits or unrelated enemy/background tint. The optional shader is scoped to the specific Pokémon image and the draw hook restores itself even when rendering fails. If the shader is unsupported, the EBDX emblem and sprite reveal still work without a crash.
+
+The badge uses **nearest-neighbour** filtering and uniform half-size rendering of the 26×34 EBDX source. It stays below the nickname/gender row rather than stretching into it.
 
 The badge is positioned from Gen1Recomp's own `Healthbox.center()`
 together with animation offsets, including double battles. We do not
