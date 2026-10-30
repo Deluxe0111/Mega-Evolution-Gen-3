@@ -224,6 +224,21 @@ function Atlas.new(mod, index, graphics, timer, presentation)
     if not location then return nil end
     local spec = battle and presentation and presentation[slug]
       and presentation[slug][side] or nil
+    if battle and not spec and side ~= "icon" then
+      -- Every newly enabled Mega receives a conservative first-pass layout.
+      -- Use one animation-wide alpha envelope (not each frame's bounds) for
+      -- size. Preserve the ORIGINAL source square's bottom as its anchor:
+      -- flying/hovering sprites retain authored empty space below the body.
+      -- A visually calibrated form like Venusaur overrides this metadata.
+      local visible = tonumber(location.fh) or tonumber(location.fs) or 64
+      local target = side == "back" and 62 or 52
+      spec = {
+        scale = math.max(0.45, math.min(1.4, target / math.max(1, visible))),
+        feet = location.fs,
+        baseline = side == "back" and 57 or 62,
+        dx = 0, dy = 0,
+      }
+    end
     local hd = spec and hdBattle() or nil
     local wide = spec and not hd and installWidePivot() or false
     local renderMode = hd and ":hd" or wide and ":wide" or ":fitted"
