@@ -23,6 +23,7 @@ return function(mod)
   -- National Dex. Fixed numeric IDs persist in Gen 3 saves; never renumber.
   local itemCatalog = loadSibling(mod, "data/mega_items.lua")
   local formCatalog = loadSibling(mod, "data/mega_forms.lua")
+  local battleForms = loadSibling(mod, "data/mega_battle_forms.lua")
   local ItemRegistry = loadSibling(mod, "src/mega_items.lua")
   local Eligibility = loadSibling(mod, "src/mega_eligibility.lua")
   local checker = Eligibility and formCatalog and itemCatalog
@@ -32,7 +33,7 @@ return function(mod)
     registered, itemErrors = ItemRegistry.register(mod, itemCatalog)
   end
   if mod.log then
-    mod.log:info("registered %d Mega items; standalone battle integration loading", #registered)
+    mod.log:info("registered %d Mega items; full-roster battle integration loading", #registered)
     for i = 1, math.min(#itemErrors, 4) do
       mod.log:warn("Mega item registration issue: %s", itemErrors[i])
     end
@@ -66,8 +67,23 @@ return function(mod)
     end
     -- National Dex resolves newly registered species through the same engine
     -- Pokemon module, so the original mon's stored species is never rewritten.
+    local knowsMegaMove = false
+    if species == "RAYQUAZA" and battler.mon and type(battler.mon.moves) == "table" then
+      local okMoves, Moves = pcall(require, "src.core.game3.battle.moves")
+      if okMoves and Moves and type(Moves.normalizeId) == "function" then
+        for _, move in pairs(battler.mon.moves) do
+          local okMove, moveName = pcall(Moves.normalizeId, move)
+          if okMove and moveName and moveName:gsub("[^A-Z0-9]", "") == "DRAGONASCENT" then
+            knowsMegaMove = true
+            break
+          end
+        end
+      end
+    end
     return checker.check({
       battler = battler, species = species, side = side,
+      baseForm = battler.mon and (battler.mon.form or battler.mon.formId) or 0,
+      knowsMegaMove = knowsMegaMove,
       keyStone = ownsKeyStone,
       disabled = st.safari or st.oldManTutorial or st.pokedude or st.link or st.spectate,
     })
@@ -134,17 +150,23 @@ return function(mod)
   -- Battle form state is entirely temporary. These are Gen 3-specific,
   -- cooperative hooks; on older engines registration fails closed.
   local Selection = loadSibling(mod, "src/mega_selection.lua")
-  local Venusaur = loadSibling(mod, "src/mega_venusaur.lua")
-  local game = Selection and Venusaur and Venusaur.new(Selection.new(),
-    function(st, b) return exports.checkMegaEligibility(st, b) end,
-    { hasSprite = exports.hasSprite, picture = exports.picture,
-      withBattleDraw = function(drawFn, ...)
-        local p = getProvider()
-        if p and p.withBattleDraw then
-          return p.withBattleDraw(drawFn, ...)
-        end
-        return drawFn(...)
-      end }) or nil
+  local MegaBattle = loadSibling(mod, "src/mega_battle.lua")
+  local typeIds = {}
+  local okTypes, Types = pcall(require, "src.core.game3.battle.types")
+  if okTypes and Types and type(Types.ID) == "table" then
+    for key, value in pairs(Types.ID) do typeIds[key] = value end
+  end
+  local game = Selection and MegaBattle and battleForms
+    and MegaBattle.new(Selection.new(),
+      function(st, b) return exports.checkMegaEligibility(st, b) end,
+      { hasSprite = exports.hasSprite, picture = exports.picture,
+        withBattleDraw = function(drawFn, ...)
+          local p = getProvider()
+          if p and p.withBattleDraw then
+            return p.withBattleDraw(drawFn, ...)
+          end
+          return drawFn(...)
+        end }, battleForms, typeIds) or nil
 
   local Standalone = loadSibling(mod, "src/mega_standalone.lua")
   local ItemIcons = loadSibling(mod, "src/mega_item_icons.lua")
@@ -198,7 +220,7 @@ return function(mod)
       local label, selectable
       if bridge then
         label, selectable = game.status(st, b)
-      elseif tonumber(b.species or (b.mon and b.mon.species)) == 3 then
+      elseif b.mon then
         label, selectable = "MEGA BRIDGE OFFLINE", false
       else
         return
@@ -293,7 +315,7 @@ return function(mod)
     return {
       bridge = bridge and "installed" or ("offline: " .. tostring(bridgeError)),
       icons = iconBridge and "installed" or ("offline: " .. tostring(iconError)),
-      supportedForm = "mega_venusaur",
+      supportedForms = battleForms and #battleForms or 0,
       keyStoneItem = registeredById.KEY_STONE,
       venusauriteItem = registeredById.VENUSAURITE,
     }
