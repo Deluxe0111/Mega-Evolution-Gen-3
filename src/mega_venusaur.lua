@@ -144,7 +144,7 @@ function Venusaur.new(selection, eligibility, art)
     if st ~= battle or not mon or selection.activeForm(mon) ~= "mega_venusaur" then
       return fallback
     end
-    return art.picture("mega_venusaur", back and "back" or "front", shiny) or fallback
+    return art.picture("mega_venusaur", back and "back" or "front", shiny, nil, true) or fallback
   end
 
   function self.switchedIn(battler)
