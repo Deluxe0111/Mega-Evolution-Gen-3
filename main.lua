@@ -18,6 +18,59 @@ return function(mod)
   local exports = mod.exports
   exports.apiVersion = 1
   exports.supportedGames = { "gen3" }
+
+  -- Register held Mega Stones through the same public item registry used by
+  -- National Dex. Fixed numeric IDs persist in Gen 3 saves; never renumber.
+  local itemCatalog = loadSibling(mod, "data/mega_items.lua")
+  local formCatalog = loadSibling(mod, "data/mega_forms.lua")
+  local ItemRegistry = loadSibling(mod, "src/mega_items.lua")
+  local Eligibility = loadSibling(mod, "src/mega_eligibility.lua")
+  local checker = Eligibility and formCatalog and itemCatalog
+    and Eligibility.new(formCatalog, itemCatalog) or nil
+  local registered, itemErrors = {}, {}
+  if ItemRegistry and itemCatalog then
+    registered, itemErrors = ItemRegistry.register(mod, itemCatalog)
+  end
+  if mod.log then
+    mod.log:info("registered %d Mega items; battle transformation not yet enabled", #registered)
+    for i = 1, math.min(#itemErrors, 4) do
+      mod.log:warn("Mega item registration issue: %s", itemErrors[i])
+    end
+  end
+  local registeredById = {}
+  for _, row in ipairs(registered) do registeredById[row.id] = row.index end
+
+  exports.itemsRegistered = function() return #registered end
+  exports.itemId = function(name) return registeredById[name] end
+  exports.checkMegaEligibility = function(st, battler)
+    if not checker or not st or type(battler) ~= "table" then return nil, "not_ready" end
+    local side = battler.side
+    if side ~= "player" and side ~= "enemy" then return nil, "invalid_side" end
+
+    -- Trainer NPC items/Key Stones and execution hooks will be implemented
+    -- together later; don't offer an enemy a misleading playable request.
+    local ownsKeyStone = false
+    if side == "player" and registeredById.KEY_STONE and st.session and st.session.bag then
+      local okBag, Bag = pcall(require, "src.core.game3.bag")
+      if okBag and Bag and type(Bag.has) == "function" then
+        local okOwned, has = pcall(Bag.has, st.session.bag, registeredById.KEY_STONE, 1)
+        ownsKeyStone = okOwned and has == true
+      end
+    end
+    local species
+    local okPokemon, Pokemon = pcall(require, "src.core.game3.pokemon")
+    if okPokemon and Pokemon and type(Pokemon.keyName) == "function" then
+      local okName, name = pcall(Pokemon.keyName, battler.species)
+      if okName then species = name end
+    end
+    -- National Dex resolves newly registered species through the same engine
+    -- Pokemon module, so the original mon's stored species is never rewritten.
+    return checker.check({
+      battler = battler, species = species, side = side,
+      keyStone = ownsKeyStone,
+      disabled = st.safari or st.oldManTutorial or st.pokedude or st.link or st.spectate,
+    })
+  end
   -- This flag means gameplay Mega Evolution is active. Artwork alone is NOT gameplay.
   exports.isActive = function() return false end
 
