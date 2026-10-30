@@ -1,0 +1,10 @@
+Source: https://github.com/ChromeValiant/Pokemon-Essentials-21-With-Unofficial-EBDX
+Pinned revision: 452d27cab271f7cf8f10d07e2236abb5c53b4899
+
+The downloaded source_metadata/README.md contains original sprite/art contributor credits.
+These assets are third-party material. Public visibility is not a redistribution licence.
+Before packing assets into a publicly distributed Gen1Recomp mod, verify permissions
+for the specific art and retain original contributor attribution.
+
+PNG files here are the original EBDX image sheets, NOT pre-converted GIF animations.
+PBS data is reference metadata, NOT directly compatible Gen1Recomp battle mechanics.

@@ -1,0 +1,25 @@
+{
+  "id": "mega-evolution-gen3",
+  "name": "Mega Evolution Gen 3",
+  "version": "0.1.0",
+  "api": 2,
+  "entry": "main.lua",
+  "profile": "content",
+  "games": [
+    "gen3"
+  ],
+  "category": "OTHER",
+  "priority": 260,
+  "permissions": [],
+  "dependencies": [],
+  "optional_dependencies": [
+    "national_dex_gen3",
+    "g9-battle-sprites-gen3",
+    "gen3-hd-sprites",
+    "untamed_advanced",
+    "nuzlocke"
+  ],
+  "conflicts": [],
+  "description": "Foundation for a standalone Gen 3 Mega Evolution mod; asset pipeline in progress, battle mechanics not yet implemented.",
+  "github": "Deluxe0111/mega-evolution-gen3"
+}

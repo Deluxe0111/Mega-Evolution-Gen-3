@@ -1,0 +1,16 @@
+# Local caches and tooling
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.vscode/
+.idea/
+*.log
+*.tmp
+*.part
+.DS_Store
+Thumbs.db
+# Distribution and generated previews (source artwork is intentionally trackable)
+dist/
+build/
+previews/
