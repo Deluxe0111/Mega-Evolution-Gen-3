@@ -40,6 +40,11 @@ function Standalone.install(mod, game, modules, battleVisual)
   local Engine = modules and modules.Engine or required("src.core.game3.battle.engine")
   local Damage = modules and modules.Damage or required("src.core.game3.battle.damage")
   local Battle = modules and modules.Battle or required("src.core.game3.battle")
+  local Field=modules and modules.MegaField
+  if not Field then
+    local ok,module=pcall(req,"src.mega_field_abilities")
+    if ok and type(module)=="table" then Field=module end
+  end
   local Champions=modules and modules.MegaChampions
   if not Champions then
     local ok,module=pcall(req,"src.mega_champions_abilities")
@@ -164,9 +169,17 @@ function Standalone.install(mod, game, modules, battleVisual)
       end
     end
     local hadFlinch=type(user)=="table" and user.flinched or nil
-    local results=table.pack and
-      table.pack(pcall(next,user,target,move,slot,adapter,st,out,opts))
-      or {pcall(next,user,target,move,slot,adapter,st,out,opts)}
+    local function native()
+      return next(user,target,move,slot,adapter,st,out,opts)
+    end
+    local function applyBurnGuard()
+      if enabled() and Field and Field.withBurnImmunity then
+        return Field.withBurnImmunity(game,adapter,native)
+      end
+      return native()
+    end
+    local results=table.pack and table.pack(pcall(applyBurnGuard))
+      or {pcall(applyBurnGuard)}
     if results[1] and enabled() and Precision
         and Precision.afterMove and hadFlinch then
       local b=type(user)=="table" and user or current(st,user)
@@ -255,6 +268,17 @@ function Standalone.install(mod, game, modules, battleVisual)
         return false
       end
       return next(adapter,b)
+    end)
+  end
+
+  -- Eelevate presents as native Levitate ONLY during switch-in hazards;
+  -- restore adapter's original lookup before returning to another action.
+  if Field and Field.withEelevate and type(Engine.switchInEffects)=="function" then
+    wrap(Engine,"switchInEffects",function(next,st,adapter,b,opts)
+      if not enabled() then return next(st,adapter,b,opts) end
+      return Field.withEelevate(game,adapter,function()
+        return next(st,adapter,b,opts)
+      end)
     end)
   end
 
@@ -353,14 +377,22 @@ function Standalone.install(mod, game, modules, battleVisual)
         end
         return next(ctx,(table.unpack or unpack)(args))
       end
+      local function eelevate(ctx)
+        if Field and Field.withEelevate then
+          return Field.withEelevate(game,ctx.adapter,function()
+            return native(ctx)
+          end)
+        end
+        return native(ctx)
+      end
       if not (Precision and Precision.withParentalBond) then
-        return native(M)
+        return eelevate(M)
       end
       local previous=parentalCtx
       parentalCtx=M
       local result=table.pack and
-        table.pack(pcall(Precision.withParentalBond,game,M,native,EffectIds))
-        or {pcall(Precision.withParentalBond,game,M,native,EffectIds)}
+        table.pack(pcall(Precision.withParentalBond,game,M,eelevate,EffectIds))
+        or {pcall(Precision.withParentalBond,game,M,eelevate,EffectIds)}
       parentalCtx=previous
       if not result[1] then error(result[2],0) end
       return (table.unpack or unpack)(result,2,result.n or #result)
@@ -377,6 +409,7 @@ function Standalone.install(mod, game, modules, battleVisual)
       local adapter=M and M.adapter
       local before=target and adapter and adapter.hp and adapter:hp(target)
       local hadSub=target and (tonumber(target.substituteHP) or 0)>0
+      local dmg,info=...
       local dealt=next(M,...)
       local after=target and adapter and adapter.hp and adapter:hp(target)
       if before and after then
@@ -384,6 +417,20 @@ function Standalone.install(mod, game, modules, battleVisual)
       end
       if Champions and Champions.afterDamage then
         Champions.afterDamage(game,M,dealt,hadSub)
+      end
+      if Field then
+        if Field.thermalDamage then
+          Field.thermalDamage(game,M,dealt,hadSub,
+            info and info.moveType or M.moveType or
+            (M.move and M.move.type),Types,Secondary)
+        end
+        if Field.innardsOut then
+          Field.innardsOut(game,M,before,after,hadSub)
+        end
+        if Field.eelevateKO and before and after and before>0 and after<=0
+            and not hadSub and not M.hitSubstitute then
+          Field.eelevateKO(game,M,Secondary)
+        end
       end
       if Weather and Weather.cleanStrongWinds and adapter then
         Weather.cleanStrongWinds(game,adapter._st,adapter)
@@ -434,6 +481,11 @@ function Standalone.install(mod, game, modules, battleVisual)
     end
     if Champions and Champions.powerOptions then
       effectiveOpts=Champions.powerOptions(game,attacker,move,effectiveOpts,Types)
+    end
+    if Field and Field.fairyPower then
+      local ad=opts and opts.adapter
+      local st=ad and ad._st or Battle._st or Ui._st
+      effectiveOpts=Field.fairyPower(game,st,ad,move,effectiveOpts,Types)
     end
     local attackView=cloneBattler(attacker, game)
     if Weather and Weather.attackView then
