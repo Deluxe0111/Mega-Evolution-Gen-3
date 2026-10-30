@@ -49,26 +49,49 @@ function Atlas.new(mod, index, graphics, timer, presentation)
   local frameCache, frameOrder = {}, {}
   local logged = {}
   local pivots = setmetatable({}, { __mode = "k" })
-  local wideInstalled, wideUnavailable = false, false
+  local inBattleDraw = false
+  local unpackArgs = table.unpack or unpack
 
-  -- G9 uses the same mechanism for big battle sprites. The stock engine
-  -- always draws at pivot (32,32), which is wrong for >64px canvases.
-  -- Chain rather than replace the existing G9/HD graphics wrapper.
-  local function installWidePivot()
-    if wideInstalled then return true end
-    if wideUnavailable or not G or type(G.draw) ~= "function" then return false end
+  -- The game's G9/HD draw wrappers are shared by EVERY sprite. Our previous
+  -- version permanently inserted a second global draw shim; this could upset
+  -- unrelated opponent rendering. Install a scoped shim ONLY while Ui.draw
+  -- paints one battle frame, and restore the exact predecessor afterwards.
+  -- IMPORTANT: non-Mega calls are forwarded with their ORIGINAL vararg count
+  -- and argument types (including quad drawing), not a padded 9-arg list.
+  function self.withBattleDraw(drawFn, ...)
+    if type(drawFn) ~= "function" then return nil end
+    if inBattleDraw or not G or type(G.draw) ~= "function" then
+      return drawFn(...)
+    end
     local previous = G.draw
-    local ok = pcall(function()
-      G.draw = function(image, a, b, c, d, e, f, h, i, ...)
-        local pivot = pivots[image]
-        if pivot and type(a) == "number" and f == 32 and h == 32 then
-          return previous(image, a, b, c, d, e, pivot[1], pivot[2], i, ...)
+    local function scoped(image, ...)
+      local pivot = pivots[image]
+      if pivot then
+        local x, _y, _rotation, _sx, _sy, ox, oy = ...
+        if type(x) == "number" and ox == PIC_BOX / 2 and oy == PIC_BOX / 2 then
+          local n = select("#", ...)
+          local args = { ... }
+          args[6], args[7] = pivot[1], pivot[2]
+          return previous(image, unpackArgs(args, 1, n))
         end
-        return previous(image, a, b, c, d, e, f, h, i, ...)
       end
-    end)
-    wideInstalled, wideUnavailable = ok, not ok
-    return ok
+      -- No mutation, no extra nil arguments, no transformation.
+      return previous(image, ...)
+    end
+    local ok = pcall(function() G.draw = scoped end)
+    if not ok then return drawFn(...) end
+    inBattleDraw = true
+    local function packed(...) return { n = select("#", ...), ... } end
+    local result = packed(pcall(drawFn, ...))
+    if G.draw == scoped then G.draw = previous end
+    inBattleDraw = false
+    if not result[1] then error(result[2], 0) end
+    return unpackArgs(result, 2, result.n)
+  end
+
+  local function installWidePivot()
+    -- This is a capability check, not a persistent global hook.
+    return G and type(G.draw) == "function" and type(G.newCanvas) == "function"
   end
 
   local function hdBattle()
