@@ -41,6 +41,19 @@ function Standalone.install(mod, game, modules, battleVisual)
   local Damage = modules and modules.Damage or required("src.core.game3.battle.damage")
   local Battle = modules and modules.Battle or required("src.core.game3.battle")
   local MegaAbilities=modules and modules.MegaAbilities
+  local Weather=modules and modules.MegaWeather
+  if not Weather then
+    local ok,module=pcall(req,"src.mega_weather_abilities")
+    if ok and type(module)=="table" then Weather=module end
+  end
+  local Types=modules and modules.Types or required("src.core.game3.battle.types")
+  local Rules=modules and modules.Rules or required("src.core.game3.battle.rules")
+  local NativeAbilities=modules and modules.NativeAbilities
+    or required("src.core.game3.battle.abilities")
+  local WeatherHandlers=modules and modules.WeatherHandlers
+    or required("src.core.game3.battle.residual_handlers")
+  local Status=modules and modules.Status
+    or required("src.core.game3.battle.effects.status")
   local Tactical=modules and modules.MegaTactical
   if not Tactical then
     local ok,module=pcall(req,"src.mega_tactical_abilities")
@@ -116,6 +129,9 @@ function Standalone.install(mod, game, modules, battleVisual)
           battleVisual:onMegaEvolved(battler)
         end
         if game.onMegaEvolved then game.onMegaEvolved(st, battler, adapter) end
+        if Weather and Weather.activate then
+          Weather.activate(game,st,battler,adapter)
+        end
       end
       -- The move has been selected and Mega activation processed. Apply
       -- Protean to the live battle battler before Gen3 resolves damage/STAB.
@@ -146,6 +162,69 @@ function Standalone.install(mod, game, modules, battleVisual)
         end
         return magic(ctx)
       end)
+    end)
+  end
+
+  -- Active Delta Stream suppresses normal native weather setters while
+  -- the Mega holder remains on the field. Their other battle handlers
+  -- continue to work because this only skips dedicated weather setters.
+  if Weather and Weather.blockNativeWeather and NativeAbilities
+      and type(NativeAbilities.switchIn)=="function" then
+    wrap(NativeAbilities,"switchIn",function(next,adapter,b)
+      if enabled() and Weather.blockNativeWeather(game,adapter,b) then
+        return false
+      end
+      return next(adapter,b)
+    end)
+  end
+
+  -- Weather-setting abilities also activate if an already Mega-Evolved
+  -- battler is switched back in. Native Abilities.switchIn runs first.
+  if Weather and Weather.activate
+      and type(Engine.switchInEffects)=="function" then
+    wrap(Engine,"switchInEffects",function(next,st,adapter,b,opts)
+      local result=next(st,adapter,b,opts)
+      if enabled() and Weather.activate(game,st,b,adapter) then return true end
+      return result
+    end)
+  end
+
+  -- Electric Terrain's finite duration and Delta Stream's weather cleanup
+  -- run at the native weather-continuation residual tick, once per turn.
+  if Weather and Weather.tick and WeatherHandlers
+      and type(WeatherHandlers.tickWeather)=="function" then
+    wrap(WeatherHandlers,"tickWeather",function(next,adapter,...)
+      local result=next(adapter,...)
+      if enabled() and adapter and adapter._st then
+        Weather.tick(game,adapter._st,adapter)
+      end
+      return result
+    end)
+  end
+
+  -- Electric Terrain prevents a grounded Pokémon falling asleep from a
+  -- direct move, without reassigning the engine's terrain ID.
+  if Weather and Weather.terrainBlocksSleep and Status
+      and type(Status.cantMakeAsleep)=="function" then
+    wrap(Status,"cantMakeAsleep",function(next,ctx,target)
+      if enabled() and ctx and ctx.adapter and
+          Weather.terrainBlocksSleep(ctx.adapter._st,target,ctx.adapter) then
+        if ctx.adapter.sayText then
+          ctx.adapter:sayText("STRINGID_ITDOESNTAFFECT",{def=target})
+        end
+        return true
+      end
+      return next(ctx,target)
+    end)
+  end
+
+  -- Solar Power's HP chip occurs after the native ability end-turn event.
+  if Weather and Weather.endTurn and NativeAbilities
+      and type(NativeAbilities.endTurn)=="function" then
+    wrap(NativeAbilities,"endTurn",function(next,adapter,b)
+      local result=next(adapter,b)
+      if enabled() and Weather.endTurn(game,adapter,b) then return true end
+      return result
     end)
   end
 
@@ -186,6 +265,9 @@ function Standalone.install(mod, game, modules, battleVisual)
       if before and after then
         Reactive.onDamaged(game,M,before,after,Secondary)
       end
+      if Weather and Weather.cleanStrongWinds and adapter then
+        Weather.cleanStrongWinds(game,adapter._st,adapter)
+      end
       return dealt
     end)
   end
@@ -197,7 +279,11 @@ function Standalone.install(mod, game, modules, battleVisual)
     wrap(Engine,"switchOutEffects",function(next,st,adapter,b)
       local result=next(st,adapter,b)
       if not enabled() then return result end
-      return Reactive.onSwitchOut(game,adapter,b) or result
+      local changed=Reactive.onSwitchOut(game,adapter,b)
+      if Weather and Weather.onSwitchOut then
+        Weather.onSwitchOut(game,st,b,adapter)
+      end
+      return changed or result
     end)
   end
 
@@ -223,8 +309,15 @@ function Standalone.install(mod, game, modules, battleVisual)
     if MegaAbilities and MegaAbilities.baseOptions then
       effectiveOpts=MegaAbilities.baseOptions(game,attacker,move,opts)
     end
-    return next(cloneBattler(attacker, game), cloneBattler(defender, game),
-      move, effectiveOpts)
+    local attackView=cloneBattler(attacker, game)
+    if Weather and Weather.attackView then
+      local st=Battle._st or Ui._st or (opts and opts.st)
+      local ad=opts and opts.adapter
+      local physical=Types and Types.isPhysical
+      attackView=Weather.attackView(game,st,ad,attacker,attackView,
+        move,effectiveOpts,physical)
+    end
+    return next(attackView,cloneBattler(defender, game),move,effectiveOpts)
   end)
 
   -- Native Damage.calc does STAB, effectiveness, crit and random rolls after
@@ -241,7 +334,14 @@ function Standalone.install(mod, game, modules, battleVisual)
         effective=Tactical.damageOptions(game,attacker,effective)
       end
       local amount,info=next(attacker,defender,move,effective)
-      return MegaAbilities.finalDamage(game,attacker,defender,amount,info)
+      amount,info=MegaAbilities.finalDamage(game,attacker,defender,amount,info)
+      if Weather and Weather.finalDamage then
+        local st=Battle._st or Ui._st or (effective and effective.st)
+        local ad=effective and effective.adapter
+        amount,info=Weather.finalDamage(game,st,ad,
+          attacker,defender,amount,info,Types)
+      end
+      return amount,info
     end)
   end
 
