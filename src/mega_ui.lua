@@ -28,6 +28,7 @@ function Ui.install(mod, game, art, modules)
   local diagnostics={
     partySlotOverrides=0, megaIconAttempts=0, megaIconSuccess=0,
     megaIconFailures=0, lastIcon=nil, lastFailure=nil,
+    partyDraws=0, lastPartySlot=nil,
   }
   local warned={}
   local function warnOnce(slug,why)
@@ -89,6 +90,7 @@ function Ui.install(mod, game, art, modules)
       if ok and icon and icon.image and icon.quads and icon.quads[0]
           and icon.quads[1] then
         diagnostics.megaIconSuccess=diagnostics.megaIconSuccess+1
+        diagnostics.lastIconSource=icon.source or "unknown"
         return icon
       end
       diagnostics.megaIconFailures=diagnostics.megaIconFailures+1
@@ -105,11 +107,45 @@ function Ui.install(mod, game, art, modules)
   -- saved party, battle state and menu array are restored after EVERY draw.
   -- Both FRLG OAM and RSE Chrome call Pokemon.monIcon on these copies.
   local drawingParty=false
+  local function diagnosticsVisible()
+    if mod and mod.developer==true then return true end
+    local options=mod and mod.options
+    if options and type(options.get)=="function" then
+      local ok,on=pcall(options.get,options,"mega_tuner_enabled")
+      return ok and on==true
+    end
+    return false
+  end
+  local function drawPartyDebug()
+    if not diagnosticsVisible() then return end
+    local G=love and love.graphics
+    if not G or not G.push or not G.rectangle or not G.print then return end
+    pcall(function()
+      G.push("all")
+      if G.origin then G.origin() end
+      if G.setShader then G.setShader() end
+      G.setColor(0.04,0.09,0.15,0.94)
+      G.rectangle("fill",0,132,240,28)
+      G.setColor(1,1,1,1)
+      local f=G.newFont and G.newFont(7)
+      if f and G.setFont then G.setFont(f) end
+      local slot=diagnostics.lastPartySlot or "-"
+      local slug=diagnostics.lastIcon or "NO MEGA STATE"
+      local info=diagnostics.megaIconSuccess>0
+        and ("ICON OK / "..tostring(diagnostics.lastIconSource or "?"))
+        or (diagnostics.megaIconFailures>0 and "ICON FAILED"
+          or "ICON NOT REQUESTED")
+      G.print("MEGA SLOT "..tostring(slot)..": "..tostring(slug),4,134)
+      G.print(info.." / hits "..tostring(diagnostics.partySlotOverrides),4,145)
+      G.pop()
+    end)
+  end
   if PartyMenu and type(PartyMenu.draw)=="function"
       and type(game.partyView)=="function" then
     wrap(PartyMenu,"draw",function(next,...)
       if drawingParty or not PartyMenu.open or not PartyMenu._battle
           or type(PartyMenu._party)~="table" then return next(...) end
+      diagnostics.partyDraws=diagnostics.partyDraws+1
       local party=PartyMenu._party
       local replacements={}
       for i,mon in ipairs(party) do
@@ -121,6 +157,7 @@ function Ui.install(mod, game, art, modules)
           party[i]=mirror
           replacements[#replacements+1]={index=i,original=mon}
           diagnostics.partySlotOverrides=diagnostics.partySlotOverrides+1
+          diagnostics.lastPartySlot=sourceSlot
           if diagnostics.partySlotOverrides==1 and mod and mod.log
               and type(mod.log.info)=="function" then
             mod.log:info("Mega party menu resolved %s in original slot %s",
@@ -128,7 +165,13 @@ function Ui.install(mod, game, art, modules)
           end
         end
       end
-      if #replacements==0 then return next(...) end
+      if #replacements==0 then
+        local function packed(...)return {n=select("#",...),...}end
+        local result=packed(pcall(next,...))
+        drawPartyDebug()
+        if not result[1] then error(result[2],0) end
+        return (table.unpack or unpack)(result,2,result.n)
+      end
       drawingParty=true
       local function packed(...)return {n=select("#",...),...}end
       local result=packed(pcall(next,...))
@@ -137,6 +180,7 @@ function Ui.install(mod, game, art, modules)
         party[record.index]=record.original
       end
       drawingParty=false
+      drawPartyDebug()
       if not result[1] then error(result[2],0) end
       return (table.unpack or unpack)(result,2,result.n)
     end)
