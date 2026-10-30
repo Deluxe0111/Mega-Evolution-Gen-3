@@ -141,6 +141,13 @@ assert(not F.innardsOut(game,{user=hero,target=foe,adapter=adapter},
   40,0,true))
 assert(not F.innardsOut(game,{user=foe,target=foe,adapter=adapter},
   40,0,false))
+-- A two-hit attack must retaliate for the entire move's HP lost.
+hero.mon.hp=120
+local doubleHit={user=hero,target=foe,adapter=adapter,move=normalMove,
+  tryFaintUser=function()end}
+assert(not F.innardsOut(game,doubleHit,70,20,false))
+assert(F.innardsOut(game,doubleHit,20,0,false))
+assert(hero.mon.hp==50,"Innards Out counts both strikes (50+20)")
 set(foe,nil)
 
 -- Both Mega Zygarde source rows already have Complete (216 base HP).
