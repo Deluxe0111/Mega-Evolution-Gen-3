@@ -330,34 +330,44 @@ function Atlas.new(mod, index, graphics, timer, presentation)
   -- TWO-FRAME vertical sheets with zero-indexed [0]/[1] quads.
   -- EBDX provides 64x64 source frames in a 128x64 horizontal strip.
   -- Do not feed a battle picture or a single-frame canvas to monIcon().
-  local iconCache, alternateIcons = {}, {}
-  local missingAlternate = {}
-  local function alternateFrame(slug, shiny, female, frame)
-    if not female or not (G and G.newImage and G.newQuad) then return nil end
-    -- An optional gender-specific EBDX icon can be supplied without rebuilding
-    -- the six-variant atlas. Prefer shiny female and fall back to female/regular.
-    local candidate = shiny and { "icon_female_shiny.png", "icon_shiny_female.png" }
-      or { "icon_female.png" }
-    for _, filename in ipairs(candidate) do
+  local iconCache, sourceIcons = {}, {}
+  local missingSource = {}
+  local function sourceFrame(slug, shiny, female, frame)
+    if not (G and G.newImage and G.newQuad) then return nil end
+    -- Load the real EBDX 128x64 animation STRIPS directly. This keeps party
+    -- icons independent of the huge packed battle_icon atlas (the previous
+    -- path produced blank icons in FireRed despite valid index entries).
+    local candidates = {}
+    if female then
+      if shiny then
+        candidates[#candidates+1] = "icon_female_shiny.png"
+        candidates[#candidates+1] = "icon_shiny_female.png"
+      else
+        candidates[#candidates+1] = "icon_female.png"
+      end
+    end
+    candidates[#candidates+1] = shiny and "icon_shiny.png" or "icon.png"
+    if shiny then candidates[#candidates+1] = "icon.png" end
+    for _, filename in ipairs(candidates) do
       local path = mod.path .. "/assets/source/ebdx/megas/" .. slug .. "/" .. filename
-      if not missingAlternate[path] then
-        local img = alternateIcons[path]
+      if not missingSource[path] then
+        local img = sourceIcons[path]
         if not img then
-          local ok, value = pcall(G.newImage, path)
-          if ok and value then
-            if value.setFilter then value:setFilter("nearest", "nearest") end
-            img, alternateIcons[path] = value, value
+          local ok, loaded = pcall(G.newImage, path)
+          if ok and loaded then
+            if loaded.setFilter then loaded:setFilter("nearest","nearest") end
+            img, sourceIcons[path] = loaded, loaded
           else
-            missingAlternate[path] = true
+            missingSource[path] = true
           end
         end
         if img then
           local iw, ih = img:getDimensions()
-          -- Optional source format is two 64x64 horizontal source icons.
-          if iw == 2 * ih and ih >= 32 then
-            return { image=img,
-              quad=G.newQuad((frame % 2)*ih,0,ih,ih,iw,ih),
-              w=ih,h=ih,cropX=0,cropY=0 }
+          if iw == ih*2 and ih >= 32 then
+            return {
+              image=img, quad=G.newQuad((frame%2)*ih,0,ih,ih,iw,ih),
+              w=ih,h=ih,cropX=0,cropY=0,
+            }
           end
         end
       end
@@ -374,7 +384,7 @@ function Atlas.new(mod, index, graphics, timer, presentation)
       then return nil end
     local frames={}
     for i=0,1 do
-      local art = alternateFrame(slug,shiny,female,i)
+      local art = sourceFrame(slug,shiny,female,i)
         or self.frame(slug,shiny and "icon_shiny" or "icon",i)
       if not art and shiny then art=self.frame(slug,"icon",i) end
       if not art or not art.image or not art.quad then return nil end
@@ -388,6 +398,7 @@ function Atlas.new(mod, index, graphics, timer, presentation)
       if G.origin then G.origin() end
       if G.setScissor then G.setScissor() end
       if G.setShader then G.setShader() end
+      if G.setBlendMode then G.setBlendMode("alpha") end
       if G.setColor then G.setColor(1,1,1,1) end
       G.setCanvas(canvas)
       if G.clear then G.clear(0,0,0,0) end
@@ -406,7 +417,8 @@ function Atlas.new(mod, index, graphics, timer, presentation)
       [0] = G.newQuad(0,0,32,32,32,64),
       [1] = G.newQuad(0,32,32,32,32,64),
     }
-    local result={image=canvas,quads=quads,w=32,h=32,frames=2}
+    local result={image=canvas,quads=quads,w=32,h=32,frames=2,
+      sheetH=64,source="ebdx"}
     iconCache[key]=result
     return result
   end
