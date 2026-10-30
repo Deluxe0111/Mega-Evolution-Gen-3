@@ -20,6 +20,7 @@ Build an optional Mega Evolution mod that works with the original Gen 3 games an
 - **92 Mega Stone icons**, 97 source Mega cries and selected UI reference graphics. Mega Slowbro has no separate cry at the pinned source revision.
 - Pinned EBDX source definitions and metrics, a generated Mega roster and the original upstream credits.
 - An asset import/checker tool and a safe Gen1Recomp Mod API 2 scaffold.
+- A **PNG animation atlas converter** with strict geometry audit, lossless frame packing, preview GIFs and a six-variant Mega Venusaur proof build. **Not wired into the game yet.**
 
 **These are original EBDX PNG source sheets, not yet an animated Gen1Recomp sprite atlas.** Having art in Git does not mean the corresponding battle mechanic is implemented or that a shiny variant is visually distinct.
 
@@ -59,12 +60,14 @@ The source artwork has **already been imported**. `1_IMPORT_EBDX_ASSETS.bat` is 
 
 ## Next milestones
 
-1. Inspect EBDX PNG-sheet geometry, frames and animation timing; build a test renderer for Mega Venusaur.
-2. Package artwork into efficient Gen1Recomp-ready atlases without compromising the existing battle sprite provider.
-3. Implement the battle transformation for Mega Venusaur, including accurate stat/ability changes and safe reversion.
-4. Expand to other Mega forms and test across the five Gen 3 games and optional mods.
+1. **Animation atlas pipeline (implemented):** validate EBDX horizontal PNG frame strips, pack six variants into atlas pages, and generate Mega Venusaur GIF previews. Inspect preview frames and adjust timing/placement before gameplay integration.
+2. **Runtime animation renderer (next):** load form-keyed atlas data, draw live animation and compose safely with G9 Battle Sprites/HD Sprites without creating permanent species IDs.
+3. Implement the battle transformation for Mega Venusaur, including accurate stats/ability changes and safe reversion.
+4. Expand to other Mega forms and test all five Gen 3 games and optional mods.
 
-See [Roadmap](docs/ROADMAP.md), [Asset import](docs/ASSET_IMPORT.md), [Implementation notes](docs/IMPLEMENTATION_NOTES.md) and [Development guide](docs/DEVELOPMENT.md).
+See [Roadmap](docs/ROADMAP.md), [Animation pipeline](docs/ANIMATION_PIPELINE.md), [Asset import](docs/ASSET_IMPORT.md), [Implementation notes](docs/IMPLEMENTATION_NOTES.md) and [Development guide](docs/DEVELOPMENT.md).
+
+To generate animated Mega Venusaur GIF previews on Windows, run **4_PREVIEW_MEGA_VENUSAUR.bat**; the originals are left untouched.
 
 ## Credits and rights
 

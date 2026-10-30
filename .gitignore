@@ -21,3 +21,8 @@ assets/source/ebdx/download_results.csv
 assets/source/ebdx/mega_coverage.csv
 assets/source/ebdx/missing_assets.csv
 assets/source/ebdx/repo_asset_audit.csv
+# Generated Mega animation atlas pages, indexes and previews
+assets/runtime/atlas/
+assets/runtime/previews/
+assets/runtime/mega_atlas_index.json
+assets/runtime/mega_atlas_index.lua
