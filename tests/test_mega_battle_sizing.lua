@@ -3,7 +3,22 @@
 local Atlas = dofile("src/mega_atlas.lua")
 local presentation = dofile("data/mega_presentation.lua")
 local spec = presentation.mega_venusaur
-assert(spec.back.scale == 0.80 and spec.front.scale == 0.74)
+assert(spec.back.scale == 0.85 and spec.front.scale == 0.74)
+assert(spec.back.feet == 100 and spec.front.feet == 98)
+local realIndex = dofile("assets/runtime/mega_atlas_index.lua")
+local actual = realIndex.forms.mega_venusaur.variants
+for _, variant in ipairs({"back", "back_shiny"}) do
+  local seg = actual[variant].segments[1]
+  -- Source feet alignment comes from the full animation's common alpha
+  -- envelope, never a guessed square-frame edge or per-frame auto-ground.
+  assert(seg.cy + seg.fh == spec.back.feet,
+    "Mega back anchor does not match packed alpha envelope")
+end
+for _, variant in ipairs({"front", "front_shiny"}) do
+  local seg = actual[variant].segments[1]
+  assert(seg.cy + seg.fh == spec.front.feet,
+    "Mega front anchor does not match packed alpha envelope")
+end
 local idx = {schema=1,forms={mega_venusaur={variants={
   back={frames=1,fps=8,segments={{first=0,frames=1,cols=2,fs=121,ox=0,oy=0,sheet=0}}},
   front={frames=1,fps=8,segments={{first=0,frames=1,cols=2,fs=117,ox=0,oy=0,sheet=0}}},
@@ -94,8 +109,8 @@ assert(full.image.w==64 and full.image.dpi==4)
 assert(#tagged==1)
 local tag=tagged[1].spec
 assert(tag.texture and tag.quad and tag.quad.w==121)
-assert(tag.scale==0.80 and tag.side=="player")
-assert(tag.pivot[1]==60.5 and tag.pivot[2]==111)
+assert(tag.scale==0.85 and tag.side=="player")
+assert(tag.pivot[1]==60.5 and tag.pivot[2]==100)
 assert(tag.lowPivot[1]==32 and tag.lowPivot[2]==57)
 assert(a.picture("mega_venusaur","back",false,0,true)==full)
 print("PASS: G9 enemy draw untouched, scoped Mega pivot, error restoration, and full-res HD tag")
