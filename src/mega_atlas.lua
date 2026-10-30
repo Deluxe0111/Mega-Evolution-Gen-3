@@ -39,7 +39,7 @@ end
 
 -- A small bounded page cache matters: 156 full-resolution pages would consume
 -- gigabytes if all loaded as GPU textures at once. Frames are separately cached.
-function Atlas.new(mod, index, graphics, timer)
+function Atlas.new(mod, index, graphics, timer, presentation)
   if type(index) ~= "table" or index.schema ~= 1 or type(index.forms) ~= "table" then
     return nil, "unsupported or missing Mega atlas index"
   end
@@ -48,6 +48,56 @@ function Atlas.new(mod, index, graphics, timer)
   local pageCache, pageOrder = {}, {}
   local frameCache, frameOrder = {}, {}
   local logged = {}
+  local pivots = setmetatable({}, { __mode = "k" })
+  local wideInstalled, wideUnavailable = false, false
+
+  -- G9 uses the same mechanism for big battle sprites. The stock engine
+  -- always draws at pivot (32,32), which is wrong for >64px canvases.
+  -- Chain rather than replace the existing G9/HD graphics wrapper.
+  local function installWidePivot()
+    if wideInstalled then return true end
+    if wideUnavailable or not G or type(G.draw) ~= "function" then return false end
+    local previous = G.draw
+    local ok = pcall(function()
+      G.draw = function(image, a, b, c, d, e, f, h, i, ...)
+        local pivot = pivots[image]
+        if pivot and type(a) == "number" and f == 32 and h == 32 then
+          return previous(image, a, b, c, d, e, pivot[1], pivot[2], i, ...)
+        end
+        return previous(image, a, b, c, d, e, f, h, i, ...)
+      end
+    end)
+    wideInstalled, wideUnavailable = ok, not ok
+    return ok
+  end
+
+  local function hdBattle()
+    if not mod or type(mod.find) ~= "function" then return nil end
+    local ok, found = pcall(mod.find, mod, "gen3-hd-sprites")
+    local hd = ok and found and found.exports or nil
+    if type(hd) ~= "table" or type(hd.tag) ~= "function" or
+        type(hd.enabled) ~= "function" then return nil end
+    local okEnabled, enabled = pcall(hd.enabled, "battle")
+    return (okEnabled and enabled) and hd or nil
+  end
+
+  -- A battle pic can exceed the 64px cartridge cell. Keep the source image
+  -- at its intended scale and shift the native pivot to retain feet alignment.
+  local function battleLayout(source, spec)
+    local fs = source.w
+    local s = tonumber(spec.scale) or 1
+    s = math.max(0.2, math.min(2, s))
+    local foot = tonumber(spec.feet) or fs
+    local baseline = tonumber(spec.baseline) or 57
+    local ox = (PIC_BOX - fs * s) / 2 + (tonumber(spec.dx) or 0)
+    local oy = baseline - foot * s + (tonumber(spec.dy) or 0)
+    local border = 96
+    local xmin = math.max(-border, math.min(0, math.floor(ox)))
+    local xmax = math.min(PIC_BOX + border, math.max(PIC_BOX, math.ceil(ox + fs * s)))
+    local ymin = math.max(-border, math.min(0, math.floor(oy)))
+    local ymax = math.min(PIC_BOX + border, math.max(PIC_BOX, math.ceil(oy + fs * s)))
+    return s, ox, oy, xmin, xmax, ymin, ymax
+  end
 
   local function warnOnce(key, message)
     if logged[key] then return end
@@ -132,16 +182,20 @@ function Atlas.new(mod, index, graphics, timer)
              frame = cell.frame, frames = cell.frames, fps = cell.fps }
   end
 
-  -- Engine-compatible {image, w=64, h=64}. This draws an individual frame into
-  -- a 64x64 logical canvas; unlike a hook it does not modify any other sprites.
-  -- Larger creatures are fitted and bottom-centred, provisionally; precise
-  -- front/back battle anchoring and HD tagging belong to the G9 adapter later.
-  function self.picture(slug, side, shiny, frame)
+  -- The public picture() remains a standard fitted 64x64 icon/picture entry.
+  -- Battle callers opt in to G9-compatible large sprite sizing. We deliberately
+  -- do not touch the global Pokemon.frontPic/backPic wrappers.
+  function self.picture(slug, side, shiny, frame, battle)
     if side ~= "front" and side ~= "back" and side ~= "icon" then return nil end
     local kind = side .. (shiny and "_shiny" or "")
     local location = indexFrame(slug, kind, frame)
     if not location then return nil end
-    local key = slug .. "/" .. kind .. "/" .. location.frame
+    local spec = battle and presentation and presentation[slug]
+      and presentation[slug][side] or nil
+    local hd = spec and hdBattle() or nil
+    local wide = spec and not hd and installWidePivot() or false
+    local renderMode = hd and ":hd" or wide and ":wide" or ":fitted"
+    local key = slug .. "/" .. kind .. "/" .. location.frame .. renderMode
     local cached = frameCache[key]
     if cached then touch(frameOrder, key); return cached end
     if not (G and type(G.newCanvas) == "function" and type(G.draw) == "function"
@@ -149,15 +203,32 @@ function Atlas.new(mod, index, graphics, timer)
         and type(G.pop) == "function") then return nil end
     local source = self.frame(slug, kind, location.frame)
     if not source then return nil end
-    local ok, canvas = pcall(G.newCanvas, PIC_BOX, PIC_BOX, { dpiscale = 4 })
+
+    local logicalW, logicalH, ox, oy, xmin, ymin, s = PIC_BOX, PIC_BOX
+    if spec then
+      local bx, by
+      s, bx, by, xmin, _, ymin = battleLayout(source, spec)
+      if wide then
+        local _, _, _, wx0, wx1, wy0, wy1 = battleLayout(source, spec)
+        logicalW, logicalH = wx1 - wx0, wy1 - wy0
+        ox, oy = bx - wx0, by - wy0
+      end
+    end
+    if not wide then
+      -- HD paints the original full-resolution frame above this stand-in;
+      -- without HD, fit-to-box remains the safe fallback if global draw
+      -- wrapping is restricted by the host.
+      local fit = math.min(1, PIC_BOX / source.w, PIC_BOX / source.h)
+      s = fit
+      ox, oy = (PIC_BOX - source.w * fit) / 2, PIC_BOX - source.h * fit
+    end
+    local dpi = wide and 2 or 4
+    local ok, canvas = pcall(G.newCanvas, logicalW, logicalH, { dpiscale = dpi })
     if not ok or not canvas then
       warnOnce("canvas", "Mega art canvas is unavailable: " .. tostring(canvas))
       return nil
     end
     if canvas.setFilter then canvas:setFilter("nearest", "nearest") end
-    local scale = math.min(1, PIC_BOX / source.w)
-    local ox = (PIC_BOX - source.w * scale) / 2
-    local oy = PIC_BOX - source.h * scale
     G.push("all")
     local drawn, err = pcall(function()
       if G.origin then G.origin() end
@@ -167,12 +238,31 @@ function Atlas.new(mod, index, graphics, timer)
       if G.setColor then G.setColor(1, 1, 1, 1) end
       G.setCanvas(canvas)
       if G.clear then G.clear(0, 0, 0, 0) end
-      G.draw(source.image, source.quad, ox, oy, 0, scale, scale)
+      G.draw(source.image, source.quad, ox, oy, 0, s, s)
     end)
     G.pop()
     if not drawn then
       warnOnce("draw", "Could not draw Mega sprite: " .. tostring(err))
       return nil
+    end
+    if wide then
+      pivots[canvas] = { PIC_BOX / 2 - xmin, PIC_BOX / 2 - ymin }
+    elseif hd then
+      local exactScale = tonumber(spec.scale) or 1
+      local sourceFeet = tonumber(spec.feet) or source.h
+      local sourceBaseline = tonumber(spec.baseline) or 57
+      local okTag, errTag = pcall(hd.tag, canvas, {
+        texture = source.image,
+        quad = source.quad,
+        lowPivot = { PIC_BOX / 2 + (tonumber(spec.dx) or 0),
+          sourceBaseline + (tonumber(spec.dy) or 0) },
+        pivot = { source.w / 2, sourceFeet },
+        scale = exactScale,
+        side = side == "back" and "player" or "enemy",
+        top = 0,
+        filter = "nearest",
+      })
+      if not okTag then warnOnce("hd:" .. slug, "Mega HD tag failed: " .. tostring(errTag)) end
     end
     local entry = { image = canvas, w = PIC_BOX, h = PIC_BOX }
     cache(frameCache, frameOrder, key, entry, 48)
