@@ -121,6 +121,11 @@ function Ui.install(mod, game, art, modules)
           party[i]=mirror
           replacements[#replacements+1]={index=i,original=mon}
           diagnostics.partySlotOverrides=diagnostics.partySlotOverrides+1
+          if diagnostics.partySlotOverrides==1 and mod and mod.log
+              and type(mod.log.info)=="function" then
+            mod.log:info("Mega party menu resolved %s in original slot %s",
+              tostring(v.slug),tostring(sourceSlot))
+          end
         end
       end
       if #replacements==0 then return next(...) end
