@@ -99,8 +99,8 @@ assert(clone.mon.spAtk==160 and originalMon.spAtk==100)
 assert(Weather.attackView(game,st,adapter,a,clone,
   {id="TACKLE",type=0,power=35},{weatherKind="SUN"},Types.isPhysical)==clone)
 assert(Weather.attackView(game,st,adapter,a,clone,
-  {id="SURF",type=11,power=90},{weatherKind="RAIN"},Types.isPhysical)==clone
-  or st.weather=="SUN") -- test native effective-weather fallback separately
+  {id="SURF",type=11,power=90},{weatherKind="RAIN"},Types.isPhysical)==clone,
+  "native effective weather must win over raw overworld weather")
 assert(Weather.endTurn(game,adapter,a))
 assert(a.mon.hp==105,"Solar Power removes 1/8 max HP in sun")
 st.weather="RAIN"
