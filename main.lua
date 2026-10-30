@@ -149,9 +149,9 @@ return function(mod)
     local p = getProvider()
     return p and p.picture(slug, side, shiny, frame, battle) or nil
   end
-  exports.megaIcon = function(slug)
+  exports.megaIcon = function(slug, shiny, female)
     local p = getProvider()
-    return p and p.icon and p.icon(slug) or nil
+    return p and p.icon and p.icon(slug, shiny, female) or nil
   end
   exports.cacheStats = function()
     local p = getProvider()
