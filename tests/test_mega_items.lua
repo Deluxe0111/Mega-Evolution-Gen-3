@@ -17,7 +17,7 @@ assert(rows.KEY_STONE.index == 1599 and rows.KEY_STONE.pocket == "KEY_ITEMS")
 assert(rows.VENUSAURITE and rows.VENUSAURITE.index >= 1500)
 assert(rows.CHARIZARDITEX and rows.CHARIZARDITEY
   and rows.CHARIZARDITEX.index ~= rows.CHARIZARDITEY.index)
-assert(rows.VENUSAURITE.price == 0)
+assert(rows.VENUSAURITE.price == 5000 and rows.KEY_STONE.price == 10000)
 -- Fail safely when registry is not available: no guessing of IDs or inventory writes.
 local noItems, noErrors = ItemReg.register({}, items)
 assert(#noItems == 0 and #noErrors == 1)
