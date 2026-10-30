@@ -179,6 +179,8 @@ return function(mod)
           return drawFn(...)
         end }, battleForms, typeIds) or nil
 
+  local BattleVisual = loadSibling(mod, "src/mega_battle_ui.lua")
+  local battleVisual = game and BattleVisual and BattleVisual.new(mod,game) or nil
   local Standalone = loadSibling(mod, "src/mega_standalone.lua")
   local ItemIcons = loadSibling(mod, "src/mega_item_icons.lua")
   local MegaUI = loadSibling(mod, "src/mega_ui.lua")
@@ -192,7 +194,7 @@ return function(mod)
       bridgeError = "Mega battle module not loaded"
       return false
     end
-    local ok, installed, err = pcall(Standalone.install, mod, game)
+    local ok, installed, err = pcall(Standalone.install, mod, game, nil, battleVisual)
     if not ok then bridgeError = tostring(installed)
     elseif installed then bridge, bridgeError = installed, nil
     else bridgeError = err end
@@ -230,46 +232,24 @@ return function(mod)
   tryInstall()
   tryIcons()
   tryUi()
+  if battleVisual then battleVisual:installHealthbox() end
 
   if mod.hooks and type(mod.hooks.wrap) == "function" then
+    -- Proper EBDX two-state Mega button; frame 0=unarmed, frame 1=armed.
+    -- The visual overlay never modifies G9's global sprite renderer.
     mod.hooks:wrap("battle.overlay", function(next, st)
       next(st)
-      if not (st and love and love.graphics) then return end
-      local ok, Ui = pcall(require, "src.core.game3.battle.ui")
-      if not ok or not Ui or Ui._mode ~= "moves" or Ui._swap then return end
-      local id = tonumber(Ui._active) or 0
-      local b = st.battlers and st.battlers[id] or
-        ((id == 0 and st.player) or (id == 1 and st.enemy))
-      if not b then return end
-      local label, selectable
-      if bridge then
-        label, selectable = game.status(st, b)
-      elseif b.mon then
-        label, selectable = "MEGA BRIDGE OFFLINE", false
-      else
-        return
-      end
-      if not label then return end
-      local g = love.graphics
-      g.setColor(0.08, 0.13, 0.23, 0.96)
-      g.rectangle("fill", 128, 99, 109, 20, 3, 3)
-      g.setColor(selectable and 1 or 0.65, selectable and 0.86 or 0.64, 0.35, 1)
-      g.rectangle("line", 128, 99, 109, 20, 3, 3)
-      g.setColor(1, 1, 1, 1)
-      -- Use a small font so the diagnostic labels fit within the panel.
-      local font = g.getFont and g.getFont()
-      local width = font and font.getWidth and font:getWidth(label) or 0
-      local scale = width > 102 and 102 / width or 1
-      g.print(label, 131, 105, 0, scale, scale)
+      if not (bridge and battleVisual and st) then return end
+      local okUi, Ui = pcall(require, "src.core.game3.battle.ui")
+      if not okUi or not Ui then return end
+      battleVisual:drawOverlay(st,Ui)
     end)
 
-    -- The visual Mega button is also clickable with mouse/touch. Convert the
-    -- viewport-local pointer into the GBA's 240x160 UI coordinates; never
-    -- swallow unrelated input or clicks on disabled diagnostic labels.
+    -- Pointer events are viewport-local: use native GBA coordinates and
+    -- the same 0,89,22,22 hotspot occupied by the actual Mega button.
     mod.hooks:wrap("input.pointer", function(next, host, ev)
-      if not bridge or not ev or ev.phase ~= "pressed" or not ev.insideGame then
-        return next(host, ev)
-      end
+      if not (bridge and battleVisual and ev and ev.phase == "pressed"
+          and ev.insideGame) then return next(host, ev) end
       local okUi, Ui = pcall(require, "src.core.game3.battle.ui")
       if not okUi or not Ui or Ui._mode ~= "moves" or Ui._swap then
         return next(host, ev)
@@ -279,25 +259,16 @@ return function(mod)
       if not (okDisplay and Display and Display.fit and okViewport and Viewport) then
         return next(host, ev)
       end
-      local w, h = Viewport.dimensions()
-      local sx, ox, oy, _, _, sy = Display.fit(w, h)
+      local w,h = Viewport.dimensions()
+      local sx,ox,oy,_,_,sy = Display.fit(w,h)
       if not sx or not sy or sx <= 0 or sy <= 0 then return next(host, ev) end
-      local x, y = (ev.gameX - ox) / sx, (ev.gameY - oy) / sy
-      if x < 128 or x > 237 or y < 99 or y > 119 then
-        return next(host, ev)
-      end
-      local st = Ui._st
-      local id = tonumber(Ui._active) or 0
-      local b = st and (st.battlers and st.battlers[id]
-        or (id == 0 and st.player) or (id == 1 and st.enemy))
-      local selectable = false
-      if b then
-        local _label, canPress = game.status(st, b)
-        selectable = canPress == true
-      end
-      if not selectable then return next(host, ev) end
-      if game.input(st, b, { wasPressed = function(_, name) return name == "start" end }) then
-        return true
+      local x,y = (ev.gameX - ox)/sx,(ev.gameY - oy)/sy
+      if battleVisual:hit(x,y) then
+        local st = Ui._st
+        local id = tonumber(Ui._active) or 0
+        local b = st and (st.battlers and st.battlers[id]
+          or (id == 0 and st.player) or (id == 1 and st.enemy))
+        if b and battleVisual:toggle(st,b) then return true end
       end
       return next(host, ev)
     end)
@@ -308,12 +279,14 @@ return function(mod)
       tryInstall()
       tryIcons()
       tryUi()
+      if battleVisual then battleVisual:installHealthbox() end
       getProvider()
     end, 0)
     mod.events:on("battle.started", function()
       tryInstall()
       tryIcons()
       tryUi()
+      if battleVisual then battleVisual:installHealthbox() end
     end)
     mod.events:on("battle.turn_ended", function() if bridge then game.turnEnded() end end)
     mod.events:on("battle.ended", function() if bridge then game.finish() end end)
@@ -342,6 +315,7 @@ return function(mod)
       bridge = bridge and "installed" or ("offline: " .. tostring(bridgeError)),
       icons = iconBridge and "installed" or ("offline: " .. tostring(iconError)),
       menus = uiBridge and "installed" or ("offline: " .. tostring(uiError)),
+      megaButton = battleVisual and "EBDX artwork installed" or "unavailable",
       supportedForms = battleForms and #battleForms or 0,
       keyStoneItem = registeredById.KEY_STONE,
       venusauriteItem = registeredById.VENUSAURITE,
