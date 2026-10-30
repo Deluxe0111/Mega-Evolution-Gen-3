@@ -44,7 +44,12 @@ local function activeAbility(game,b)
   if type(game)~="table" or type(game.view)~="function"
       or type(b)~="table" or type(b.mon)~="table" then return nil end
   local v=game.view(b.mon)
-  return v and type(v.ability)=="string" and v.ability~="" and v.ability or nil
+  local name=v and type(v.ability)=="string" and v.ability or nil
+  if b._megaIgnoreDefensiveAbility and name and ({
+    FILTER=true,MULTISCALE=true,BULLETPROOF=true,MAGIC_BOUNCE=true,
+    SHELL_ARMOR=true,BATTLE_ARMOR=true,THICK_FAT=true,
+  })[name] then return nil end
+  return name and name~="" and name or nil
 end
 Abilities.activeAbility=activeAbility
 
