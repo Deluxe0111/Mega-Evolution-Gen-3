@@ -12,6 +12,7 @@
 
 - [x] Implement strict geometry audit and inspect all imported PNG strip dimensions in CI
 - [x] Convert Mega front/back, normal/shiny and party-icon PNG strips into lossless bounded atlas pages
+- [x] Add a one-click full-roster launcher and index/page integrity checker
 - [x] Emit stable form-keyed Lua/JSON animation index without touching species/save data
 - [x] Export Mega Venusaur GIF previews and test frame-order/alpha preservation
 - [ ] Visually review EBDX timing and normal/shiny alignment; use static fallback when required
