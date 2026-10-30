@@ -130,6 +130,11 @@ function Standalone.install(mod, game, modules, battleVisual)
   if type(Ui.draw) == "function" then
     wrap(Ui, "draw", function(next, ...)
       if not enabled() then return next(...) end
+      if battleVisual and battleVisual.withTransitionDraw then
+        return battleVisual:withTransitionDraw(function(...)
+          return game.withBattleDraw(next,...)
+        end,...)
+      end
       return game.withBattleDraw(next, ...)
     end)
   end
@@ -142,16 +147,26 @@ function Standalone.install(mod, game, modules, battleVisual)
     -- The existing Ui.sidePic already receives the real mon pointer. The
     -- original provider is evaluated FIRST (including G9's wrappers), and
     -- non-Mega battlers always keep its result untouched.
-    return game.monPicture(st, mon, back, shiny, ordinary)
+    local mega = game.monPicture(st, mon, back, shiny, ordinary)
+    if battleVisual and battleVisual.choosePicture then
+      return battleVisual:choosePicture(mon,back,ordinary,mega)
+    end
+    return mega
   end)
 
   wrap(Battle, "start", function(next, opts)
-    if enabled() then game.finish() end
+    if enabled() then
+      game.finish()
+      if battleVisual and battleVisual.resetTransform then battleVisual:resetTransform() end
+    end
     return next(opts)
   end)
 
   wrap(Battle, "reset", function(next, ...)
-    if enabled() then game.finish() end
+    if enabled() then
+      game.finish()
+      if battleVisual and battleVisual.resetTransform then battleVisual:resetTransform() end
+    end
     return next(...)
   end)
 
@@ -160,6 +175,7 @@ function Standalone.install(mod, game, modules, battleVisual)
     if not active then return end
     active = false
     game.finish()
+    if battleVisual and battleVisual.resetTransform then battleVisual:resetTransform() end
     -- Undo only if our wrapper is still on top; later mods must keep the
     -- chain they installed. Otherwise our closure remains a pass-through.
     for i = #wrapped, 1, -1 do
