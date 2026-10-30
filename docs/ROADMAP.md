@@ -1,11 +1,12 @@
 # Roadmap
 
-## Milestone 0 — Repository foundation (this ZIP)
+## Milestone 0 — Repository foundation
 
 - [x] Mod metadata and non-invasive entry point
 - [x] Credited EBDX asset intake
 - [x] Asset inventory and missing-file validation
-- [ ] Upload the source-art folders to the repository
+- [x] Import and commit the source-art folders to the repository
+- [x] Separate generated machine-specific audit reports from source artwork and CI
 
 ## Milestone 1 — Animation pipeline
 

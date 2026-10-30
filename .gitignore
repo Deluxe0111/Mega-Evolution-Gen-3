@@ -14,3 +14,10 @@ Thumbs.db
 dist/
 build/
 previews/
+reports/
+# Importer/validator output is reproducible and machine-specific
+assets/source/ebdx/asset_plan.csv
+assets/source/ebdx/download_results.csv
+assets/source/ebdx/mega_coverage.csv
+assets/source/ebdx/missing_assets.csv
+assets/source/ebdx/repo_asset_audit.csv

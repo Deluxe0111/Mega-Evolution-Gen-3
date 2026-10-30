@@ -1,66 +1,73 @@
 # Mega Evolution Gen 3
 
-**An independent Mega Evolution project for the Generation 3 games in [Gen1Recomp](https://github.com/bryanthaboi/gen1recomp).**
+**Standalone Mega Evolution project for Gen1Recomp's Generation 3 games:** FireRed, LeafGreen, Ruby, Sapphire and Emerald.
 
-Planned games: **FireRed · LeafGreen · Ruby · Sapphire · Emerald**.
+> **Status: source assets imported / gameplay not implemented (v0.1.0).**
+> The mod's `main.lua` is an intentionally non-invasive scaffold. Mega Evolution, battle transformation, Mega Stones, battle sprites and items are **not currently playable**.
 
-> **Status: initial repository foundation (v0.1.0).** The manifest loads a no-op entry point. It does **not** yet Mega Evolve Pokémon, modify battle stats, change artwork or add items to saves. No playable version is being claimed.
+## Project goal
 
-## Goal
+Build an optional Mega Evolution mod that works with the original Gen 3 games and cooperates with National Dex Gen 3, G9 Battle Sprites (Gen 3), Gen 3 HD Sprites, Untamed Advanced and Nuzlocke.
 
-- Mega Evolve eligible Pokémon during battles, restoring their normal forms when the battle ends.
-- Support Mega Stones, Mega X/Y and Z forms, Mega Rayquaza's special trigger and form-specific stats, types and abilities.
-- Use Gen 5-style animated battle artwork where available, with static fallbacks. Preserve regular/shiny, front/back and party icon variants.
-- Cooperate with **National Dex Gen 3**, **G9 Battle Sprites (Gen 3)**, **Gen 3 HD Sprites**, **Untamed Advanced** and **Nuzlocke**, without requiring all of them.
-- Keep the Pokémon's permanent identity (species, nickname, shiny state, provenance and run history) separate from its temporary Mega battle form.
+- Mega Evolution is a **temporary battle form**, not a change to the saved Pokémon's species, identity, shiny status or encounter provenance.
+- Support form-specific stats, types, abilities and triggers, including X/Y, Z and Mega Rayquaza.
+- Use animated Gen 5-style sprites wherever available, with a static fallback and corresponding normal/shiny, front/back and icon art.
+- Integrations are optional. The mod must fail safely when another mod is absent.
 
-## EBDX source-art pipeline
+## What's already in the repository
 
-The upstream asset source is [ChromeValiant's Pokémon Essentials / EBDX project](https://github.com/ChromeValiant/Pokemon-Essentials-21-With-Unofficial-EBDX). Its original PNG sheets are **source files**, not Gen1Recomp-compatible animated sprites yet. We keep them unchanged so a later conversion process can read their layout.
+- **98 EBDX Mega-form variants** (including alternate gender/form representations) with all six source-artwork variants per form: front, back, shiny front, shiny back, icon and shiny icon.
+- **92 Mega Stone icons**, 97 source Mega cries and selected UI reference graphics. Mega Slowbro has no separate cry at the pinned source revision.
+- Pinned EBDX source definitions and metrics, a generated Mega roster and the original upstream credits.
+- An asset import/checker tool and a safe Gen1Recomp Mod API 2 scaffold.
 
-The included extractor currently targets a **pinned upstream revision** and reads the EBDX PBS form definitions. It inventories **98 Mega form variants** (including separate additional variants of Meowstic and Zygarde), six picture/icon variants per form, Mega Stones, relevant UI reference graphics and available cries. This is a *source-asset inventory*, not a claim that those forms are implemented in-game.
-
-### Import assets on Windows
-
-1. Make sure Python 3 is installed.
-2. Double-click **`1_IMPORT_EBDX_ASSETS.bat`**. This downloads the relevant Mega art to `assets/source/ebdx/` without installing the full Essentials project.
-3. Double-click **`2_CHECK_EBDX_ASSETS.bat`** to generate an asset coverage report.
-4. Commit the art and reports to Git only after checking the files and their attribution.
-
-To include original forms for reverting a Pokémon after battle, use `3_IMPORT_WITH_BASE_FORMS.bat` instead. The downloader is repeat-safe and does not overwrite existing nonempty files. You can also copy your earlier `EBDX_Mega_Assets/` folder directly into `assets/source/ebdx/` and run the checker.
-
-### Import from command line
-
-```powershell
-py -3 tools/extract_ebdx_megas.py --out assets/source/ebdx
-py -3 tools/validate_assets.py --root assets/source/ebdx
-```
-
-No external Python packages are required for the download/check steps. Sprite-sheet animation conversion is a later milestone.
+**These are original EBDX PNG source sheets, not yet an animated Gen1Recomp sprite atlas.** Having art in Git does not mean the corresponding battle mechanic is implemented or that a shiny variant is visually distinct.
 
 ## Repository layout
 
 ```text
-mega-evolution-gen3/
-  manifest.json           Gen1Recomp Mod API 2 metadata
-  main.lua                Safe no-op mod entry
-  CREDITS.md              Artist/source credits and attribution notes
-  docs/                   Asset format and implementation roadmap
-  tools/                  Pinned EBDX extractor and audit tool
-  assets/
-    source/ebdx/          Downloaded original EBDX Mega source artwork
-    runtime/              Future optimised Gen1Recomp sprites/atlases
+manifest.json                 Gen1Recomp mod metadata
+main.lua                      No-op API scaffold (no battle hooks yet)
+assets/
+  source/ebdx/
+    megas/                    Original EBDX form art + cries (committed)
+    mega_stones/              Item icons (committed)
+    ui_reference/             Reference UI artwork (committed)
+    source_metadata/          Original PBS definitions and upstream credits
+    mega_forms.json           Parsed source form definitions
+    mega_roster.csv           Stable form/filename mapping
+  runtime/                    Future Gen1Recomp-ready animation atlases
+tools/
+  extract_ebdx_megas.py       Re-import/refresh source files from pinned revision
+  validate_assets.py         Verify artwork, icons and available cries
+tests/check_project.py        Verify scaffold metadata and source roster
+docs/                         Roadmap, asset-source contract, development notes
 ```
 
-## Scope and compatibility
+## Checking the imported artwork
 
-- The **Mega mod owns the transformation**; Nuzlocke should only observe the original Pokémon identity and enforce existing encounter/permadeath rules.
-- Do not assign permanent National Dex slots to temporary Mega states or write modified species IDs into a save.
-- The G9 Battle Sprites and HD Sprites integrations will need an explicit rendering contract; merely shipping EBDX PNG sheets does not make them animate in Gen1Recomp.
-- Mega sprites, alternate forms and item data should be referenced by explicit stable IDs, never inferred from raw EBDX filename numbers at runtime.
+Python 3 is required; the asset import and validation tools need no third-party packages.
 
-See [Roadmap](docs/ROADMAP.md), [Asset import details](docs/ASSET_IMPORT.md), and [Credits](CREDITS.md).
+```powershell
+py -3 tests/check_project.py
+py -3 tools/validate_assets.py --root assets/source/ebdx --strict
+```
 
-## Credits
+On Windows, `2_CHECK_EBDX_ASSETS.bat` runs the artwork checker. Reports go into the **ignored** `reports/` folder, not the committed artwork directory. CI uses `--no-report` to avoid generating files.
 
-Mega battle artwork is credited to **[Aronousqui20](https://www.deviantart.com/aronousqui20/gallery)** and **[mangalos810](https://www.deviantart.com/mangalos810/gallery/103628774/new-work)** as detailed in [CREDITS.md](CREDITS.md). Credit and permission to use artwork are distinct; preserve any individual artists' terms along with the source files. This repository's starter code does not impose a licence on third-party art.
+The source artwork has **already been imported**. `1_IMPORT_EBDX_ASSETS.bat` is for recovering or intentionally refreshing the pinned upstream set; `3_IMPORT_WITH_BASE_FORMS.bat` additionally downloads the normal/reversion form artwork. Avoid replacing hand-curated assets without reviewing the source and licences.
+
+## Next milestones
+
+1. Inspect EBDX PNG-sheet geometry, frames and animation timing; build a test renderer for Mega Venusaur.
+2. Package artwork into efficient Gen1Recomp-ready atlases without compromising the existing battle sprite provider.
+3. Implement the battle transformation for Mega Venusaur, including accurate stat/ability changes and safe reversion.
+4. Expand to other Mega forms and test across the five Gen 3 games and optional mods.
+
+See [Roadmap](docs/ROADMAP.md), [Asset import](docs/ASSET_IMPORT.md), [Implementation notes](docs/IMPLEMENTATION_NOTES.md) and [Development guide](docs/DEVELOPMENT.md).
+
+## Credits and rights
+
+Mega artwork credits: [Aronousqui20](https://www.deviantart.com/aronousqui20/gallery) and [mangalos810](https://www.deviantart.com/mangalos810/gallery/103628774/new-work). See [CREDITS.md](CREDITS.md) and `assets/source/ebdx/source_metadata/README.md` for the wider EBDX contributor list. Artwork, audio, icons and code can have **different permissions**; do not treat those assets as one blanket-licensed package.
+
+**Project repository:** [Deluxe0111/Mega-Evolution-Gen-3](https://github.com/Deluxe0111/Mega-Evolution-Gen-3).
