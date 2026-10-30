@@ -41,6 +41,12 @@ function Standalone.install(mod, game, modules, battleVisual)
   local Damage = modules and modules.Damage or required("src.core.game3.battle.damage")
   local Battle = modules and modules.Battle or required("src.core.game3.battle")
   local MegaAbilities=modules and modules.MegaAbilities
+  local Tactical=modules and modules.MegaTactical
+  if not Tactical then
+    local ok,module=pcall(req,"src.mega_tactical_abilities")
+    if ok and type(module)=="table" then Tactical=module end
+  end
+  local Moves=modules and modules.Moves or required("src.core.game3.battle.moves")
   local Reactive=modules and modules.MegaReactive
   local Hit=modules and modules.Hit or required("src.core.game3.battle.effects.hit")
   local Secondary=modules and modules.Secondary or required("src.core.game3.battle.effects.secondary")
@@ -111,6 +117,14 @@ function Standalone.install(mod, game, modules, battleVisual)
         end
         if game.onMegaEvolved then game.onMegaEvolved(st, battler, adapter) end
       end
+      -- The move has been selected and Mega activation processed. Apply
+      -- Protean to the live battle battler before Gen3 resolves damage/STAB.
+      if battler and Tactical and Tactical.beforeMove and Moves then
+        local resolved=battler.expLockedMove
+          or ((battler.expEncoreTurns or 0)>0 and battler.expEncoreMove)
+          or move
+        Tactical.beforeMove(game,Moves,battler,resolved)
+      end
     end
     return next(user, target, move, slot, adapter, st, out, opts)
   end)
@@ -124,8 +138,27 @@ function Standalone.install(mod, game, modules, battleVisual)
     wrap(Engine,"forEachTarget",function(next,M,body)
       if not enabled() then return next(M,body) end
       return next(M,function(ctx)
-        return Reactive.withMagicBounce(game,ctx,body,Engine.hasFlag)
+        local function magic(targetCtx)
+          return Reactive.withMagicBounce(game,targetCtx,body,Engine.hasFlag)
+        end
+        if Tactical and Tactical.withInfiltrator then
+          return Tactical.withInfiltrator(game,ctx,magic)
+        end
+        return magic(ctx)
       end)
+    end)
+  end
+
+  -- Defiant reacts only to native, successfully applied enemy stat drops.
+  -- Its own +2 Attack is a standard positive Secondary.changeStat call.
+  if Secondary and type(Secondary.changeStat)=="function"
+      and Tactical and Tactical.afterStatChange then
+    wrap(Secondary,"changeStat",function(next,ad,b,stat,delta,flags)
+      local result=next(ad,b,stat,delta,flags)
+      if enabled() then
+        Tactical.afterStatChange(game,Secondary,ad,b,stat,delta,flags,result)
+      end
+      return result
     end)
   end
 
@@ -202,11 +235,36 @@ function Standalone.install(mod, game, modules, battleVisual)
       if not enabled() then return next(attacker,defender,move,opts) end
       local effective=opts
       if MegaAbilities.moveOptions then
-        effective=MegaAbilities.moveOptions(game,attacker,move,opts)
+        effective=MegaAbilities.moveOptions(game,attacker,move,effective)
+      end
+      if Tactical and Tactical.damageOptions then
+        effective=Tactical.damageOptions(game,attacker,effective)
       end
       local amount,info=next(attacker,defender,move,effective)
       return MegaAbilities.finalDamage(game,attacker,defender,amount,info)
     end)
+  end
+
+  -- Apply Prankster at the official singles/doubles turn ordering hook.
+  -- No move database mutation and no reordering of switches/items.
+  local turnOrderUnhook
+  if mod.hooks and type(mod.hooks.wrap)=="function" and Tactical
+      and Tactical.turnOrder and Moves then
+    turnOrderUnhook=mod.hooks:wrap("battle.turn_order",
+      function(next,a,am,b,bm,ctx)
+        local vanilla=next(a,am,b,bm,ctx)
+        if not enabled() then return vanilla end
+        local st=(type(ctx)=="table" and ctx.battle)
+          or Battle._st or Ui._st
+        local function resolve(pub)
+          if type(pub)~="table" then return nil end
+          local id=tonumber(pub.id)
+          if id~=nil then return current(st,id) end
+          return pub.mon and pub or nil
+        end
+        return Tactical.turnOrder(game,Moves,resolve(a),am,
+          resolve(b),bm,vanilla)
+      end)
   end
 
   -- Gen 3 publishes an accuracy callback after Protect and the native
@@ -286,6 +344,7 @@ function Standalone.install(mod, game, modules, battleVisual)
     game.finish()
     if battleVisual and battleVisual.resetTransform then battleVisual:resetTransform() end
     if type(accuracyUnhook)=="function" then accuracyUnhook() end
+    if type(turnOrderUnhook)=="function" then turnOrderUnhook() end
     -- Undo only if our wrapper is still on top; later mods must keep the
     -- chain they installed. Otherwise our closure remains a pass-through.
     for i = #wrapped, 1, -1 do
