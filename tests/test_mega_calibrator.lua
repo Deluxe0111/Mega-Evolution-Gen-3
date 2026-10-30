@@ -44,6 +44,7 @@ local art={
 local shared={}
 local tool=assert(Screen.install(mod,Model,forms,settings,art,{
   graphics=G,background={draw=function()return false end},
+  pushScreen=mod.ui.push,
   isVisible=function()return true end,
   writeFile=function(name,body) exported[name]=body;return true end,
 }))
