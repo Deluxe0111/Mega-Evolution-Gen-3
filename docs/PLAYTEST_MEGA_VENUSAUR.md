@@ -1,0 +1,67 @@
+# Mega Venusaur playtest (experimental PR #8)
+
+This is the **first single-form gameplay proof**, not a 98-form release.
+It is intended for **unmodified, stock Gen1Recomp**: the mod itself wraps
+existing Gen 3 Lua battle functions. No custom battle hooks, patches or
+upstream PRs are needed. This is still **experimental** and must pass an actual
+Emerald session before being promoted from Draft.
+
+## Required setup
+
+1. Use an unmodified current **Gen1Recomp** build with a disposable
+   **Pokémon Emerald** save. No engine fork or extra API hooks.
+2. Install this Mega mod and, ideally, National Dex + G9 Battle Sprites
+   + Gen 3 HD Sprites + Untamed Advanced + Nuzlocke as a compatibility stack.
+3. Give the player the Key Stone (registered item ID **1599**) and a Venusaur
+   with **Venusaurite** held. The mod intentionally does **not** grant either
+   item or alter existing saves. Use a controlled development save/item
+   injection mechanism (avoid modifying an actual challenge run).
+4. Use a battle with a second non-Mega Pokémon for comparison.
+
+## Expected behaviour
+
+- Enter **FIGHT**. If eligible, the small prompt **START: MEGA** appears.
+- Press **START** to arm the Mega; the prompt reads **MEGA READY**.
+  START again disarms. Backing out with B cancels. No extra action/turn.
+- Select a valid move (and target in doubles). Turn order stays as planned
+  with pre-Mega Speed. A scoped wrapper of the stock move executor activates
+  Mega Venusaur immediately before the move resolves. Ability and artwork
+  follow the live battler; damage reads a temporary Pokémon stat copy.
+- Base stats are **80/100/123/122/120/80** (HP/Atk/Def/SpA/SpD/Spe);
+  level, IVs, EVs and nature are preserved. Thick Fat applies.
+- Only that Pokémon shows its animated Mega sprite (front/back and shiny).
+  A second Venusaur on the field remains normal.
+- Switching out and back restores the Mega form and Thick Fat.
+- A fainted Mega is cleared without refunding the trainer's one-per-battle
+  limit. Battle end removes all temporary form state.
+- Saved species, original calculated stats, nickname, moves, PP, encounter
+  history and Nuzlocke identity must remain unchanged.
+
+## Negative tests
+
+- No Key Stone, no Venusaurite, wrong stone, fainted or transformed Pokémon,
+  safari/tutorial/link scenes: no live Mega toggle.
+- Reject invalid move or cancelled target without spending the allowance.
+- Switching after activation should preserve active form; an attempted Mega
+  on another Pokémon must fail.
+- Test all five games' move-menu layouts, singles and doubles; check SELECT
+  move swap, START toggle, B backtracking and held-item changes.
+- Disable G9 or HD independently and verify fallback art does not break UI.
+
+## Known limitations
+
+- Only Mega Venusaur is wired to battle rules. Other 97 forms are art/roster
+  data, not usable battle transformations yet.
+- The first visual treatment uses the new Mega art and a compact battle
+  indicator, **not yet the full ORAS cinematic, cry or bespoke UI art**.
+- Held-item acquisition, NPC trainer Mega stones, Rayquaza's special rule
+  and Z-form policies remain separate milestones.
+- No actual in-game test has been performed by this PR authoring session.
+  Lua tests validate the wrapper chain and save isolation but do not substitute
+  for integration tests. Do not merge until CI passes and Emerald gameplay
+  has been reviewed.
+- The implementation wraps internal public Lua functions
+  (`Ui.handleInput`, `Ui.takeCommand`, `Engine.resolveMove`,
+  `Damage.base`, `Ui.sidePic`, `Battle.start/reset`). A future engine
+  update may change these signatures. Keep fallback behaviour intact when
+  the stock API is unavailable.

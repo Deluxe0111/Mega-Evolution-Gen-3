@@ -6,6 +6,8 @@ on:
     paths:
       - 'src/mega_atlas.lua'
       - 'src/mega_selection.lua'
+      - 'src/mega_venusaur.lua'
+      - 'src/mega_standalone.lua'
       - 'src/mega_items.lua'
       - 'src/mega_eligibility.lua'
       - 'data/mega_items.lua'
@@ -13,6 +15,8 @@ on:
       - 'main.lua'
       - 'tests/test_mega_provider.lua'
       - 'tests/test_mega_selection.lua'
+      - 'tests/test_mega_venusaur.lua'
+      - 'tests/test_mega_standalone.lua'
       - 'tests/test_mega_items.lua'
       - '.github/workflows/runtime-art-provider.yml'
       - 'assets/runtime/mega_atlas_index.lua'
@@ -30,11 +34,15 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y lua5.4
       - name: Check Lua syntax
-        run: luac -p main.lua src/mega_atlas.lua src/mega_selection.lua src/mega_items.lua src/mega_eligibility.lua data/mega_items.lua data/mega_forms.lua assets/runtime/mega_atlas_index.lua tests/test_mega_provider.lua tests/test_mega_selection.lua tests/test_mega_items.lua
+        run: luac -p main.lua src/mega_atlas.lua src/mega_selection.lua src/mega_venusaur.lua src/mega_standalone.lua src/mega_items.lua src/mega_eligibility.lua data/mega_items.lua data/mega_forms.lua assets/runtime/mega_atlas_index.lua tests/test_mega_provider.lua tests/test_mega_selection.lua tests/test_mega_items.lua tests/test_mega_venusaur.lua tests/test_mega_standalone.lua
       - name: Verify packed Mega provider and compatibility boundaries
         run: lua tests/test_mega_provider.lua
       - name: Test ORAS-style Mega selection state machine
         run: lua tests/test_mega_selection.lua
       - name: Test Mega item registration and battler eligibility
         run: lua tests/test_mega_items.lua
+      - name: Test playable Mega Venusaur mechanics without mutating saves
+        run: lua tests/test_mega_venusaur.lua
+      - name: Test standalone stock-engine battle wrappers
+        run: lua tests/test_mega_standalone.lua
 

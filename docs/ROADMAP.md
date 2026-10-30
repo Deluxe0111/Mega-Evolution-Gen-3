@@ -17,19 +17,20 @@
 - [x] Export Mega Venusaur GIF previews and test frame-order/alpha preservation
 - [ ] Visually review EBDX timing and normal/shiny alignment; use static fallback when required
 - [x] Build a lazy-loaded form-keyed Lua picture provider with bounded GPU memory and no conflicting engine hooks
-- [ ] Integrate the provider into an actual Gen1Recomp battle through an explicitly selected battler state, without interfering with G9 Battle Sprites
+- [x] Integrate the provider into existing Ui.sidePic by Pokémon identity without replacing G9 Battle Sprites
+- [ ] Verify animated front/back/shiny position in an actual Emerald/FireRed battle
 
 ## Milestone 2 — Mega Venusaur proof of concept
 
 - [x] Audit Gen1Recomp's normal move selection, double-battle targeting and action-resolution seams
-- [x] Implement a standalone, tested Mega request/commit/cancel state controller (not yet wired to gameplay)
+- [x] Implement a standalone, tested Mega request/commit/cancel state controller (wired to the standalone Venusaur proof)
 - [x] Register 92 fixed-ID Mega Stones and a Key Stone through the native Gen 3 item registry
 - [x] Implement read-only live eligibility checks against held item, species and actual Bag Key Stone possession
-- [ ] Add a visible Mega button inside the FIGHT move menu with eligibility and input controls
-- [ ] Attach the request to the move after selection, then transform immediately before that move executes
-- [ ] Expose a Mega command for one eligible Pokémon holding its Mega Stone
-- [ ] Apply temporary stats, typing, ability, artwork and battle display name
-- [ ] Return to normal form at battle end and keep save species identity unchanged
+- [x] Implement the standalone START Mega toggle and move selection bridge without any engine PR
+- [x] Preserve move intent across stock-engine turn planning and transform before selected move resolution
+- [x] Implement Mega Venusaur's temporary stats, types, Thick Fat and animated battle art (headless tests)
+- [ ] Replace placeholder indicator with native-looking battle control and full transformation animation/name
+- [ ] Verify battle end, switching and saved species identity in an actual Emerald session
 - [ ] Test switching, fainting, capture, reconnect, shiny status and save/load
 
 ## Milestone 3 — Complete Mega roster

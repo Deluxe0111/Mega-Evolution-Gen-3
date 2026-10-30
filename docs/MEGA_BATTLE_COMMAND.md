@@ -24,9 +24,9 @@ Audited against bryanthaboi/gen1recomp (dev) on 2026-10-30:
 - src/core/game3/battle/commands.lua: Commands.playerAction returns a regular kind="move" command; do not change the move slot.
 - src/core/game3/battle/engine.lua: turn planning and Engine.resolveMove; preserve the original action and turn-order semantics.
 - src/core/game3/battle/init.lua: turn execution, double-battle action queue, pursuit/switch exceptions and battle cleanup. Must review all relevant resolve paths before installing hooks.
-- src/core/game3/battle/ui.lua also exposes a battle.overlay hook, which may assist visual display, but **not** input acceptance. An overlay by itself would be a dead button.
+- src/core/game3/battle/ui.lua exposes a battle.overlay hook for drawing the status indicator; Ui.handleInput is wrapped separately so the button is genuinely interactive.
 
-This is an architecture and tested selection-state milestone, **not** an implemented on-screen control or a working transformation. We intentionally avoid installing an inert UI button.
+PR #8 adds an experimental **START: MEGA / MEGA READY** control for Mega Venusaur using **existing stock Gen1Recomp Lua entrypoints**: Ui.handleInput / Ui.takeCommand, Engine.resolveMove, Damage.base and Ui.sidePic. It no longer depends on a Gen1Recomp patch. The damage adapter passes battle-only **copies** of each battler's Pokémon stats and never overwrites permanent party stats. The placeholder indicator and sprite swap will later receive the full ORAS presentation. See [Mega Venusaur playtest](PLAYTEST_MEGA_VENUSAUR.md).
 
 ## Code already implemented
 
@@ -38,7 +38,7 @@ src/mega_selection.lua is an isolated controller with:
 - activate(side, pokemonIdentity, decoratedMoveAction, success) to mark a successful transformation and consume that side's allowance
 - faint, activeForm and finishBattle to preserve or revert form appropriately
 
-Nothing in this module updates engine Pokémon data; it only records temporary intent and activation state. The future battle adapter owns eligibility and actual transformation, while the G9-compatible art provider supplies frames. No public release should describe this controller as playable Mega Evolution.
+The selection controller never modifies a Pokémon save. The implemented standalone bridge resolves eligible move requests, applies temporary battler ability changes, and supplies per-mon battle artwork. No public release should call the full roster playable before the remaining forms are implemented and tested.
 
 ## Rules to verify during next implementation
 
