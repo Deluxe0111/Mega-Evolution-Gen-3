@@ -55,7 +55,7 @@ assert(not visual:hit(22,89) and not visual:hit(0,111))
 assert(visual:drawButton(st,ui))
 assert(drawn[#drawn].img.key=="button")
 assert(quads[#quads].x==0 and quads[#quads].w==44 and quads[#quads].h==44)
-assert(drawn[#drawn].params[3]==0.5 and drawn[#drawn].params[4]==0.5)
+assert(drawn[#drawn].params[5]==0.5 and drawn[#drawn].params[6]==0.5)
 -- Selecting LEFT on first move focuses the new button; A toggles it.
 assert(visual:handleInput(ui,st,b,pressed("left")))
 assert(visual.focused)
