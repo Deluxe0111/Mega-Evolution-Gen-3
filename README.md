@@ -21,6 +21,7 @@ Build an optional Mega Evolution mod that works with the original Gen 3 games an
 - Pinned EBDX source definitions and metrics, a generated Mega roster and the original upstream credits.
 - An asset import/checker tool, the **156-page converted atlas and its Lua/JSON indexes**, and a safe Gen1Recomp Mod API 2 art provider.
 - Explicit APIs for checking Mega forms, locating animation frames and rendering an isolated 64×64 picture entry, without changing G9 Battle Sprites' hooks.
+- **92 Mega Stones and one Key Stone** registered through the public Gen 3 item registry, with fixed numeric IDs, and a strict read-only eligibility checker. These items are **not distributed to players**, and there is not yet a battle button or transformation.
 
 **The original EBDX strips and converted PNG atlas pages are both committed.** The atlas has 24,018 frames across 156 pages; the provider loads only the requested pages. Having renderable art does **not** mean an in-game Mega transformation is implemented.
 
