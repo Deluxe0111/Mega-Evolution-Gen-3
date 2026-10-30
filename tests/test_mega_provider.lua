@@ -38,10 +38,23 @@ local synthetic = {
           }
         }
       }
+    },
+    mega_crop = {
+      display_name = "Mega Hover", species = "HOVER",
+      variants = {
+        back = {frames=3, fps=8, segments={
+          {sheet=0, first=0, frames=3, ox=0, oy=0, cols=2, fs=32,
+           fw=20, fh=14, cx=4, cy=7}
+        }}
+      }
     }
   }
 }
 assert(Provider.locate(synthetic, "mega_test", "front", 1).x == 64)
+local croppedFrame = Provider.locate(synthetic, "mega_crop", "back", 2)
+assert(croppedFrame and croppedFrame.x == 0 and croppedFrame.y == 14)
+assert(croppedFrame.fs == 32 and croppedFrame.fw == 20 and croppedFrame.fh == 14)
+assert(croppedFrame.cx == 4 and croppedFrame.cy == 7)
 local p2 = Provider.locate(synthetic, "mega_test", "front", 3)
 assert(p2.file == "battle_front_1.png" and p2.y == 32 and p2.frame == 3)
 assert(Provider.locate(synthetic, "mega_test", "front", 4).frame == 0)
@@ -50,6 +63,7 @@ assert(Provider.locate(synthetic, "mega_test", "back", 0) == nil)
 assert(Provider.locate(synthetic, "mega_test", "nope", 0) == nil)
 
 local images, draws, canvases, pushes, pops = 0, 0, 0, 0, 0
+local drawX, drawY
 local oldPage = {}
 local G = {
   newImage = function(path)
@@ -76,7 +90,10 @@ local G = {
   setColor = function() end,
   setCanvas = function() end,
   clear = function() end,
-  draw = function(texture,quad,...) draws = draws + 1 end
+  draw = function(texture,quad,x,y,...)
+    draws = draws + 1
+    drawX, drawY = x, y
+  end
 }
 local mod = { path = "mods/mega-evolution", log = {warn=function()end} }
 local atlas = assert(Provider.new(mod, synthetic, G, function()return 0.375 end))
@@ -96,6 +113,14 @@ assert(pushes == 1 and pops == 1, "graphics state was not restored")
 assert(atlas.picture("mega_test", "back", false, 0) == nil)
 assert(atlas.picture("mega_test", "front", true, 0))
 assert(atlas.stats().cachedPages == 2)
+local sprite = atlas.frame("mega_crop", "back", 1)
+assert(sprite and sprite.w == 32 and sprite.h == 32)
+assert(sprite.quad.w == 20 and sprite.quad.h == 14)
+assert(sprite.cropX == 4 and sprite.cropY == 7)
+assert(atlas.picture("mega_crop", "back", false, 1))
+-- A common crop is packed smaller, but the ORIGINAL on-screen pose remains.
+-- 64px presentation box: (64-32)/2 + cropX, 64-32 + cropY.
+assert(drawX == 20 and drawY == 39, "crop origin lost: hover pose would jump")
 
 -- Main.lua must provide discovery API without overriding global Pokemon graphics hooks.
 local oldFront = function()return "native" end
