@@ -49,6 +49,25 @@ return function(mod)
   local registeredById = {}
   for _, row in ipairs(registered) do registeredById[row.id] = row.index end
 
+  -- Research aide offers the native Poké Mart interface inside Oak/Birch labs.
+  -- The Key Stone is ₽10,000; all registered Mega Stones are ₽5,000.
+  local LabShop=loadSibling(mod,"src/mega_lab_shop.lua")
+  local labShop,labShopError
+  if LabShop and type(LabShop.install)=="function" then
+    local ok,shop,err=pcall(LabShop.install,mod,itemCatalog,registered)
+    if ok then labShop,labShopError=shop,err
+    else labShopError=tostring(shop) end
+  else
+    labShopError="lab shop module unavailable"
+  end
+  if not labShop and mod.log then
+    mod.log:warn("Mega lab fundraising shop unavailable: %s",tostring(labShopError))
+  end
+  exports.labShopDiagnostics = function()
+    return labShop and labShop.diagnostics and labShop.diagnostics()
+      or { error=labShopError }
+  end
+
   exports.itemsRegistered = function() return #registered end
   exports.itemId = function(name) return registeredById[name] end
   exports.checkMegaEligibility = function(st, battler)
