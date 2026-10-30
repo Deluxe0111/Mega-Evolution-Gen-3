@@ -25,11 +25,19 @@ function Atlas.locate(index, slug, kind, frame)
     if first and nseg and cols and cols > 0 and fs and fs > 0
         and n >= first and n < first + nseg then
       local localFrame = n - first
+      local fw, fh = tonumber(seg.fw) or fs, tonumber(seg.fh) or fs
+      local cx, cy = tonumber(seg.cx) or 0, tonumber(seg.cy) or 0
+      -- Segments in older committed atlases have no crop metadata.
+      -- A normalized segment stores its common source-frame crop origin
+      -- and actual packed rectangle, so hovering/bouncing never shifts.
+      if fw < 1 or fh < 1 or cx < 0 or cy < 0
+          or fw + cx > fs or fh + cy > fs then return nil end
       return {
         file = string.format("battle_%s_%d.png", kind, seg.sheet),
-        x = seg.ox + (localFrame % cols) * fs,
-        y = seg.oy + math.floor(localFrame / cols) * fs,
-        fs = fs, frame = n, frames = count,
+        x = seg.ox + (localFrame % cols) * fw,
+        y = seg.oy + math.floor(localFrame / cols) * fh,
+        fs = fs, fw = fw, fh = fh, cx = cx, cy = cy,
+        frame = n, frames = count,
         fps = tonumber(cell.fps) or 8, slug = slug, kind = kind,
       }
     end
@@ -195,13 +203,14 @@ function Atlas.new(mod, index, graphics, timer, presentation)
     local img = imageFor(cell.file)
     if not img then return nil end
     local w, h = img:getDimensions()
-    if cell.x + cell.fs > w or cell.y + cell.fs > h then
+    if cell.x + cell.fw > w or cell.y + cell.fh > h then
       warnOnce(cell.file .. ":bounds", "Mega sprite cell outside atlas: " .. cell.file)
       return nil
     end
-    local ok, quad = pcall(G.newQuad, cell.x, cell.y, cell.fs, cell.fs, w, h)
+    local ok, quad = pcall(G.newQuad, cell.x, cell.y, cell.fw, cell.fh, w, h)
     if not ok then return nil end
     return { image = img, quad = quad, w = cell.fs, h = cell.fs,
+             cropX = cell.cx, cropY = cell.cy,
              frame = cell.frame, frames = cell.frames, fps = cell.fps }
   end
 
@@ -260,7 +269,11 @@ function Atlas.new(mod, index, graphics, timer, presentation)
       if G.setColor then G.setColor(1, 1, 1, 1) end
       G.setCanvas(canvas)
       if G.clear then G.clear(0, 0, 0, 0) end
-      G.draw(source.image, source.quad, ox, oy, 0, s, s)
+      -- This offset exactly restores the frame's position in its original
+      -- square source canvas; do not ground or centre individual poses.
+      G.draw(source.image, source.quad,
+        ox + (source.cropX or 0) * s, oy + (source.cropY or 0) * s,
+        0, s, s)
     end)
     G.pop()
     if not drawn then
@@ -278,7 +291,10 @@ function Atlas.new(mod, index, graphics, timer, presentation)
         quad = source.quad,
         lowPivot = { PIC_BOX / 2 + (tonumber(spec.dx) or 0),
           sourceBaseline + (tonumber(spec.dy) or 0) },
-        pivot = { source.w / 2, sourceFeet },
+        -- HD drawing uses the cropped quad's coordinates. Translate the
+        -- source-space anchor by the common crop, preserving hover height.
+        pivot = { source.w / 2 - (source.cropX or 0),
+          sourceFeet - (source.cropY or 0) },
         scale = exactScale,
         side = side == "back" and "player" or "enemy",
         top = 0,
