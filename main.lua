@@ -1,4 +1,4 @@
--- Mega Evolution Gen 3: artwork provider, not battle mechanics.
+-- Mega Evolution Gen 3: standalone temporary battle forms + art provider.
 -- G9 Battle Sprites owns Pokemon.frontPic/backPic/icon: we never wrap those here.
 local function loadSibling(mod, path)
   local source = mod:read(path)
@@ -32,7 +32,7 @@ return function(mod)
     registered, itemErrors = ItemRegistry.register(mod, itemCatalog)
   end
   if mod.log then
-    mod.log:info("registered %d Mega items; battle transformation not yet enabled", #registered)
+    mod.log:info("registered %d Mega items; standalone battle integration loading", #registered)
     for i = 1, math.min(#itemErrors, 4) do
       mod.log:warn("Mega item registration issue: %s", itemErrors[i])
     end
@@ -98,7 +98,7 @@ return function(mod)
       return nil
     end
     provider = value
-    if mod.log then mod.log:info("Mega art provider ready; battle mechanics not installed") end
+    if mod.log then mod.log:info("Mega art provider ready") end
     return provider
   end
 
@@ -138,80 +138,63 @@ return function(mod)
     function(st, b) return exports.checkMegaEligibility(st, b) end,
     { hasSprite = exports.hasSprite, picture = exports.picture }) or nil
 
-  if game and mod.hooks and type(mod.hooks.wrap) == "function" then
-    local subscriptions, failure = {}, nil
-    local function bind(name, fn)
-      if failure then return end
-      local ok, unsub = pcall(function() return mod.hooks:wrap(name, fn) end)
-      if not ok then failure = tostring(unsub); return end
-      subscriptions[#subscriptions + 1] = unsub
+  local Standalone = loadSibling(mod, "src/mega_standalone.lua")
+  local bridge, bridgeError
+  if game and Standalone and type(Standalone.install) == "function" then
+    local ok, installed, err = pcall(Standalone.install, mod, game)
+    if ok then bridge, bridgeError = installed, err
+    else bridgeError = tostring(installed) end
+  else
+    bridgeError = "Mega battle module unavailable"
+  end
+
+  if bridge then
+    gameplayReady = true
+    -- This is only a DRAW hook. All gameplay uses stock Gen 3 Lua modules.
+    if mod.hooks and type(mod.hooks.wrap) == "function" then
+      mod.hooks:wrap("battle.overlay", function(next, st)
+        next(st)
+        if not (st and love and love.graphics) then return end
+        local ok, Ui = pcall(require, "src.core.game3.battle.ui")
+        if not ok or not Ui or Ui._mode ~= "moves" or Ui._swap then return end
+        local id = tonumber(Ui._active) or 0
+        local b = st.battlers and st.battlers[id] or
+          ((id == 0 and st.player) or (id == 1 and st.enemy))
+        local label = game.status(st, b)
+        if not label then return end
+        local g = love.graphics
+        g.setColor(0.08, 0.13, 0.23, 0.92)
+        g.rectangle("fill", 155, 102, 82, 14, 2, 2)
+        g.setColor(1.0, 0.88, 0.38, 1)
+        g.print(label, 159, 103)
+        g.setColor(1, 1, 1, 1)
+      end)
     end
 
-    bind("battle.move_menu_input", function(next, st, b, input)
-      if game.input(st, b, input) then return true end
-      return next(st, b, input)
-    end)
-    bind("battle.move_command", function(next, st, b, command)
-      return game.command(st, b, next(st, b, command))
-    end)
-    bind("battle.before_move", function(next, st, action, b)
-      game.beforeMove(st, action, b)
-      return next(st, action, b)
-    end)
-    bind("battle.stat_value", function(next, b, stat, value)
-      return game.stat(b, stat, next(b, stat, value))
-    end)
-    bind("battle.battler_picture", function(next, b, back, shiny, entry)
-      return game.picture(b, back, shiny, next(b, back, shiny, entry))
-    end)
-    bind("battle.overlay", function(next, st)
-      next(st)
-      if not (st and love and love.graphics) then return end
-      local ok, Ui = pcall(require, "src.core.game3.battle.ui")
-      if not ok or not Ui or Ui._mode ~= "moves" or Ui._swap then return end
-      local id = tonumber(Ui._active) or 0
-      local b = (id == 0 and st.player) or (st.battlers and st.battlers[id])
-      local label = game.status(st, b)
-      if not label then return end
-      local g = love.graphics
-      g.setColor(0.08, 0.13, 0.23, 0.92)
-      g.rectangle("fill", 155, 102, 82, 14, 2, 2)
-      g.setColor(1.0, 0.88, 0.38, 1)
-      g.print(label, 159, 103)
-      g.setColor(1, 1, 1, 1)
-    end)
-
-    if failure then
-      for _, unsubscribe in ipairs(subscriptions) do
-        if type(unsubscribe) == "function" then pcall(unsubscribe) end
-      end
-      if mod.log then mod.log:warn("Mega gameplay requires Gen 3 battle seams: %s", failure) end
-    else
-      gameplayReady = true
-      if mod.events and mod.events.on then
-        mod.events:on("battle.turn_ended", function() game.turnEnded() end)
-        mod.events:on("battle.ended", function() game.finish() end)
-        mod.events:on("battle.battler_switched", function(ev)
-          local ok, Battle = pcall(require, "src.core.game3.battle")
-          local st = ok and Battle and Battle.getState and Battle.getState()
-          local id = ev and tonumber(ev.battlerId)
-          local b = st and id and ((id == 0 and st.player) or (id == 1 and st.enemy)
-            or (st.battlers and st.battlers[id]))
-          if b then game.switchedIn(b) end
-        end)
-        mod.events:on("battle.fainted", function(ev)
-          -- Public event records may contain copied battlers. Resolve the
-          -- original live mon by numeric battler ID before clearing state.
-          local ok, Battle = pcall(require, "src.core.game3.battle")
-          local st = ok and Battle and Battle.getState and Battle.getState()
-          local id = ev and tonumber(ev.battlerId)
-          local b = st and id and ((id == 0 and st.player) or (id == 1 and st.enemy)
-            or (st.battlers and st.battlers[id]))
-          if b and b.mon then game.fainted(b.mon) end
-        end)
-      end
-      if mod.log then mod.log:info("Mega Venusaur battle integration installed (START in FIGHT menu)") end
+    if mod.events and mod.events.on then
+      mod.events:on("battle.turn_ended", function() game.turnEnded() end)
+      mod.events:on("battle.ended", function() game.finish() end)
+      mod.events:on("battle.battler_switched", function(ev)
+        local ok, Battle = pcall(require, "src.core.game3.battle")
+        local st = ok and Battle and Battle.getState and Battle.getState()
+        local id = ev and tonumber(ev.battlerId)
+        local b = st and id and (st.battlers and st.battlers[id]
+          or (id == 0 and st.player) or (id == 1 and st.enemy))
+        if b then game.switchedIn(b) end
+      end)
+      mod.events:on("battle.fainted", function(ev)
+        local ok, Battle = pcall(require, "src.core.game3.battle")
+        local st = ok and Battle and Battle.getState and Battle.getState()
+        local id = ev and tonumber(ev.battlerId)
+        local b = st and id and (st.battlers and st.battlers[id]
+          or (id == 0 and st.player) or (id == 1 and st.enemy))
+        if b and b.mon then game.fainted(b.mon) end
+      end)
     end
+    if mod.log then mod.log:info("Standalone Mega Venusaur enabled; no engine patch required") end
+  elseif mod.log then
+    mod.log:warn("Mega gameplay unavailable; vanilla Gen 3 signatures changed: %s",
+      tostring(bridgeError))
   end
 
   exports.megaFormOf = function(mon) return gameplayReady and game.activeForm(mon) or nil end
