@@ -28,6 +28,13 @@ function Calibrator.install(mod, modelModule, forms, presentation, atlas, opts)
   local exportName = opts.exportName or OUTPUT
   local bg = opts.background or tryModule("src.core.game3.battle.bg")
   local G = opts.graphics or (love and love.graphics)
+  -- API2's generic mod.ui.push targets old Gen1 Screens; the existing
+  -- Gen3 bridge is explicitly required for a Gen3 registered screen.
+  local screenBridge = opts.screenBridge or tryModule("src.ui.game3.mod_ui")
+  local pushScreen = opts.pushScreen or (screenBridge and screenBridge.push)
+  if type(pushScreen) ~= "function" then
+    return nil, "Gen 3 custom screen bridge not available"
+  end
   local lastExport
   local lastModel
   local function export(game, model)
@@ -62,7 +69,7 @@ function Calibrator.install(mod, modelModule, forms, presentation, atlas, opts)
     local self = setmetatable({
       game = game,
       gbaCanvas = true, kind = "mega_calibrator",
-      isMenu = true, mode = "browse",
+      isMenu = true, isOpaque = true, mode = "browse",
       model = modelModule.new(forms, presentation),
       seconds = 0, message = "", messageTimer = 0,
     }, Screen)
@@ -196,7 +203,7 @@ function Calibrator.install(mod, modelModule, forms, presentation, atlas, opts)
     if opts.isVisible and not opts.isVisible() then return out end
     local row = { label = "MEGA TUNER",
       onSelect = function()
-        if mod.ui.push then mod.ui.push(game, SCREEN) end
+        pushScreen(game, SCREEN)
       end }
     if mod.ui.insertBefore then
       return mod.ui.insertBefore(out, "SAVE", row)
@@ -213,8 +220,7 @@ function Calibrator.install(mod, modelModule, forms, presentation, atlas, opts)
     return lastExport or (lastModel and lastModel:exportLua()) or nil
   end
   function facade.open(game)
-    if not mod.ui.push then return nil end
-    return mod.ui.push(game, SCREEN)
+    return pushScreen(game, SCREEN)
   end
   return facade
 end
