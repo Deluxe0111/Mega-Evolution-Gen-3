@@ -2,7 +2,7 @@ local Visual = dofile("src/mega_battle_ui.lua")
 local clock = 10
 local enabled,armed,active = true,false,false
 local mon={}
-local b={mon=mon,side="player"}
+local b={mon=mon,side="player",species=3}
 local st={player=b, enemy={mon={},side="enemy"}}
 local calls={toggle=0}
 local game={
@@ -58,7 +58,21 @@ G.pop=function()end
 G.setColor=function()end
 G.rectangle=function()end
 local mod={path="mods/mega",enabled=true}
-local visual=Visual.new(mod,game,{graphics=G,time=function() return clock end})
+local cryLog={}
+local audio={newSource=function(path,mode)
+  assert(path=="mods/mega/assets/source/ebdx/megas/mega_venusaur/cry.ogg")
+  assert(mode=="static")
+  local source={}
+  function source:play()
+    cryLog[#cryLog+1]={path=path,volume=self.volume}
+  end
+  function source:stop() end
+  function source:setVolume(v) self.volume=v end
+  return source
+end}
+local visual=Visual.new(mod,game,{
+  graphics=G,time=function() return clock end,audio=audio,cryVolume=.6
+})
 local ui={_mode="moves",_swap=nil,_moveIndex=1,_active=0,
   moveGridNavigation=function()return true end}
 local function pressed(name)
@@ -166,8 +180,13 @@ assert(drawn[#drawn].img.key=="flash","longer symbol animation must persist")
 clock=11.37
 chosen,paint=render()
 assert(chosen==mega and paint.shader==nil)
+assert(#cryLog==0,"Mega cry must wait until silhouette animation finishes")
 visual:drawOverlay(st,ui)
 assert(visual.lastFlash==nil)
+assert(#cryLog==1 and cryLog[1].volume==.6,
+  "correct Mega form cry should play exactly once at the reveal end")
+visual:drawOverlay(st,ui)
+assert(#cryLog==1,"cry must not repeat during following frames")
 -- Rendering errors must restore G.draw and the shader without touching the
 -- already installed G9/HD renderer.
 visual:onMegaEvolved(b)
