@@ -41,6 +41,13 @@ function Standalone.install(mod, game, modules, battleVisual)
   local Damage = modules and modules.Damage or required("src.core.game3.battle.damage")
   local Battle = modules and modules.Battle or required("src.core.game3.battle")
   local MegaAbilities=modules and modules.MegaAbilities
+  local Reactive=modules and modules.MegaReactive
+  local Hit=modules and modules.Hit or required("src.core.game3.battle.effects.hit")
+  local Secondary=modules and modules.Secondary or required("src.core.game3.battle.effects.secondary")
+  if not Reactive then
+    local ok,module=pcall(req,"src.mega_reactive_abilities")
+    if ok and type(module)=="table" then Reactive=module end
+  end
   if not MegaAbilities then
     local ok, module=pcall(req,"src.mega_abilities")
     if ok and type(module)=="table" then MegaAbilities=module end
@@ -107,6 +114,59 @@ function Standalone.install(mod, game, modules, battleVisual)
     end
     return next(user, target, move, slot, adapter, st, out, opts)
   end)
+
+  -- A targeted native status move enters Engine.forEachTarget before the
+  -- engine's Magic Coat guard. Reuse that guard for Mega Magic Bounce without
+  -- changing the move record or permanently setting expMagicCoat.
+  if Reactive and Reactive.withMagicBounce
+      and type(Engine.forEachTarget)=="function"
+      and type(Engine.hasFlag)=="function" then
+    wrap(Engine,"forEachTarget",function(next,M,body)
+      if not enabled() then return next(M,body) end
+      return next(M,function(ctx)
+        return Reactive.withMagicBounce(game,ctx,body,Engine.hasFlag)
+      end)
+    end)
+  end
+
+  -- Bulletproof stops ball/bomb moves *before* damage or secondary effects.
+  -- Hit.run is the native attack boundary after target/PP validation.
+  if Hit and type(Hit.run)=="function" and Reactive
+      and Reactive.blockBulletproof then
+    wrap(Hit,"run",function(next,M,...)
+      if enabled() and Reactive.blockBulletproof(game,M) then return end
+      return next(M,...)
+    end)
+  end
+
+  -- Cross the HP threshold only for real direct attack damage (never
+  -- substitute), then invoke the engine's standard stat-stage function.
+  if Hit and type(Hit.dealDamage)=="function" and Reactive and Secondary
+      and Reactive.onDamaged then
+    wrap(Hit,"dealDamage",function(next,M,...)
+      if not enabled() then return next(M,...) end
+      local target=M and M.target
+      local adapter=M and M.adapter
+      local before=target and adapter and adapter.hp and adapter:hp(target)
+      local dealt=next(M,...)
+      local after=target and adapter and adapter.hp and adapter:hp(target)
+      if before and after then
+        Reactive.onDamaged(game,M,before,after,Secondary)
+      end
+      return dealt
+    end)
+  end
+
+  -- Engine.performSwitch invokes switchOutEffects before it copies HP back
+  -- to the saved party. Native adapter.heal records HP and events correctly.
+  if Reactive and Reactive.onSwitchOut
+      and type(Engine.switchOutEffects)=="function" then
+    wrap(Engine,"switchOutEffects",function(next,st,adapter,b)
+      local result=next(st,adapter,b)
+      if not enabled() then return result end
+      return Reactive.onSwitchOut(game,adapter,b) or result
+    end)
+  end
 
   -- Native turn-order calculation reads mon.speed in both singles and
   -- doubles. Supply a temporary copied speed view during planning only;
