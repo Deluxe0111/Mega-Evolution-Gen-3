@@ -21,7 +21,7 @@ Build an optional Mega Evolution mod that works with the original Gen 3 games an
 - Pinned EBDX source definitions and metrics, a generated Mega roster and the original upstream credits.
 - An asset import/checker tool, the **156-page converted atlas and its Lua/JSON indexes**, and a safe Gen1Recomp Mod API 2 art provider.
 - Explicit APIs for checking Mega forms, locating animation frames and rendering an isolated 64×64 picture entry, without changing G9 Battle Sprites' hooks.
-- **92 Mega Stones and one Key Stone** registered through the public Gen 3 item registry, with fixed numeric IDs, and a strict read-only eligibility checker. These items are **not distributed to players**.
+- **92 Mega Stones and one Key Stone** registered through the public Gen 3 item registry, with fixed numeric IDs and a strict read-only eligibility checker. A professor's lab aide offers the Key Stone for ₽10,000 and each Mega Stone for ₽5,000 through the native Poké Mart interface.
 - Experimental **full-roster Mega gameplay** in PR #13: all 98 form variants from the pinned EBDX definitions can be selected with their required stones/Key Stone (Mega Rayquaza uses Dragon Ascent), and have temporary calculated stats, live battler type/ability overrides where supported, and animated battle art. **No engine changes needed.** Stock Gen 3 does not implement all newer abilities or Fairy typing, so exact mechanics still require compatibility work.
 
 **The original EBDX strips and converted PNG atlas pages are both committed.** The atlas has 24,018 frames across 156 pages; the provider loads only the requested pages. Having renderable art does **not** mean an in-game Mega transformation is implemented.
@@ -52,6 +52,15 @@ tools/
 tests/check_project.py        Verify scaffold metadata and source roster
 docs/                         Roadmap, asset-source contract, development notes
 ```
+
+## Buying Mega Stones
+
+Visit **Professor Oak's Lab** in Pallet Town (FireRed/LeafGreen) or **Professor Birch's Lab** in Littleroot Town (Ruby/Sapphire/Emerald). An additional scientist aide raises funds for the lab by selling special stones. Speak to the aide to open a normal in-game shop.
+
+- **Key Stone:** ₽10,000 (one needed to use Mega Evolution; hidden from the shop on later visits once owned).
+- **Mega Stones:** ₽5,000 each, all 92 varieties in alphabetical order.
+
+The player pays using normal in-game money; purchases go to the appropriate Bag pocket. The Mega Stone must still be held by the corresponding Pokémon. The aide is placed at runtime on map entry without overwriting the starter-story NPCs, and does not appear without this mod.
 
 ## Checking the imported artwork
 
