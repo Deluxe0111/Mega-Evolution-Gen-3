@@ -42,7 +42,7 @@ local exported = model:exportLua()
 assert(exported:find("mega_mewtwo_x = {", 1, true))
 assert(exported:find("mega_venusaur = {", 1, true))
 assert(exported:find("scale = 0.95", 1, true))
-assert(exported:find("dy = 4", 1, true))
+assert(exported:find("dy = 5", 1, true))
 assert(exported:find("front_shiny = {", 1, true)) -- source exceptions
 local chunk,err = load(exported,"mega_export")
 assert(chunk,err)
@@ -51,7 +51,7 @@ assert(check.mega_venusaur.back.scale == .95)
 assert(check.mega_venusaur.back.dx == 1)
 assert(check.mega_venusaur.back.dy == 1)
 assert(check.mega_venusaur.front.feet == feet - 1)
-assert(check.mega_mewtwo_x.back.dy == 4)
+assert(check.mega_mewtwo_x.back.dy == 5)
 local n=0
 for slug,sides in pairs(check) do
   assert(sides.back and sides.front,slug)
