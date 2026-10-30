@@ -40,6 +40,41 @@ sprite scaling. The transform emblem is a brief *cosmetic* flourish, not
 a change to turn order or a new cutscene; it requires live testing for
 timing against the battle text.
 
+## Party-switch icons and transformation cry
+
+The party/switch UI, PC box and summary icon hooks use `Pokemon.monIcon(mon)`.
+The Mega provider now returns **two actual 32×32 frames**, with zero-indexed
+`quads[0]`/`quads[1]` and a 32×64 vertical sprite sheet. This matches
+FireRed's OAM party animation and Emerald's party icon animations.
+
+- Mega active: render the temporary Mega form's own `icon.png` strip
+- Shiny Mega active: render `icon_shiny.png`
+- Female Mega: prefer `icon_female.png`, or
+  `icon_female_shiny.png` / `icon_shiny_female.png` when those optional
+  source assets are present; otherwise fall back to the normal/shiny
+  Mega artwork, not a missing image
+- Untransformed/fainted/after battle: native Gen 3 icon unchanged
+- No Pokémon/save data is modified
+
+The imported EBDX cries live at
+`assets/source/ebdx/megas/<mega_slug>/cry.ogg`.
+The exact form cry plays **once** after the existing **1.36-second** white
+silhouette/reveal animation finishes. If the OGG is absent or unsupported,
+the game falls back to the native species cry. Battle end/reset cancels any
+unfinished audio cue. It does **not** delay move resolution.
+
+### Extra playtest
+
+- Mega Evolve, then open the in-battle **Pokémon / SWITCH** party screen.
+  Verify the active Mega's animated icon appears, including the second frame.
+- Check a shiny Mega against a non-shiny Mega and a mixed party.
+- Try a female Mega; if EBDX supplied no female-specific image, it should
+  still display the correct generic Mega icon.
+- Switch a transformed Mega out/in, and then end the battle. The temporary
+  icon should persist only while that Mega form remains active.
+- Mega Evolve once and listen for the cry at **the end of the white reveal**,
+  not immediately when the move is selected. Verify it doesn't repeat.
+
 ## Playtest
 
 1. Fully restart Gen1Recomp with this feature branch and the same G9/HD
