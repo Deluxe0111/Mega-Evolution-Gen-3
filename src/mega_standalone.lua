@@ -40,6 +40,11 @@ function Standalone.install(mod, game, modules, battleVisual)
   local Engine = modules and modules.Engine or required("src.core.game3.battle.engine")
   local Damage = modules and modules.Damage or required("src.core.game3.battle.damage")
   local Battle = modules and modules.Battle or required("src.core.game3.battle")
+  local MegaAbilities=modules and modules.MegaAbilities
+  if not MegaAbilities then
+    local ok, module=pcall(req,"src.mega_abilities")
+    if ok and type(module)=="table" then MegaAbilities=module end
+  end
   if not (Ui and Engine and Damage and Battle
       and type(Ui.handleInput) == "function"
       and type(Ui.takeCommand) == "function"
@@ -121,8 +126,24 @@ function Standalone.install(mod, game, modules, battleVisual)
 
   wrap(Damage, "base", function(next, attacker, defender, move, opts)
     if not enabled() then return next(attacker, defender, move, opts) end
-    return next(cloneBattler(attacker, game), cloneBattler(defender, game), move, opts)
+    local effectiveOpts=opts
+    if MegaAbilities and MegaAbilities.baseOptions then
+      effectiveOpts=MegaAbilities.baseOptions(game,attacker,move,opts)
+    end
+    return next(cloneBattler(attacker, game), cloneBattler(defender, game),
+      move, effectiveOpts)
   end)
+
+  -- Native Damage.calc does STAB, effectiveness, crit and random rolls after
+  -- Damage.base. Only end-of-calculation multipliers belong on this seam.
+  if type(Damage.calc)=="function" and MegaAbilities
+      and MegaAbilities.finalDamage then
+    wrap(Damage, "calc", function(next, attacker, defender, move, opts)
+      local amount,info=next(attacker,defender,move,opts)
+      if not enabled() then return amount,info end
+      return MegaAbilities.finalDamage(game,attacker,defender,amount,info)
+    end)
+  end
 
   -- Ui.draw is the narrowest exported boundary around battle sprite draws.
   -- Any Mega pivot rewrite exists only inside this call, not across frames
