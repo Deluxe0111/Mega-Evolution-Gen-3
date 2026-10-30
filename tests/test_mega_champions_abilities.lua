@@ -96,6 +96,21 @@ assert(C.withPiercingProtect(game,M,function(ctx)
   assert(not ctx._megaQuarterProtect)
   return "unprotected"
 end)=="unprotected")
+-- Actual Gen3 Ctx inherits isProtected from a metatable. The scoped
+-- penetration must not leave its temporary method on the action object.
+local inherited=setmetatable({user=p,target=foe,move=contact},{
+  __index={isProtected=function(self)return self.target.expProtected end}
+})
+foe.expProtected=true
+set(p,"PIERCING_DRILL")
+assert(C.withPiercingProtect(game,inherited,function(ctx)
+  assert(ctx:isProtected()==false)
+  return "passed"
+end)=="passed")
+assert(rawget(inherited,"isProtected")==nil
+  and rawget(inherited,"_megaQuarterProtect")==nil
+  and inherited:isProtected()==true)
+foe.expProtected=nil
 set(p,nil)
 
 -- Spicy Spray triggers after HP damage to Mega Scovillain, never on a
