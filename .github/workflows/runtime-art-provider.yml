@@ -1,0 +1,28 @@
+name: Mega runtime art provider checks
+on:
+  push:
+    branches: [feature/mega-runtime-art-provider]
+  pull_request:
+    paths:
+      - 'src/mega_atlas.lua'
+      - 'main.lua'
+      - 'tests/test_mega_provider.lua'
+      - '.github/workflows/runtime-art-provider.yml'
+      - 'assets/runtime/mega_atlas_index.lua'
+
+permissions:
+  contents: read
+
+jobs:
+  lua-provider:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Lua
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y lua5.4
+      - name: Check Lua syntax
+        run: luac -p main.lua src/mega_atlas.lua assets/runtime/mega_atlas_index.lua tests/test_mega_provider.lua
+      - name: Verify packed Mega provider and compatibility boundaries
+        run: lua tests/test_mega_provider.lua
