@@ -38,7 +38,59 @@ function MegaUI.new(mod, game, opts)
   local req = opts.require or require
   local images, tried = {}, {}
   local warn = {}
+  local crySources, cryFailed = {}, {}
+  local sound = opts.audio or (love and love.audio)
   local self = {focused = false, lastFlash = nil}
+
+  -- Every Mega has a form-specific EBDX OGG when imported. Keep a small
+  -- bounded cache of Sources; falling back to the game's native cry if the
+  -- optional clip is absent/unsupported. Never write audio into the save.
+  local cryOrder = {}
+  local function megaCry(slug,species)
+    if type(slug) ~= "string" or not slug:match("^mega_[%w_]+$") then return false end
+    if sound and type(sound.newSource) == "function" and not cryFailed[slug] then
+      local source = crySources[slug]
+      if not source then
+        local path = (mod.path or "") .. "/assets/source/ebdx/megas/" .. slug .. "/cry.ogg"
+        local ok, value = pcall(sound.newSource,path,"static")
+        if ok and value then
+          source = value
+          crySources[slug] = source
+          cryOrder[#cryOrder + 1] = slug
+          if #cryOrder > 8 then crySources[table.remove(cryOrder,1)] = nil end
+        else
+          cryFailed[slug] = true
+          if mod.log and mod.log.warn then
+            mod.log:warn("Mega cry unavailable: %s", path)
+          end
+        end
+      end
+      if source then
+        local ok = pcall(function()
+          local vol=opts.cryVolume
+          if vol == nil then
+            local okAudio, Audio = pcall(req,"src.core.game3.audio")
+            if okAudio and Audio then vol=Audio._sfxVolume end
+          end
+          if vol ~= nil and source.setVolume then
+            source:setVolume(math.max(0,math.min(1,tonumber(vol) or 1)))
+          end
+          if source.stop then source:stop() end
+          source:play()
+        end)
+        if ok then return true end
+      end
+    end
+    if opts.fallbackCry then
+      local ok = pcall(opts.fallbackCry,species)
+      return ok
+    end
+    local ok, audio = pcall(req,"src.core.game3.audio")
+    if ok and audio and type(audio.playCry) == "function" and species then
+      return pcall(audio.playCry,species)
+    end
+    return false
+  end
   local whiteShader, whiteShaderFailed
   local pendingImage, pendingWhite
   local function loadAsset(key)
@@ -153,7 +205,11 @@ function MegaUI.new(mod, game, opts)
 
   function self:onMegaEvolved(battler)
     if not battler or not battler.mon then return end
-    self.lastFlash = {started=clock(),mon=battler.mon}
+    self.lastFlash = {
+      started=clock(),mon=battler.mon,
+      species=battler.species or battler.mon.species,
+      slug=game.activeForm(battler.mon), cryPlayed=false,
+    }
     self.focused = false
   end
 
@@ -243,7 +299,14 @@ function MegaUI.new(mod, game, opts)
     local flash = self.lastFlash
     if not flash or not G then return end
     local age = clock() - flash.started
-    if age < 0 or age >= TRANSFORM.finish then
+    if age < 0 then return end
+    if age >= TRANSFORM.finish then
+      -- Fire the form-specific cry ONCE when the Mega reveal finishes:
+      -- no early cry at the gameplay activation boundary.
+      if not flash.cryPlayed then
+        flash.cryPlayed=true
+        megaCry(flash.slug or game.activeForm(flash.mon),flash.species)
+      end
       self.lastFlash = nil
       return
     end
