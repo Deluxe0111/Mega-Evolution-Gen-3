@@ -14,7 +14,7 @@ local mon = {
   evs={atk=0,def=0,spa=0,spd=0,spe=0},
   attack=102, defense=103, spAtk=120, spDef=120, speed=100,
 }
-local otherMon = { species=3, hp=155, defense=103 }
+local otherMon = { species=3, hp=155, attack=102, defense=103 }
 local player = { mon=mon, species=3, side="player", item=stone,
                  ability="OVERGROW", type1=12, type2=3 }
 local foe = { mon=otherMon, species=3, side="enemy", ability="OVERGROW" }
