@@ -289,7 +289,12 @@ return function(mod)
       if battleVisual then battleVisual:installHealthbox() end
     end)
     mod.events:on("battle.turn_ended", function() if bridge then game.turnEnded() end end)
-    mod.events:on("battle.ended", function() if bridge then game.finish() end end)
+    mod.events:on("battle.ended", function()
+      if bridge then game.finish() end
+      if battleVisual and battleVisual.resetTransform then
+        battleVisual:resetTransform()
+      end
+    end)
     mod.events:on("battle.battler_switched", function(ev)
       if not bridge then return end
       local ok, Battle = pcall(require, "src.core.game3.battle")

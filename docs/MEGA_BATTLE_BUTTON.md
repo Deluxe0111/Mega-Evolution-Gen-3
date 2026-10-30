@@ -29,6 +29,8 @@ Its active half means **armed for the current move**, not simply holding a
 Mega Stone. The symbol next to the HP bar means **currently Mega Evolved**,
 not merely eligible.
 
+The emblem's white-silhouette sequence is **render-only**: the original Pokémon fades to an alpha-preserving white silhouette (0–0.48s), holds white until 0.72s, then the **white Mega sprite** is revealed and its full colours return by 1.36s. The original Mega symbol keeps growing and fading throughout. The native engine still resolves Mega abilities, speed, types and the selected attack immediately; no artificial battle delay, save edits or unrelated enemy/background tint. The optional shader is scoped to the specific Pokémon image and the draw hook restores itself even when rendering fails. If the shader is unsupported, the EBDX emblem and sprite reveal still work without a crash.
+
 The badge is positioned from Gen1Recomp's own `Healthbox.center()`
 together with animation offsets, including double battles. We do not
 override `Pokemon.frontPic`, `Pokemon.backPic`, battle backgrounds or G9
