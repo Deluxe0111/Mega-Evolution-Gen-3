@@ -83,4 +83,75 @@ assert(party[1]==copied and copied.__megaUiView==nil)
 assert(pokemon.monIcon(copied).image=="vanilla:BLASTOISE")
 safety.uninstall()
 assert(party[1]==copied and party[2]==other)
-print("PASS: FireRed party copied/reordered slot Mega icon, native fallback, failure diagnostics, and exception-safe save pointers")
+
+-- A regression that the earlier mocked PartyMenu.draw() test missed:
+-- FireRed's real icons are OAM sprites. An unrelated mod can bypass our
+-- Pokemon.monIcon wrapper or OAM can already contain a vanilla sprite from
+-- PartyMenu.show(). The last native OAM paint must still show the Mega.
+local originalSprite={image="vanilla-blastoise",quad="vanilla-frame",
+  data={[2]=1}}
+local otherSprite={image="vanilla-bulbasaur",quad="vanilla-other",
+  data={[2]=0}}
+local flushed={}
+local Oam={}
+function Oam.get(id)
+  if id==101 then return originalSprite end
+  if id==102 then return otherSprite end
+end
+function Oam.flushOne(sprite)
+  flushed[#flushed+1]={image=sprite.image,quad=sprite.quad}
+end
+local originalFlush=Oam.flushOne
+PartyMenu._oam={[1]={mon=101},[2]={mon=102}}
+PartyMenu._battle=true
+PartyMenu.draw=function()
+  -- Intentionally bypass Pokemon.monIcon, like a separate sprite provider.
+  Oam.flushOne(originalSprite)
+  Oam.flushOne(otherSprite)
+  return "native OAM painted"
+end
+local iconArgs={}
+local nativeUi=assert(Ui.install(mod,game,{
+  picture=function(slug)return {image=slug}end,
+  icon=function(slug,isShiny,isFemale)
+    iconArgs[#iconArgs+1]={slug,isShiny,isFemale}
+    return {image="oam-mega-blastoise",
+      quads={[0]="mega-frame-0",[1]="mega-frame-1"},w=32,h=32}
+  end,
+},{Pokemon=pokemon,PartyMenu=PartyMenu,Oam=Oam}))
+assert(PartyMenu.draw()=="native OAM painted")
+assert(flushed[1].image=="oam-mega-blastoise"
+  and flushed[1].quad=="mega-frame-1",
+  "FireRed OAM paint must replace the battle Mega's animated frame")
+assert(flushed[2].image=="vanilla-bulbasaur"
+  and flushed[2].quad=="vanilla-other",
+  "OAM paint must not alter a non-Mega party member")
+assert(originalSprite._quads[0]=="mega-frame-0"
+  and originalSprite._quads[1]=="mega-frame-1",
+  "both frames must stay available to native party icon animation")
+local nd=nativeUi.diagnostics()
+assert(nd.nativePartyFlushes==2 and nd.nativeMegaOverrides==1
+  and nd.lastNativeSlot==2 and nd.lastNativeSlug=="mega_blastoise",
+  "the Mega icon must resolve the original party slot through _order")
+assert(iconArgs[1][1]=="mega_blastoise")
+-- Female/shiny flags must reach the source icon provider.
+pokemon.isShiny=function(m)return m and m.isShiny==true end
+copied.gender="F"
+copied.isShiny=true
+flushed={}
+assert(PartyMenu.draw()=="native OAM painted")
+local args=iconArgs[#iconArgs]
+assert(args[1]=="mega_blastoise" and args[2]==true and args[3]==true,
+  "native FireRed OAM must preserve the shiny/female icon variants")
+-- Menu closes / non-battle menu: the native icon must remain untouched.
+PartyMenu._battle=false
+originalSprite.image,originalSprite.quad="normal-again","normal-frame"
+flushed={}
+assert(PartyMenu.draw()=="native OAM painted")
+assert(flushed[1].image=="normal-again" and flushed[1].quad=="normal-frame",
+  "ordinary party icons must not be overridden")
+nativeUi.uninstall()
+assert(Oam.flushOne==originalFlush,"OAM hook must uninstall without residue")
+assert(party[1]==copied and party[2]==other and original.__megaUiView==nil,
+  "Mega OAM paint must not change party or save records")
+print("PASS: FireRed party copied/reordered Mega icons including final OAM paint, shiny/female variants, native fallback, and safe cleanup")
