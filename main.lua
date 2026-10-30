@@ -142,6 +142,10 @@ return function(mod)
     local p = getProvider()
     return p and p.picture(slug, side, shiny, frame, battle) or nil
   end
+  exports.megaIcon = function(slug)
+    local p = getProvider()
+    return p and p.icon and p.icon(slug) or nil
+  end
   exports.cacheStats = function()
     local p = getProvider()
     return p and p.stats() or nil
@@ -170,6 +174,8 @@ return function(mod)
 
   local Standalone = loadSibling(mod, "src/mega_standalone.lua")
   local ItemIcons = loadSibling(mod, "src/mega_item_icons.lua")
+  local MegaUI = loadSibling(mod, "src/mega_ui.lua")
+  local uiBridge, uiError
   local bridge, bridgeError
   local iconBridge, iconError
   local failedBridgeMessage
@@ -194,6 +200,16 @@ return function(mod)
     end
     return false
   end
+  local function tryUi()
+    if uiBridge or not (bridge and MegaUI and MegaUI.install and game) then return end
+    local ok, installed, err = pcall(MegaUI.install,mod,game,{
+      picture=exports.picture,
+      icon=exports.megaIcon,
+    })
+    if ok and installed then uiBridge,uiError=installed,nil
+    else uiError=ok and err or tostring(installed) end
+  end
+
   local function tryIcons()
     if iconBridge or not (ItemIcons and ItemIcons.install and itemCatalog) then return end
     local ok, installed, err = pcall(ItemIcons.install, mod, itemCatalog)
@@ -206,6 +222,7 @@ return function(mod)
   -- instead of permanently failing after the first early require().
   tryInstall()
   tryIcons()
+  tryUi()
 
   if mod.hooks and type(mod.hooks.wrap) == "function" then
     mod.hooks:wrap("battle.overlay", function(next, st)
@@ -283,11 +300,13 @@ return function(mod)
     mod.events:on("game.ready", function()
       tryInstall()
       tryIcons()
+      tryUi()
       getProvider()
     end, 0)
     mod.events:on("battle.started", function()
       tryInstall()
       tryIcons()
+      tryUi()
     end)
     mod.events:on("battle.turn_ended", function() if bridge then game.turnEnded() end end)
     mod.events:on("battle.ended", function() if bridge then game.finish() end end)
@@ -315,6 +334,7 @@ return function(mod)
     return {
       bridge = bridge and "installed" or ("offline: " .. tostring(bridgeError)),
       icons = iconBridge and "installed" or ("offline: " .. tostring(iconError)),
+      menus = uiBridge and "installed" or ("offline: " .. tostring(uiError)),
       supportedForms = battleForms and #battleForms or 0,
       keyStoneItem = registeredById.KEY_STONE,
       venusauriteItem = registeredById.VENUSAURITE,
