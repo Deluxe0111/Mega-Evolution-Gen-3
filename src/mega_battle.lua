@@ -46,6 +46,20 @@ function Mega.new(selection, eligibility, art, catalogue, typeIds)
   typeIds=type(typeIds)=="table" and typeIds or {}
   local battle
   local changes,calculated={},{}
+  -- The Gen3 battle uses a moves-only proxy while PartyMenu uses the
+  -- original session.party Pokémon. Both must share the same Mega key.
+  local proxyToParty = setmetatable({}, { __mode = "k" })
+  local function identity(mon)
+    return mon and (proxyToParty[mon] or mon) or nil
+  end
+  local function battlerIdentity(b)
+    if not b or not b.mon then return nil end
+    if b._partyMon then
+      proxyToParty[b.mon] = b._partyMon
+      return b._partyMon
+    end
+    return identity(b.mon)
+  end
   local function restoreOne(b)
     local old=changes[b]
     if not old then return end
@@ -55,6 +69,7 @@ function Mega.new(selection, eligibility, art, catalogue, typeIds)
   local function restore()
     for b in pairs(changes) do restoreOne(b) end
     calculated={}
+    proxyToParty = setmetatable({}, { __mode = "k" })
   end
   local self={}
   function self.begin(st)
@@ -67,7 +82,7 @@ function Mega.new(selection, eligibility, art, catalogue, typeIds)
     return true
   end
   local function attach(b)
-    local mon=b and b.mon
+    local mon=battlerIdentity(b)
     local slug=mon and selection.activeForm(mon)
     local row=slug and forms[slug]
     if not row then return end
@@ -96,27 +111,28 @@ function Mega.new(selection, eligibility, art, catalogue, typeIds)
   end
   function self.input(st,b,input)
     if not self.begin(st) or not b or not b.mon then return false end
-    if input:wasPressed("b") then selection.cancel("player",b.mon); return false end
+    local mon=battlerIdentity(b)
+    if input:wasPressed("b") then selection.cancel("player",mon); return false end
     if not input:wasPressed("start") then return false end
-    local status=selection.status("player",b.mon)
+    local status=selection.status("player",mon)
     if status and (status.used or status.pending) then return false end
     local slug=validForm(st,b)
     if not slug or not art.hasSprite(slug,"back")
         or not art.hasSprite(slug,"front") then return false end
-    selection.toggle("player",b.mon,slug,true)
+    selection.toggle("player",mon,slug,true)
     return true
   end
   function self.command(st,b,action)
     if not self.begin(st) or type(action)~="table" then return action end
     if action.kind=="cancel_partner" then selection.cancel("player"); return action end
     if action.kind~="move" or not b or not b.mon then return action end
-    local chosen,ok=selection.commit("player",b.mon,action)
+    local chosen,ok=selection.commit("player",battlerIdentity(b),action)
     return ok and chosen or action
   end
   function self.beforeMove(st,action,b)
     if not self.begin(st) or type(action)~="table" or action.kind~="move"
         or not b or not b.mon or b.side~="player" then return false end
-    local mon=b.mon
+    local mon=battlerIdentity(b)
     local tag=action.megaEvolution
     if not tag or tag.mon~=mon or not forms[tag.form] then
       attach(b)
@@ -126,7 +142,7 @@ function Mega.new(selection, eligibility, art, catalogue, typeIds)
     if not s or s.used or not s.pending or b.fainted then return false end
     if eligibility(st,b)~=tag.form then return false end
     local row=forms[tag.form]
-    local stats=makeStats(mon,row)
+    local stats=makeStats(b.mon,row)
     if not stats or not art.hasSprite(tag.form,"back") then return false end
     local active=selection.activatePlanned("player",mon,action,true)
     if active~=tag.form then return false end
@@ -136,7 +152,7 @@ function Mega.new(selection, eligibility, art, catalogue, typeIds)
   end
   function self.beforeResolved(st,b,move,slot)
     if not self.begin(st) or not b or not b.mon then return false end
-    local chosen=selection.pendingAction("player",b.mon)
+    local chosen=selection.pendingAction("player",battlerIdentity(b))
     if not chosen or chosen.kind~="move" or chosen.move~=move
         or chosen.slot~=slot then return false end
     return self.beforeMove(st,{
@@ -153,7 +169,7 @@ function Mega.new(selection, eligibility, art, catalogue, typeIds)
     local function stage(b)
       if not b or seen[b] or not b.mon then return end
       seen[b]=true
-      local stats=calculated[b.mon]
+      local stats=calculated[battlerIdentity(b)]
       if not stats then return end
       local original=b.mon
       local copy={}
@@ -198,7 +214,7 @@ function Mega.new(selection, eligibility, art, catalogue, typeIds)
     -- First ordinary frames let G9/HD finish their own setup untouched.
     local showingMega = false
     local function check(b)
-      if b and b.mon and selection.activeForm(b.mon) then
+      if b and b.mon and selection.activeForm(battlerIdentity(b)) then
         showingMega = true
       end
     end
@@ -213,28 +229,29 @@ function Mega.new(selection, eligibility, art, catalogue, typeIds)
     return drawFn(...)
   end
   function self.view(mon)
-    local slug = mon and selection.activeForm(mon)
+    local key = identity(mon)
+    local slug = key and selection.activeForm(key)
     local row = slug and forms[slug]
-    local stats = mon and calculated[mon]
+    local stats = key and calculated[key]
     if not row or not stats then return nil end
     return { slug=slug, stats=stats, ability=row.ability, types=row.types }
   end
   function self.monPicture(st,mon,back,shiny,fallback)
     if st~=battle or not mon then return fallback end
-    local slug=selection.activeForm(mon)
+    local slug=selection.activeForm(identity(mon))
     if not slug then return fallback end
     return art.picture(slug,back and "back" or "front",shiny,nil,true) or fallback
   end
   function self.switchedIn(b) attach(b) end
   function self.stat(b,key,vanilla)
-    local mon=b and b.mon
+    local mon=battlerIdentity(b)
     local slug=mon and selection.activeForm(mon)
     if not slug then return vanilla end
     attach(b)
     return calculated[mon] and calculated[mon][key] or vanilla
   end
   function self.picture(b,back,shiny,fallback)
-    local mon=b and b.mon
+    local mon=battlerIdentity(b)
     local slug=mon and selection.activeForm(mon)
     if not slug then return fallback end
     attach(b)
@@ -242,7 +259,7 @@ function Mega.new(selection, eligibility, art, catalogue, typeIds)
   end
   function self.status(st,b)
     if not self.begin(st) or not b or not b.mon or b.side~="player" then return nil end
-    local s=selection.status("player",b.mon)
+    local s=selection.status("player",battlerIdentity(b))
     if not s or s.used or s.pending then return nil end
     local slug,reason=eligibility(st,b)
     if not slug then
@@ -263,16 +280,19 @@ function Mega.new(selection, eligibility, art, catalogue, typeIds)
   function self.turnEnded() selection.cancel("player") end
   function self.fainted(mon)
     if not mon then return end
-    selection.faint(mon)
-    calculated[mon]=nil
-    for b in pairs(changes) do if b.mon==mon then restoreOne(b) end end
+    local key = identity(mon)
+    selection.faint(key)
+    calculated[key]=nil
+    for b in pairs(changes) do
+      if battlerIdentity(b)==key then restoreOne(b) end
+    end
   end
   function self.finish()
     restore()
     selection.finishBattle()
     battle=nil
   end
-  function self.activeForm(mon) return selection.activeForm(mon) end
+  function self.activeForm(mon) return selection.activeForm(identity(mon)) end
   function self.formData(slug) return forms[slug] end
   return self
 end
