@@ -192,8 +192,14 @@ return function(mod)
         mod.events:on("battle.turn_ended", function() game.turnEnded() end)
         mod.events:on("battle.ended", function() game.finish() end)
         mod.events:on("battle.fainted", function(ev)
-          local mon = ev and (ev.mon or (ev.battler and ev.battler.mon))
-          if mon then game.fainted(mon) end
+          -- Public event records may contain copied battlers. Resolve the
+          -- original live mon by numeric battler ID before clearing state.
+          local ok, Battle = pcall(require, "src.core.game3.battle")
+          local st = ok and Battle and Battle.getState and Battle.getState()
+          local id = ev and tonumber(ev.battlerId)
+          local b = st and id and ((id == 0 and st.player) or (id == 1 and st.enemy)
+            or (st.battlers and st.battlers[id]))
+          if b and b.mon then game.fainted(b.mon) end
         end)
       end
       if mod.log then mod.log:info("Mega Venusaur battle integration installed (START in FIGHT menu)") end
