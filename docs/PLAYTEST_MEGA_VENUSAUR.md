@@ -1,16 +1,15 @@
 # Mega Venusaur playtest (experimental PR #8)
 
 This is the **first single-form gameplay proof**, not a 98-form release.
-It requires the companion Gen1Recomp engine branch/PR that adds the five
-scoped Gen 3 battle seams. On stock Gen1Recomp the mod fails closed:
-items and art still load, but `isActive()` stays false and no Mega button
-is installed. Do **not** describe it as playable on stock builds.
+It is intended for **unmodified, stock Gen1Recomp**: the mod itself wraps
+existing Gen 3 Lua battle functions. No custom battle hooks, patches or
+upstream PRs are needed. This is still **experimental** and must pass an actual
+Emerald session before being promoted from Draft.
 
 ## Required setup
 
-1. Use a disposable **Pokémon Emerald** save and matching Gen1Recomp
-   engine with battle hooks: `battle.move_menu_input`, `battle.move_command`,
-   `battle.before_move`, `battle.stat_value`, `battle.battler_picture`.
+1. Use an unmodified current **Gen1Recomp** build with a disposable
+   **Pokémon Emerald** save. No engine fork or extra API hooks.
 2. Install this Mega mod and, ideally, National Dex + G9 Battle Sprites
    + Gen 3 HD Sprites + Untamed Advanced + Nuzlocke as a compatibility stack.
 3. Give the player the Key Stone (registered item ID **1599**) and a Venusaur
@@ -25,8 +24,9 @@ is installed. Do **not** describe it as playable on stock builds.
 - Press **START** to arm the Mega; the prompt reads **MEGA READY**.
   START again disarms. Backing out with B cancels. No extra action/turn.
 - Select a valid move (and target in doubles). Turn order stays as planned
-  with pre-Mega Speed. Immediately before the move resolves, Venusaur
-  becomes Mega Venusaur for battle calculations, ability and drawing.
+  with pre-Mega Speed. A scoped wrapper of the stock move executor activates
+  Mega Venusaur immediately before the move resolves. Ability and artwork
+  follow the live battler; damage reads a temporary Pokémon stat copy.
 - Base stats are **80/100/123/122/120/80** (HP/Atk/Def/SpA/SpD/Spe);
   level, IVs, EVs and nature are preserved. Thick Fat applies.
 - Only that Pokémon shows its animated Mega sprite (front/back and shiny).
@@ -56,6 +56,12 @@ is installed. Do **not** describe it as playable on stock builds.
   indicator, **not yet the full ORAS cinematic, cry or bespoke UI art**.
 - Held-item acquisition, NPC trainer Mega stones, Rayquaza's special rule
   and Z-form policies remain separate milestones.
-- No actual in-game test has been performed by this PR authoring session;
-  the Lua headless unit tests and GitHub Actions are the preliminary gate.
-  Do not merge until tests pass and an Emerald gameplay capture is reviewed.
+- No actual in-game test has been performed by this PR authoring session.
+  Lua tests validate the wrapper chain and save isolation but do not substitute
+  for integration tests. Do not merge until CI passes and Emerald gameplay
+  has been reviewed.
+- The implementation wraps internal public Lua functions
+  (`Ui.handleInput`, `Ui.takeCommand`, `Engine.resolveMove`,
+  `Damage.base`, `Ui.sidePic`, `Battle.start/reset`). A future engine
+  update may change these signatures. Keep fallback behaviour intact when
+  the stock API is unavailable.
