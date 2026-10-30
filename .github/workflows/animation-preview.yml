@@ -9,13 +9,17 @@ permissions:
 jobs:
   atlas-preview:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.15']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: ${{ matrix.python-version }}
       - name: Install Pillow
-        run: python -m pip install Pillow==11.3.0
+        run: python -m pip install --only-binary=:all: Pillow==13.0.0
       - name: Run lossless packing tests
         run: python -m unittest discover -s tests -p 'test_mega_atlas.py'
       - name: Audit EBDX Mega source geometry
@@ -26,7 +30,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: mega-venusaur-animation-proof
+          name: mega-venusaur-animation-proof-py${{ matrix.python-version }}
           path: |
             assets/runtime/
             reports/mega_sheet_geometry.csv
