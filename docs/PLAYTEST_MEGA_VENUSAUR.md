@@ -73,6 +73,42 @@ Mega Venusaur and verify both sprites. Repeat in Emerald and FireRed with
 G9 and HD enabled; test at least one enemy with a different sprite size.
 These screenshots are a reported regression, not a validated fix yet.
 
+## G9 / HD sprite presentation calibration
+
+Source inspection and a real screenshot comparison found the initial Mega back
+presentation `scale = 0.80`, `feet = 111`, `baseline = 57` was not aligned to
+the actual 74-frame sprite animation. Both shiny and normal Mega Venusaur back
+atlas entries in `assets/runtime/mega_atlas_index.lua` have a common alpha
+envelope at source rows 21..99, with **bottom at y=100**. The legacy anchor
+put its visible feet **8.8 game pixels above** baseline 57 (11 * 0.80).
+
+The new tested default is **back scale 0.85**, source feet **100**, baseline
+**57**. G9 normal Venusaur uses a typical 63px-tall back-sprite body
+(`cy0=13`, `cy1=76`), multiplied by its default approximate 1.069
+HD scale (`bn=1.063` plus default realism for a 2m Pokémon), resulting
+in ~67.3 game pixels. Mega Venusaur's alpha envelope is 79px tall,
+and **79 × 0.85 = 67.15px**. The change matches *visible height*, not
+the misleading full transparent source-square size.
+
+For the enemy view, Mega front `feet` changes from 108 to the atlas alpha
+bottom **98** (common crop y=19, height=79); the existing front scale 0.74
+is retained pending visual checks.
+
+With **G9 Battle Sprites**, sprite sizes come from
+`src/atlas.lua:backLayout` and `frontLayout` plus species metadata
+(`bfr/bfl`, bounding boxes, per-game `coordShift`). When **Gen 3 HD
+Sprites** is active, G9 additionally passes source quads, per-side scale,
+pivot, lowPivot, frame top, and optional body bounds through `hd.tag()`.
+Mega Evolution uses the same HD tag interface but currently has separate
+presentation metadata; the goal is to match the normal Venusaur reference
+without applying a global camera or pixel scaling hack.
+
+**Test from a full app restart:** screenshot normal Venusaur before Mega,
+then transformed Venusaur on the same pad. Confirm feet align with the
+platform and visible height is similar. Repeat with HD Battle on/off.
+Ruby/Sapphire require separate verification of G9's 4px game-specific back
+shift; this fix targets the tested FireRed/Emerald coordinate system.
+
 ## Negative tests
 
 - No Key Stone, no Venusaurite, wrong stone, fainted or transformed Pokémon,
