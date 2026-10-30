@@ -40,6 +40,11 @@ function Standalone.install(mod, game, modules, battleVisual)
   local Engine = modules and modules.Engine or required("src.core.game3.battle.engine")
   local Damage = modules and modules.Damage or required("src.core.game3.battle.damage")
   local Battle = modules and modules.Battle or required("src.core.game3.battle")
+  local Champions=modules and modules.MegaChampions
+  if not Champions then
+    local ok,module=pcall(req,"src.mega_champions_abilities")
+    if ok and type(module)=="table" then Champions=module end
+  end
   local Precision=modules and modules.MegaPrecision
   if not Precision then
     local ok,module=pcall(req,"src.mega_precision_abilities")
@@ -99,6 +104,7 @@ function Standalone.install(mod, game, modules, battleVisual)
   -- Only populated while executing a Parental Bond user's native Hit.run.
   -- Damage.calc is invoked once for each natural hit in that native loop.
   local parentalCtx=nil
+  local protectedCtx=nil
   local function enabled()
     if active and mod.enabled == false then
       game.finish()
@@ -194,10 +200,26 @@ function Standalone.install(mod, game, modules, battleVisual)
           end
           return infiltrate(c)
         end
-        if Precision and Precision.withUnseenFist then
-          return Precision.withUnseenFist(game,ctx,mold)
+        local function nativeGuard(c)
+          if Precision and Precision.withUnseenFist then
+            return Precision.withUnseenFist(game,c,mold)
+          end
+          return mold(c)
         end
-        return mold(ctx)
+        if not (Champions and Champions.withPiercingProtect) then
+          return nativeGuard(ctx)
+        end
+        -- Only this target-action may qualify for 25% damage through
+        -- Protect. No protection state is changed for any other target.
+        local prev=protectedCtx
+        protectedCtx=ctx
+        local packed=table.pack and
+          table.pack(pcall(Champions.withPiercingProtect,
+            game,ctx,nativeGuard))
+          or {pcall(Champions.withPiercingProtect,game,ctx,nativeGuard)}
+        protectedCtx=prev
+        if not packed[1] then error(packed[2],0) end
+        return (table.unpack or unpack)(packed,2,packed.n or #packed)
       end)
     end)
   end
@@ -354,10 +376,14 @@ function Standalone.install(mod, game, modules, battleVisual)
       local target=M and M.target
       local adapter=M and M.adapter
       local before=target and adapter and adapter.hp and adapter:hp(target)
+      local hadSub=target and (tonumber(target.substituteHP) or 0)>0
       local dealt=next(M,...)
       local after=target and adapter and adapter.hp and adapter:hp(target)
       if before and after then
         Reactive.onDamaged(game,M,before,after,Secondary)
+      end
+      if Champions and Champions.afterDamage then
+        Champions.afterDamage(game,M,dealt,hadSub)
       end
       if Weather and Weather.cleanStrongWinds and adapter then
         Weather.cleanStrongWinds(game,adapter._st,adapter)
@@ -406,6 +432,9 @@ function Standalone.install(mod, game, modules, battleVisual)
     if Specialized and Specialized.baseOptions then
       effectiveOpts=Specialized.baseOptions(game,attacker,move,effectiveOpts,EffectIds)
     end
+    if Champions and Champions.powerOptions then
+      effectiveOpts=Champions.powerOptions(game,attacker,move,effectiveOpts,Types)
+    end
     local attackView=cloneBattler(attacker, game)
     if Weather and Weather.attackView then
       local st=Battle._st or Ui._st or (opts and opts.st)
@@ -430,6 +459,9 @@ function Standalone.install(mod, game, modules, battleVisual)
       if Tactical and Tactical.damageOptions then
         effective=Tactical.damageOptions(game,attacker,effective)
       end
+      if Champions and Champions.weatherOptions then
+        effective=Champions.weatherOptions(game,attacker,effective)
+      end
       local amount,info=next(attacker,defender,move,effective)
       amount,info=MegaAbilities.finalDamage(game,attacker,defender,amount,info)
       if Weather and Weather.finalDamage then
@@ -438,12 +470,34 @@ function Standalone.install(mod, game, modules, battleVisual)
         amount,info=Weather.finalDamage(game,st,ad,
           attacker,defender,amount,info,Types)
       end
+      if Champions and Champions.defensiveDamage then
+        amount,info=Champions.defensiveDamage(game,attacker,defender,
+          move,amount,info)
+      end
       if Precision and Precision.parentalDamage and parentalCtx then
         amount,info=Precision.parentalDamage(game,parentalCtx,
           attacker,defender,amount,info)
       end
+      if Champions and Champions.piercingDamage and protectedCtx then
+        amount,info=Champions.piercingDamage(game,protectedCtx,
+          attacker,defender,amount,info)
+      end
       return amount,info
     end)
+  end
+
+  -- Solar Beam/Blade may charge instantly for Mega Sol even when the
+  -- global weather is not sunny. Other Pokémon still use stock rules.
+  local solarUnhook
+  if mod.hooks and type(mod.hooks.wrap)=="function"
+      and Champions and Champions.noSolarCharge then
+    solarUnhook=mod.hooks:wrap("battle.charge_required",
+      function(next,ctx)
+        if enabled() and Champions.noSolarCharge(game,ctx) then
+          return false
+        end
+        return next(ctx)
+      end)
   end
 
   -- Apply Prankster at the official singles/doubles turn ordering hook.
@@ -547,6 +601,7 @@ function Standalone.install(mod, game, modules, battleVisual)
     game.finish()
     if battleVisual and battleVisual.resetTransform then battleVisual:resetTransform() end
     if type(accuracyUnhook)=="function" then accuracyUnhook() end
+    if type(solarUnhook)=="function" then solarUnhook() end
     if type(turnOrderUnhook)=="function" then turnOrderUnhook() end
     -- Undo only if our wrapper is still on top; later mods must keep the
     -- chain they installed. Otherwise our closure remains a pass-through.
