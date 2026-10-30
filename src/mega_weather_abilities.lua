@@ -27,17 +27,18 @@ local function grounded(b,adapter)
 end
 Weather.grounded=grounded
 
-local function strongWindsPresent(game,ad)
+local function strongWindsPresent(game,ad,excluding)
   if not ad or type(ad.activeBattlers)~="function" then return false end
   for _,b in ipairs(ad:activeBattlers()) do
-    if alive(b) and ability(game,b)=="DELTA_STREAM" then return true end
+    if b~=excluding and alive(b)
+        and ability(game,b)=="DELTA_STREAM" then return true end
   end
   return false
 end
 
-function Weather.cleanStrongWinds(game,st,adapter)
+function Weather.cleanStrongWinds(game,st,adapter,excluding)
   if not (st and st.weather=="STRONG_WINDS") then return false end
-  if strongWindsPresent(game,adapter) then return false end
+  if strongWindsPresent(game,adapter,excluding) then return false end
   st.weather,st.weatherTurns=nil,0
   return true
 end
@@ -66,6 +67,11 @@ end
 -- Weather continues through existing Gen3 rules. Electric Terrain has its
 -- own turn counter instead of rewriting st.terrain (that is the overworld
 -- terrain index used by Nature Power).
+function Weather.onSwitchOut(game,st,b,adapter)
+  if ability(game,b)~="DELTA_STREAM" then return false end
+  return Weather.cleanStrongWinds(game,st,adapter,b)
+end
+
 function Weather.tick(game,st,adapter)
   if not st then return false end
   local turns=tonumber(st.megaElectricTerrainTurns) or 0
@@ -93,19 +99,20 @@ end
 
 -- Solar Power boosts Special Attack rather than just move power. Supply a
 -- temporary battler+mon view to Damage.base after the Mega stat calculation.
-function Weather.attackView(game,st,adapter,b,move,opts,isPhysical)
+function Weather.attackView(game,st,adapter,b,statView,move,opts,isPhysical)
+  statView=statView or b
   if ability(game,b)~="SOLAR_POWER" or not weatherIsSun(st,adapter,opts)
-      or not (b and b.mon) then return b end
+      or not (statView and statView.mon) then return statView end
   local typ=tonumber(opts and opts.moveType)
     or tonumber(type(move)=="table" and move.type)
   if not typ or (type(isPhysical)=="function" and isPhysical(typ)) then
-    return b
+    return statView
   end
-  local oldSpA=tonumber(b.mon.spAtk)
-  if not oldSpA then return b end
+  local oldSpA=tonumber(statView.mon.spAtk)
+  if not oldSpA then return statView end
   local newB,newMon={},{}
-  for k,v in pairs(b) do newB[k]=v end
-  for k,v in pairs(b.mon) do newMon[k]=v end
+  for k,v in pairs(statView) do newB[k]=v end
+  for k,v in pairs(statView.mon) do newMon[k]=v end
   newMon.spAtk=math.max(1,math.floor(oldSpA*3/2))
   newB.mon=newMon
   return newB
