@@ -209,11 +209,14 @@ function Standalone.install(mod, game, modules, battleVisual)
       if type(Engine[name])=="function" then
         wrap(Engine,name,function(next,st,adapter,attacker,moveId,...)
           if not enabled() then return next(st,adapter,attacker,moveId,...) end
-          local extra={...}
+          -- Preserve nil positional arguments, e.g. chosenId=nil but
+          -- info.recompute supplied to Engine.resolveTarget.
+          local extra=table.pack and table.pack(...)
+            or {n=select("#",...),...}
           return Precision.withStalwart(game,st,adapter,attacker,moveId,
             function()
               return next(st,adapter,attacker,moveId,
-                (table.unpack or unpack)(extra))
+                (table.unpack or unpack)(extra,1,extra.n))
             end)
         end)
       end
