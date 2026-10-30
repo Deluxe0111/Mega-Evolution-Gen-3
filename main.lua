@@ -206,6 +206,7 @@ return function(mod)
   local MegaTactical = loadSibling(mod, "src/mega_tactical_abilities.lua")
   local MegaWeather = loadSibling(mod, "src/mega_weather_abilities.lua")
   local MegaSpecialized = loadSibling(mod, "src/mega_specialized_abilities.lua")
+  local MegaPrecision = loadSibling(mod, "src/mega_precision_abilities.lua")
   local ItemIcons = loadSibling(mod, "src/mega_item_icons.lua")
   local MegaUI = loadSibling(mod, "src/mega_ui.lua")
   local uiBridge, uiError
@@ -221,7 +222,7 @@ return function(mod)
     local ok, installed, err = pcall(Standalone.install, mod, game,
       { MegaAbilities=MegaAbilities, MegaReactive=MegaReactive,
         MegaTactical=MegaTactical, MegaWeather=MegaWeather,
-        MegaSpecialized=MegaSpecialized }, battleVisual)
+        MegaSpecialized=MegaSpecialized, MegaPrecision=MegaPrecision }, battleVisual)
     if not ok then bridgeError = tostring(installed)
     elseif installed then bridge, bridgeError = installed, nil
     else bridgeError = err end
