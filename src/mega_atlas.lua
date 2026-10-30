@@ -326,28 +326,88 @@ function Atlas.new(mod, index, graphics, timer, presentation)
     return entry
   end
 
-  -- A Mega icon is a distinct 32x32 party/summary asset. NEVER expose a
-  -- battle-sized canvas in a menu: menu draws do not use battle pivots.
-  local iconCache = {}
-  function self.icon(slug)
-    if iconCache[slug] then return iconCache[slug] end
-    local pic = self.picture(slug, "icon", false, 0, false)
-    if not pic or not pic.image or not G then return nil end
-    local ok,canvas = pcall(G.newCanvas, 32, 32)
+  -- Native FRLG/RSE PartyMenu, PC and summary menus require 32x32
+  -- TWO-FRAME vertical sheets with zero-indexed [0]/[1] quads.
+  -- EBDX provides 64x64 source frames in a 128x64 horizontal strip.
+  -- Do not feed a battle picture or a single-frame canvas to monIcon().
+  local iconCache, alternateIcons = {}, {}
+  local missingAlternate = {}
+  local function alternateFrame(slug, shiny, female, frame)
+    if not female or not (G and G.newImage and G.newQuad) then return nil end
+    -- An optional gender-specific EBDX icon can be supplied without rebuilding
+    -- the six-variant atlas. Prefer shiny female and fall back to female/regular.
+    local candidate = shiny and { "icon_female_shiny.png", "icon_shiny_female.png" }
+      or { "icon_female.png" }
+    for _, filename in ipairs(candidate) do
+      local path = mod.path .. "/assets/source/ebdx/megas/" .. slug .. "/" .. filename
+      if not missingAlternate[path] then
+        local img = alternateIcons[path]
+        if not img then
+          local ok, value = pcall(G.newImage, path)
+          if ok and value then
+            if value.setFilter then value:setFilter("nearest", "nearest") end
+            img, alternateIcons[path] = value, value
+          else
+            missingAlternate[path] = true
+          end
+        end
+        if img then
+          local iw, ih = img:getDimensions()
+          -- Optional source format is two 64x64 horizontal source icons.
+          if iw == 2 * ih and ih >= 32 then
+            return { image=img,
+              quad=G.newQuad((frame % 2)*ih,0,ih,ih,iw,ih),
+              w=ih,h=ih,cropX=0,cropY=0 }
+          end
+        end
+      end
+    end
+    return nil
+  end
+
+  function self.icon(slug, shiny, female)
+    if type(slug) ~= "string" then return nil end
+    shiny, female = shiny == true, female == true
+    local key = slug .. ":" .. (shiny and "s" or "n") .. (female and "f" or "m")
+    if iconCache[key] then return iconCache[key] end
+    if not (G and G.newCanvas and G.newQuad and G.push and G.pop and G.draw)
+      then return nil end
+    local frames={}
+    for i=0,1 do
+      local art = alternateFrame(slug,shiny,female,i)
+        or self.frame(slug,shiny and "icon_shiny" or "icon",i)
+      if not art and shiny then art=self.frame(slug,"icon",i) end
+      if not art or not art.image or not art.quad then return nil end
+      frames[#frames+1]=art
+    end
+    local ok,canvas=pcall(G.newCanvas,32,64)
     if not ok or not canvas then return nil end
-    if canvas.setFilter then canvas:setFilter("nearest", "nearest") end
+    if canvas.setFilter then canvas:setFilter("nearest","nearest") end
     G.push("all")
-    local drawn = pcall(function()
+    local drawn=pcall(function()
       if G.origin then G.origin() end
+      if G.setScissor then G.setScissor() end
+      if G.setShader then G.setShader() end
+      if G.setColor then G.setColor(1,1,1,1) end
       G.setCanvas(canvas)
       if G.clear then G.clear(0,0,0,0) end
-      if G.setColor then G.setColor(1,1,1,1) end
-      G.draw(pic.image, 0, 0, 0, 0.5, 0.5)
+      for i=0,1 do
+        local art=frames[i+1]
+        -- Two high-resolution 64px EBDX frames become the game's native
+        -- 32px icons. Restore the ORIGINAL source-frame crop position.
+        local s=32/(art.w or 64)
+        G.draw(art.image,art.quad,(art.cropX or 0)*s,
+          i*32+(art.cropY or 0)*s,0,s,s)
+      end
     end)
     G.pop()
     if not drawn then return nil end
-    local result = {image=canvas,w=32,h=32,frames=1}
-    iconCache[slug]=result
+    local quads = {
+      [0] = G.newQuad(0,0,32,32,32,64),
+      [1] = G.newQuad(0,32,32,32,32,64),
+    }
+    local result={image=canvas,quads=quads,w=32,h=32,frames=2}
+    iconCache[key]=result
     return result
   end
 
