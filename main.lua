@@ -37,6 +37,7 @@ return function(mod)
       mod.log:warn("Mega item registration issue: %s", itemErrors[i])
     end
   end
+  local presentation = loadSibling(mod, "data/mega_presentation.lua")
   local registeredById = {}
   for _, row in ipairs(registered) do registeredById[row.id] = row.index end
 
@@ -91,7 +92,7 @@ return function(mod)
     local timer = function()
       return love and love.timer and love.timer.getTime and love.timer.getTime() or 0
     end
-    local value, err = engine.new(mod, index, graphics, timer)
+    local value, err = engine.new(mod, index, graphics, timer, presentation)
     if not value then
       if not failed and mod.log then mod.log:warn("Mega atlas is invalid: %s", tostring(err)) end
       failed = true
@@ -121,9 +122,9 @@ return function(mod)
     local p = getProvider()
     return p and p.frame(slug, variant, frame) or nil
   end
-  exports.picture = function(slug, side, shiny, frame)
+  exports.picture = function(slug, side, shiny, frame, battle)
     local p = getProvider()
-    return p and p.picture(slug, side, shiny, frame) or nil
+    return p and p.picture(slug, side, shiny, frame, battle) or nil
   end
   exports.cacheStats = function()
     local p = getProvider()
