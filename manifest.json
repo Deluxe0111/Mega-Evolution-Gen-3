@@ -20,6 +20,6 @@
     "nuzlocke"
   ],
   "conflicts": [],
-  "description": "Foundation for a standalone Gen 3 Mega Evolution mod; asset pipeline in progress, battle mechanics not yet implemented.",
+  "description": "Full 98-form Mega animated atlas and opt-in picture provider; battle transformations are not yet implemented.",
   "github": "Deluxe0111/Mega-Evolution-Gen-3"
 }

@@ -16,7 +16,8 @@
 - [x] Emit stable form-keyed Lua/JSON animation index without touching species/save data
 - [x] Export Mega Venusaur GIF previews and test frame-order/alpha preservation
 - [ ] Visually review EBDX timing and normal/shiny alignment; use static fallback when required
-- [ ] Integrate an in-game animation viewer/renderer without interfering with G9 Battle Sprites
+- [x] Build a lazy-loaded form-keyed Lua picture provider with bounded GPU memory and no conflicting engine hooks
+- [ ] Integrate the provider into an actual Gen1Recomp battle through an explicitly selected battler state, without interfering with G9 Battle Sprites
 
 ## Milestone 2 — Mega Venusaur proof of concept
 

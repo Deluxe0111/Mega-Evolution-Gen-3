@@ -2,8 +2,8 @@
 
 **Standalone Mega Evolution project for Gen1Recomp's Generation 3 games:** FireRed, LeafGreen, Ruby, Sapphire and Emerald.
 
-> **Status: source assets imported / gameplay not implemented (v0.1.0).**
-> The mod's `main.lua` is an intentionally non-invasive scaffold. Mega Evolution, battle transformation, Mega Stones, battle sprites and items are **not currently playable**.
+> **Status: all Mega atlases imported, artwork provider implemented / gameplay not implemented (v0.1.0).**
+> The mod now offers a non-invasive Mega-art API; it does not hook Pokémon rendering. Mega Evolution, battle transformation, Mega Stones, battle sprites and items are **not currently playable**.
 
 ## Project goal
 
@@ -19,15 +19,17 @@ Build an optional Mega Evolution mod that works with the original Gen 3 games an
 - **98 EBDX Mega-form variants** (including alternate gender/form representations) with all six source-artwork variants per form: front, back, shiny front, shiny back, icon and shiny icon.
 - **92 Mega Stone icons**, 97 source Mega cries and selected UI reference graphics. Mega Slowbro has no separate cry at the pinned source revision.
 - Pinned EBDX source definitions and metrics, a generated Mega roster and the original upstream credits.
-- An asset import/checker tool and a safe Gen1Recomp Mod API 2 scaffold.
+- An asset import/checker tool, the **156-page converted atlas and its Lua/JSON indexes**, and a safe Gen1Recomp Mod API 2 art provider.
+- Explicit APIs for checking Mega forms, locating animation frames and rendering an isolated 64×64 picture entry, without changing G9 Battle Sprites' hooks.
 
-**These are original EBDX PNG source sheets, not yet an animated Gen1Recomp sprite atlas.** Having art in Git does not mean the corresponding battle mechanic is implemented or that a shiny variant is visually distinct.
+**The original EBDX strips and converted PNG atlas pages are both committed.** The atlas has 24,018 frames across 156 pages; the provider loads only the requested pages. Having renderable art does **not** mean an in-game Mega transformation is implemented.
 
 ## Repository layout
 
 ```text
 manifest.json                 Gen1Recomp mod metadata
-main.lua                      No-op API scaffold (no battle hooks yet)
+main.lua                      Opt-in artwork API exports (no battle hooks yet)
+src/mega_atlas.lua            Lazy PNG atlas frame locator and picture renderer
 assets/
   source/ebdx/
     megas/                    Original EBDX form art + cries (committed)
@@ -36,7 +38,7 @@ assets/
     source_metadata/          Original PBS definitions and upstream credits
     mega_forms.json           Parsed source form definitions
     mega_roster.csv           Stable form/filename mapping
-  runtime/                    Future Gen1Recomp-ready animation atlases
+  runtime/                    Committed PNG atlases and frame index
 tools/
   extract_ebdx_megas.py       Re-import/refresh source files from pinned revision
   validate_assets.py         Verify artwork, icons and available cries
@@ -59,12 +61,12 @@ The source artwork has **already been imported**. `1_IMPORT_EBDX_ASSETS.bat` is 
 
 ## Next milestones
 
-1. Inspect EBDX PNG-sheet geometry, frames and animation timing; build a test renderer for Mega Venusaur.
-2. Package artwork into efficient Gen1Recomp-ready atlases without compromising the existing battle sprite provider.
-3. Implement the battle transformation for Mega Venusaur, including accurate stat/ability changes and safe reversion.
-4. Expand to other Mega forms and test across the five Gen 3 games and optional mods.
+1. Verify the opt-in Mega atlas provider in an actual Gen1Recomp session, checking art playback and visual positioning.
+2. Add a per-battler temporary Mega state and a cooperative integration with G9 Battle Sprites/HD Sprites.
+3. Implement the battle transformation for Mega Venusaur, with accurate stats, ability and safe reversion.
+4. Expand to all Mega forms and test all Gen 3 games and optional mods.
 
-See [Roadmap](docs/ROADMAP.md), [Asset import](docs/ASSET_IMPORT.md), [Implementation notes](docs/IMPLEMENTATION_NOTES.md) and [Development guide](docs/DEVELOPMENT.md).
+See [Roadmap](docs/ROADMAP.md), [Four-mod rendering integration research](docs/RENDERING_INTEGRATION.md), [Animation pipeline](docs/ANIMATION_PIPELINE.md), [Asset import](docs/ASSET_IMPORT.md), [Implementation notes](docs/IMPLEMENTATION_NOTES.md) and [Development guide](docs/DEVELOPMENT.md).
 
 ## Credits and rights
 
