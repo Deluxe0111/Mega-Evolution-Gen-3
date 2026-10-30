@@ -23,7 +23,7 @@ From the repository root:
     py -3 tools/build_mega_atlas.py
     py -3 -m unittest discover -s tests -p "test_mega_atlas.py"
 
-The first command checks all 588 source PNGs. The second builds six Mega Venusaur atlases and GIF previews to inspect. The third builds the entire 98-variant Mega roster.
+The first command checks all 588 source PNGs. The second builds six Mega Venusaur atlases and GIF previews to inspect. The third builds the entire 98-variant Mega roster. Alternatively, on Windows run `5_BUILD_ALL_MEGA_ATLASES.bat` for the complete collection. The repository also includes a separately triggered **Full Mega atlas build** workflow, which checks that every frame range and generated PNG page resolves correctly. For locally generated output, run `py -3 tests/check_full_mega_atlas.py` after the full build.
 
 The packer uses 2048px atlas pages by default, with configurable 256–4096px page size. Large strips can be split across segments without losing a frame. Generated pages are not yet committed or packaged as a player release.
 
