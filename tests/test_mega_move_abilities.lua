@@ -37,15 +37,19 @@ expect("PIXILATE",normal,24,108)
 expect("AERILATE",normal,2,108)
 expect("REFRIGERATE",normal,15,108)
 use("PIXILATE")
-assert(Ability.moveOptions(game,hero,status,{})==nil,"status moves cannot convert")
-assert(Ability.moveOptions(game,hero,water,{})==nil,"only normal types convert")
+local untouched={}
+assert(Ability.moveOptions(game,hero,status,untouched)==untouched,
+  "status moves cannot convert")
+assert(Ability.moveOptions(game,hero,water,untouched)==untouched,
+  "only normal types convert")
 assert(Ability.baseOptions(game,hero,water,{power=90,moveType=11}).power==90)
 -- Missing Fairy provider must leave the original move unmodified.
 package.loaded["src.core.game3.progression"]={
   typeIndexFor=function()return nil end,
 }
 package.loaded["src.core.game3.battle.types"]={ID={NORMAL=0,ICE=15,FLYING=2}}
-assert(Ability.moveOptions(game,hero,normal,{})==nil)
+local withoutProvider={}
+assert(Ability.moveOptions(game,hero,normal,withoutProvider)==withoutProvider)
 assert(Ability.baseOptions(game,hero,normal,{power=90,moveType=0}).power==90)
 package.loaded["src.core.game3.progression"]={
   typeIndexFor=function(key)if key=="FAIRY" then return 24 end end,
@@ -57,8 +61,9 @@ local scrappy=Ability.moveOptions(game,hero,normal,original)
 assert(scrappy.foresight==true and scrappy.power==90 and original.foresight==nil)
 local scrappyFight=Ability.moveOptions(game,hero,fighting,{})
 assert(scrappyFight.foresight==true)
-assert(Ability.moveOptions(game,hero,water,{})==nil)
-assert(Ability.moveOptions(game,hero,status,{})==nil)
+local scrappyUnchanged={}
+assert(Ability.moveOptions(game,hero,water,scrappyUnchanged)==scrappyUnchanged)
+assert(Ability.moveOptions(game,hero,status,scrappyUnchanged)==scrappyUnchanged)
 use("NO_GUARD")
 assert(Ability.accuracy(game,{user={id=0},target={id=1}},function(pub)
   return pub.id==0 and hero or enemy end))
