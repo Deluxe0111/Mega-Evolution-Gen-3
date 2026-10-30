@@ -36,6 +36,14 @@ local function strongWindsPresent(game,ad,excluding)
   return false
 end
 
+function Weather.blockNativeWeather(game,adapter,b)
+  local st=adapter and adapter._st
+  if not (st and st.weather=="STRONG_WINDS"
+      and strongWindsPresent(game,adapter)) then return false end
+  local ab=adapter and adapter.abilityOf and adapter:abilityOf(b)
+  return ab=="DRIZZLE" or ab=="DROUGHT" or ab=="SAND_STREAM"
+end
+
 function Weather.cleanStrongWinds(game,st,adapter,excluding)
   if not (st and st.weather=="STRONG_WINDS") then return false end
   if strongWindsPresent(game,adapter,excluding) then return false end
@@ -49,6 +57,8 @@ function Weather.activate(game,st,b,adapter)
   if not (st and alive(b)) then return false end
   local ab=ability(game,b)
   if ab=="SNOW_WARNING" then
+    if st.weather=="STRONG_WINDS"
+        and strongWindsPresent(game,adapter) then return false end
     st.weather,st.weatherTurns="HAIL",5
     if adapter and adapter.playAnim then
       adapter:playAnim("general","HAIL_CONTINUES",nil,nil)
