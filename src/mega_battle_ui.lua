@@ -8,6 +8,18 @@ local ASSETS = {
   flash = ROOT .. "mega_sym.png",        -- 30x30 transformation emblem
 }
 local BX, BY, BW, BH = 0, 89, 22, 22  -- flush left, above moves at y=111
+-- Display-only timeline: battle calculation still transforms immediately.
+-- Keep the original Pokémon visible while its silhouette whitens; swap to
+-- an entirely white Mega silhouette, then restore the Mega's colours.
+local TRANSFORM = { white = 0.48, swap = 0.72, finish = 1.36 }
+local WHITE_SHADER = [[
+extern float whiten;
+vec4 effect(vec4 color, Image texture, vec2 uv, vec2 screenCoords) {
+  vec4 pixel = Texel(texture, uv);
+  vec3 original = pixel.rgb * color.rgb;
+  return vec4(mix(original, vec3(1.0), whiten), pixel.a * color.a);
+}
+]]
 
 local function resolve(st, id)
   if not st then return nil end
@@ -27,6 +39,8 @@ function MegaUI.new(mod, game, opts)
   local images, tried = {}, {}
   local warn = {}
   local self = {focused = false, lastFlash = nil}
+  local whiteShader, whiteShaderFailed
+  local pendingImage, pendingWhite
   local function loadAsset(key)
     if images[key] then return images[key] end
     if tried[key] then return nil end
@@ -127,21 +141,115 @@ function MegaUI.new(mod, game, opts)
     return true
   end
 
+  local function transformAge(mon)
+    local fx = self.lastFlash
+    if not fx or fx.mon ~= mon then return nil end
+    local age = clock() - fx.started
+    if age < 0 or age >= TRANSFORM.finish then return nil end
+    return age
+  end
+
   function self:onMegaEvolved(battler)
     if not battler or not battler.mon then return end
     self.lastFlash = {started=clock(),mon=battler.mon}
     self.focused = false
   end
 
+  -- Only presentation is delayed. Engine.resolveMove already installed the
+  -- temporary Mega form and continues its damage/ability/turn logic normally.
+  -- Because Ui.sidePic supplies both old and Mega pictures, keep the real
+  -- original image while it whitens and reveal the Mega entirely white.
+  function self:choosePicture(mon,back,ordinary,mega)
+    if not back or not mon or not mega then return mega or ordinary end
+    local age = transformAge(mon)
+    if age == nil then return mega end
+    local picture,white
+    if age < TRANSFORM.swap then
+      picture = ordinary or mega
+      white = math.min(1, age / TRANSFORM.white)
+    else
+      picture = mega
+      white = math.max(0, (TRANSFORM.finish-age) /
+        (TRANSFORM.finish-TRANSFORM.swap))
+    end
+    -- Ui.sidePic is called inside the battle draw. The temporary render hook
+    -- recognises only this exact image; it never whitens the battle backdrop,
+    -- HP bar, other battlers, or the expanding Mega emblem.
+    pendingImage = picture and picture.image
+    pendingWhite = white
+    return picture
+  end
+
+  local function getWhiteShader()
+    if whiteShader then return whiteShader end
+    if whiteShaderFailed or not G or not G.newShader then return nil end
+    local ok,result = pcall(G.newShader,WHITE_SHADER)
+    if not ok or not result then
+      whiteShaderFailed = true
+      if mod.log and mod.log.warn then
+        mod.log:warn("Mega silhouette shader unavailable: %s", tostring(result))
+      end
+      return nil
+    end
+    whiteShader = result
+    return result
+  end
+
+  -- Scope the whitening to a single Ui.draw call, only while transforming.
+  -- This composes with Mega atlas' already-scoped pivot correction, and puts
+  -- the exact previous graphics.draw and shader back even on an error.
+  function self:withTransitionDraw(drawFn,...)
+    pendingImage,pendingWhite = nil,nil
+    local flash = self.lastFlash
+    if not flash or transformAge(flash.mon) == nil or not G
+       or type(G.draw) ~= "function"
+       or type(G.setShader) ~= "function" or type(G.getShader) ~= "function"
+       or not getWhiteShader() then
+      return drawFn(...)
+    end
+    local previous = G.draw
+    local busy = false
+    local function scoped(image,...)
+      if busy or image ~= pendingImage or not pendingWhite or pendingWhite <= 0 then
+        return previous(image,...)
+      end
+      busy = true
+      local before = G.getShader()
+      local strength = math.max(0,math.min(1,pendingWhite))
+      local function packed(...) return {n=select("#",...),...} end
+      local result = packed(pcall(function(...)
+        whiteShader:send("whiten",strength)
+        G.setShader(whiteShader)
+        return previous(image,...)
+      end,...))
+      G.setShader(before)
+      busy = false
+      if not result[1] then error(result[2],0) end
+      return (table.unpack or unpack)(result,2,result.n)
+    end
+    local replaced = pcall(function() G.draw=scoped end)
+    if not replaced then return drawFn(...) end
+    local function packed(...) return {n=select("#",...),...} end
+    local result = packed(pcall(drawFn,...))
+    if G.draw==scoped then G.draw=previous end
+    pendingImage,pendingWhite=nil,nil
+    if not result[1] then error(result[2],0) end
+    return (table.unpack or unpack)(result,2,result.n)
+  end
+
   function self:drawFlash(st)
     local flash = self.lastFlash
     if not flash or not G then return end
     local age = clock() - flash.started
-    if age < 0 or age > 0.7 then self.lastFlash = nil; return end
-    -- The 30x30 EBDX Mega emblem briefly blooms over the player battler.
+    if age < 0 or age >= TRANSFORM.finish then
+      self.lastFlash = nil
+      return
+    end
+    -- Retain the user's favourite expanding Mega symbol, with a longer
+    -- easing curve and a more gradual fade while the silhouette changes.
     local img = loadAsset("flash")
     if not img then return end
-    local k = math.max(0, math.min(1,age/0.7))
+    local k = math.max(0,math.min(1,age/TRANSFORM.finish))
     local scale = 0.6 + 0.9*k
     local alpha = 1-k
     local side = resolve(st,0)
@@ -165,6 +273,8 @@ function MegaUI.new(mod, game, opts)
   function self:drawHealthBadge(side, battler, opts, modules)
     if not (battler and battler.mon and game.activeForm(battler.mon) and G)
       then return false end
+    local age = transformAge(battler.mon)
+    if age and age < TRANSFORM.swap then return false end
     local img=loadAsset("badge")
     if not img then return false end
     local H=modules and modules.Healthbox
@@ -222,6 +332,8 @@ function MegaUI.new(mod, game, opts)
     return true
   end
   function self:uninstall()
+    self.lastFlash=nil
+    pendingImage,pendingWhite=nil,nil
     if hbModule and hbModule.draw==wrappedDraw then
       hbModule.draw=originalDraw
     end
