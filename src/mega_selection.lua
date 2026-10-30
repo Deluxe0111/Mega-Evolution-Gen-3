@@ -136,6 +136,17 @@ function Selection.new()
     return was
   end
 
+  -- Read-only observation for vanilla Gen 3's move executor, whose turn
+  -- planner may discard the metadata on the chosen UI command.
+  function self.pendingAction(side, monKey)
+    side = sideKey(side)
+    local chosen = side and committed[side] or nil
+    if not chosen or chosen.mon ~= monKey then return nil end
+    local out = {}
+    for key, value in pairs(chosen.action) do out[key] = value end
+    return out
+  end
+
   function self.activeForm(monKey)
     return monKey ~= nil and active[monKey] or nil
   end
