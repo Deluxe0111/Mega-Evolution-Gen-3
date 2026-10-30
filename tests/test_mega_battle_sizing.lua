@@ -3,7 +3,7 @@
 local Atlas = dofile("src/mega_atlas.lua")
 local presentation = dofile("data/mega_presentation.lua")
 local spec = presentation.mega_venusaur
-assert(spec.back.scale == 0.85 and spec.front.scale == 0.74)
+assert(spec.back.scale == 1 and spec.front.scale == 1)
 assert(spec.back.feet == 100 and spec.front.feet == 98)
 local realIndex = dofile("assets/runtime/mega_atlas_index.lua")
 local actual = realIndex.forms.mega_venusaur.variants
@@ -110,7 +110,7 @@ assert(full.image.w==64 and full.image.dpi==4)
 assert(#tagged==1)
 local tag=tagged[1].spec
 assert(tag.texture and tag.quad and tag.quad.w==121)
-assert(tag.scale==0.85 and tag.side=="player")
+assert(tag.scale==1 and tag.side=="player")
 assert(tag.pivot[1]==60.5 and tag.pivot[2]==100)
 assert(tag.lowPivot[1]==32 and tag.lowPivot[2]==57)
 assert(a.picture("mega_venusaur","back",false,0,true)==full)
@@ -125,4 +125,23 @@ assert(G.draw==hdDraw)
 local icon=assert(a.icon("mega_venusaur"))
 assert(icon.w==32 and icon.h==32 and icon.image.w==32 and icon.image.h==32)
 assert(a.icon("mega_venusaur")==icon)
-print("PASS: G9 enemy draw untouched, scoped Mega pivot, error restoration, and full-res HD tag")
+-- Two imported Mega animations use DIFFERENT source frame dimensions for
+-- shiny art. Verify that the renderer uses the geometry-specific feet value
+-- and offsets the HD quad's pivot by that animation's common crop origin.
+local oddIndex = {schema=1, forms={mega_pyroar={variants={
+  front={frames=1, segments={{first=0,frames=1,cols=1,fs=100,
+    fw=93,fh=100,cx=3,cy=0,ox=0,oy=0,sheet=0}}},
+  front_shiny={frames=1, segments={{first=0,frames=1,cols=1,fs=96,
+    fw=86,fh=85,cx=7,cy=7,ox=0,oy=0,sheet=0}}},
+}}}}
+local odd=assert(Atlas.new(mod,oddIndex,G,function() return 0 end,presentation))
+local plain=assert(odd.picture("mega_pyroar","front",false,0,true))
+local ptag=tagged[#tagged].spec
+assert(ptag.scale==1 and ptag.pivot[2]==100)
+assert(ptag.lowPivot[2]==62)
+local shining=assert(odd.picture("mega_pyroar","front",true,0,true))
+local stag=tagged[#tagged].spec
+assert(stag.scale==1 and stag.pivot[2]==85,
+  "shiny pivot should use its own feet=92 and original cropY=7")
+assert(stag.lowPivot[2]==62 and plain~=shining)
+print("PASS: G9 enemy draw untouched, 1x Mega pivots, 32px icons, HD and shiny frame geometry")

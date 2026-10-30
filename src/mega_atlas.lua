@@ -226,8 +226,8 @@ function Atlas.new(mod, index, graphics, timer, presentation)
     local kind = side .. (shiny and "_shiny" or "")
     local location = indexFrame(slug, kind, frame)
     if not location then return nil end
-    local spec = battle and presentation and presentation[slug]
-      and presentation[slug][side] or nil
+    local formSettings = battle and presentation and presentation[slug]
+    local spec = formSettings and (formSettings[kind] or formSettings[side]) or nil
     if battle and not spec and side ~= "icon" then
       -- Every newly enabled Mega receives a conservative first-pass layout.
       -- Use one animation-wide alpha envelope (not each frame's bounds) for
