@@ -56,7 +56,7 @@ local function typeId(key,typeProvider)
   local ok,Progression=pcall(require,"src.core.game3.progression")
   if ok and Progression and type(Progression.typeIndexFor)=="function" then
     local okId,id=pcall(Progression.typeIndexFor,key)
-    if okId then return id end
+    if okId and id~=nil then return id end
   end
   local okTypes,Types=pcall(require,"src.core.game3.battle.types")
   return okTypes and Types and Types.ID and Types.ID[key] or nil
