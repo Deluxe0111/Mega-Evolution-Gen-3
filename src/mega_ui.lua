@@ -116,6 +116,7 @@ function Ui.install(mod, game, art, modules)
     end
     return false
   end
+  local tinyFont
   local function drawPartyDebug()
     if not diagnosticsVisible() then return end
     local G=love and love.graphics
@@ -127,8 +128,8 @@ function Ui.install(mod, game, art, modules)
       G.setColor(0.04,0.09,0.15,0.94)
       G.rectangle("fill",0,132,240,28)
       G.setColor(1,1,1,1)
-      local f=G.newFont and G.newFont(7)
-      if f and G.setFont then G.setFont(f) end
+      if not tinyFont and G.newFont then tinyFont=G.newFont(7) end
+      if tinyFont and G.setFont then G.setFont(tinyFont) end
       local slot=diagnostics.lastPartySlot or "-"
       local slug=diagnostics.lastIcon or "NO MEGA STATE"
       local info=diagnostics.megaIconSuccess>0
