@@ -23,7 +23,7 @@ end
 local mod={
   content={screens={register=function(_,name,record)registry[name]=record;return true end}},
   hooks={wrap=function(_,name,fn) hooks[name]=fn end},
-  ui={insertBefore=function(_,items,anchor,row)
+  ui={insertBefore=function(items,anchor,row)
     items[#items+1]=row
     return items
   end},
