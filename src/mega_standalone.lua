@@ -40,6 +40,11 @@ function Standalone.install(mod, game, modules, battleVisual)
   local Engine = modules and modules.Engine or required("src.core.game3.battle.engine")
   local Damage = modules and modules.Damage or required("src.core.game3.battle.damage")
   local Battle = modules and modules.Battle or required("src.core.game3.battle")
+  local Precision=modules and modules.MegaPrecision
+  if not Precision then
+    local ok,module=pcall(req,"src.mega_precision_abilities")
+    if ok and type(module)=="table" then Precision=module end
+  end
   local Specialized=modules and modules.MegaSpecialized
   if not Specialized then
     local ok,module=pcall(req,"src.mega_specialized_abilities")
@@ -91,6 +96,9 @@ function Standalone.install(mod, game, modules, battleVisual)
 
   local active = true
   local wrapped = {}
+  -- Only populated while executing a Parental Bond user's native Hit.run.
+  -- Damage.calc is invoked once for each natural hit in that native loop.
+  local parentalCtx=nil
   local function enabled()
     if active and mod.enabled == false then
       game.finish()
@@ -149,7 +157,17 @@ function Standalone.install(mod, game, modules, battleVisual)
         Tactical.beforeMove(game,Moves,battler,resolved)
       end
     end
-    return next(user, target, move, slot, adapter, st, out, opts)
+    local hadFlinch=type(user)=="table" and user.flinched or nil
+    local results=table.pack and
+      table.pack(pcall(next,user,target,move,slot,adapter,st,out,opts))
+      or {pcall(next,user,target,move,slot,adapter,st,out,opts)}
+    if results[1] and enabled() and Precision
+        and Precision.afterMove and hadFlinch then
+      local b=type(user)=="table" and user or current(st,user)
+      Precision.afterMove(game,b,hadFlinch,Secondary,adapter)
+    end
+    if not results[1] then error(results[2],0) end
+    return (table.unpack or unpack)(results,2,results.n or #results)
   end)
 
   -- A targeted native status move enters Engine.forEachTarget before the
@@ -170,12 +188,36 @@ function Standalone.install(mod, game, modules, battleVisual)
           end
           return magic(c)
         end
-        if Specialized and Specialized.withMoldBreaker then
-          return Specialized.withMoldBreaker(game,ctx,infiltrate)
+        local function mold(c)
+          if Specialized and Specialized.withMoldBreaker then
+            return Specialized.withMoldBreaker(game,c,infiltrate)
+          end
+          return infiltrate(c)
         end
-        return infiltrate(ctx)
+        if Precision and Precision.withUnseenFist then
+          return Precision.withUnseenFist(game,ctx,mold)
+        end
+        return mold(ctx)
       end)
     end)
+  end
+
+  -- Stalwart ignores doubles redirection at both move-target entrypoints,
+  -- while native Follow Me and Lightning Rod fields remain unchanged.
+  if Precision and Precision.withStalwart then
+    for _,name in ipairs({"getMoveTarget","resolveTarget"}) do
+      if type(Engine[name])=="function" then
+        wrap(Engine,name,function(next,st,adapter,attacker,moveId,...)
+          if not enabled() then return next(st,adapter,attacker,moveId,...) end
+          local extra={...}
+          return Precision.withStalwart(game,st,adapter,attacker,moveId,
+            function()
+              return next(st,adapter,attacker,moveId,
+                (table.unpack or unpack)(extra))
+            end)
+        end)
+      end
+    end
   end
 
   -- Active Delta Stream suppresses normal native weather setters while
@@ -276,13 +318,27 @@ function Standalone.install(mod, game, modules, battleVisual)
       and Reactive.blockBulletproof then
     wrap(Hit,"run",function(next,M,...)
       if enabled() and Reactive.blockBulletproof(game,M) then return end
-      if enabled() and Specialized and Specialized.withSkillLink then
-        local args={...}
-        return Specialized.withSkillLink(game,M,function(ctx)
-          return next(ctx,(table.unpack or unpack)(args))
-        end,EffectIds)
+      if not enabled() then return next(M,...) end
+      local args={...}
+      local function native(ctx)
+        if Specialized and Specialized.withSkillLink then
+          return Specialized.withSkillLink(game,ctx,function(c)
+            return next(c,(table.unpack or unpack)(args))
+          end,EffectIds)
+        end
+        return next(ctx,(table.unpack or unpack)(args))
       end
-      return next(M,...)
+      if not (Precision and Precision.withParentalBond) then
+        return native(M)
+      end
+      local previous=parentalCtx
+      parentalCtx=M
+      local result=table.pack and
+        table.pack(pcall(Precision.withParentalBond,game,M,native,EffectIds))
+        or {pcall(Precision.withParentalBond,game,M,native,EffectIds)}
+      parentalCtx=previous
+      if not result[1] then error(result[2],0) end
+      return (table.unpack or unpack)(result,2,result.n or #result)
     end)
   end
 
@@ -378,6 +434,10 @@ function Standalone.install(mod, game, modules, battleVisual)
         local ad=effective and effective.adapter
         amount,info=Weather.finalDamage(game,st,ad,
           attacker,defender,amount,info,Types)
+      end
+      if Precision and Precision.parentalDamage and parentalCtx then
+        amount,info=Precision.parentalDamage(game,parentalCtx,
+          attacker,defender,amount,info)
       end
       return amount,info
     end)
