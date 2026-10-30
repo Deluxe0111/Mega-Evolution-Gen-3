@@ -21,7 +21,10 @@
 
 ## Milestone 2 — Mega Venusaur proof of concept
 
-- [ ] Identify the correct Gen1Recomp Gen 3 battle hook and rendering seam
+- [x] Audit Gen1Recomp's normal move selection, double-battle targeting and action-resolution seams
+- [x] Implement a standalone, tested Mega request/commit/cancel state controller (not yet wired to gameplay)
+- [ ] Add a visible Mega button inside the FIGHT move menu with eligibility and input controls
+- [ ] Attach the request to the move after selection, then transform immediately before that move executes
 - [ ] Expose a Mega command for one eligible Pokémon holding its Mega Stone
 - [ ] Apply temporary stats, typing, ability, artwork and battle display name
 - [ ] Return to normal form at battle end and keep save species identity unchanged
