@@ -7,7 +7,12 @@ local function megaAbility(game,b)
   if type(game)~="table" or type(game.view)~="function"
       or type(b)~="table" or type(b.mon)~="table" then return nil end
   local view=game.view(b.mon)
-  return view and view.ability or nil
+  local ability=view and view.ability
+  if b._megaIgnoreDefensiveAbility
+      and (ability=="BULLETPROOF" or ability=="MAGIC_BOUNCE") then
+    return nil
+  end
+  return ability
 end
 Reactive.activeAbility=megaAbility
 
