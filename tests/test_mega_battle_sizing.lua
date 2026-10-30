@@ -3,7 +3,7 @@
 local Atlas = dofile("src/mega_atlas.lua")
 local presentation = dofile("data/mega_presentation.lua")
 local spec = presentation.mega_venusaur
-assert(spec.back.scale == 0.85 and spec.front.scale == 0.74)
+assert(spec.back.scale == 1 and spec.front.scale == 1)
 assert(spec.back.feet == 100 and spec.front.feet == 98)
 local realIndex = dofile("assets/runtime/mega_atlas_index.lua")
 local actual = realIndex.forms.mega_venusaur.variants
@@ -110,7 +110,7 @@ assert(full.image.w==64 and full.image.dpi==4)
 assert(#tagged==1)
 local tag=tagged[1].spec
 assert(tag.texture and tag.quad and tag.quad.w==121)
-assert(tag.scale==0.85 and tag.side=="player")
+assert(tag.scale==1 and tag.side=="player")
 assert(tag.pivot[1]==60.5 and tag.pivot[2]==100)
 assert(tag.lowPivot[1]==32 and tag.lowPivot[2]==57)
 assert(a.picture("mega_venusaur","back",false,0,true)==full)
