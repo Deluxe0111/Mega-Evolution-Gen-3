@@ -8,10 +8,13 @@ for _,kind in ipairs({"icon","icon_shiny"}) do
 end
 local draws,filter,canvases={}, {}, {}
 local femaleFiles=true
+local sourceFiles=true
 local G={}
 G.newImage=function(path)
-  if path:find("icon_female",1,true) then
-    if not femaleFiles then error("no optional female sprite") end
+  if path:find("/mega_venusaur/",1,true) then
+    if not sourceFiles or (not femaleFiles and path:find("female",1,true)) then
+      error("optional EBDX source absent: "..path)
+    end
     return {path=path,getDimensions=function()return 128,64 end,
       setFilter=function(_,a,b)assert(a=="nearest" and b=="nearest")end}
   end
@@ -45,14 +48,16 @@ local normal=assert(provider.icon("mega_venusaur",false,false))
 assert(normal.w==32 and normal.h==32 and normal.frames==2)
 assert(normal.image.w==32 and normal.image.h==64)
 assert(normal.quads[0].y==0 and normal.quads[1].y==32)
-assert(#draws==2 and draws[1].image.path:find("battle_icon_0.png",1,true))
-assert(draws[1].quad.x==2 and draws[2].quad.x==64)
-assert(draws[1].x==1.5 and draws[1].y==2.5)
-assert(draws[2].y==34.5)
+assert(#draws==2 and draws[1].image.path:find("/mega_venusaur/icon.png",1,true),
+  "must read source EBDX icon rather than large battle_icon atlas")
+assert(draws[1].quad.x==0 and draws[2].quad.x==64)
+assert(draws[1].x==0 and draws[1].y==0)
+assert(draws[2].y==32)
+assert(normal.source=="ebdx" and normal.sheetH==64)
 assert(draws[1].scaleX==.5 and draws[1].scaleY==.5)
 assert(provider.icon("mega_venusaur",false,false)==normal)
 local shiny=assert(provider.icon("mega_venusaur",true,false))
-assert(shiny~=normal and draws[4].image.path:find("battle_icon_shiny_0.png",1,true))
+assert(shiny~=normal and draws[4].image.path:find("/mega_venusaur/icon_shiny.png",1,true))
 local female=assert(provider.icon("mega_venusaur",false,true))
 assert(female~=normal and draws[5].image.path:find("icon_female.png",1,true))
 assert(draws[5].quad.x==0 and draws[6].quad.x==64)
@@ -65,5 +70,12 @@ femaleFiles=false
 local fallback=assert(Atlas.new({path="mods/mega"},idx,G,function()return 0 end))
 local fallbackShiny=assert(fallback.icon("mega_venusaur",true,true))
 assert(fallbackShiny.quads[0] and fallbackShiny.quads[1])
-assert(draws[#draws].image.path:find("battle_icon_shiny_0.png",1,true))
-print("PASS: active Mega party icons use two 32px frames, shiny variants, optional female assets, safe fallback")
+assert(draws[#draws].image.path:find("icon_shiny.png",1,true),
+  "female icon fallback must retain shiny artwork")
+-- If original EBDX PNGs are missing, the packed atlas remains a fallback.
+sourceFiles=false
+local fallbackAtlas=assert(Atlas.new({path="mods/mega"},idx,G,function()return 0 end))
+local atlasIcon=assert(fallbackAtlas.icon("mega_venusaur",false,false))
+assert(atlasIcon.quads[0] and atlasIcon.quads[1])
+assert(draws[#draws].image.path:find("battle_icon_0.png",1,true))
+print("PASS: native source Mega party PNG strips at 32px, male/female shiny variants, packed atlas fallback")
