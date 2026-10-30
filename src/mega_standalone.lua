@@ -40,6 +40,13 @@ function Standalone.install(mod, game, modules, battleVisual)
   local Engine = modules and modules.Engine or required("src.core.game3.battle.engine")
   local Damage = modules and modules.Damage or required("src.core.game3.battle.damage")
   local Battle = modules and modules.Battle or required("src.core.game3.battle")
+  local Specialized=modules and modules.MegaSpecialized
+  if not Specialized then
+    local ok,module=pcall(req,"src.mega_specialized_abilities")
+    if ok and type(module)=="table" then Specialized=module end
+  end
+  local EffectIds=modules and modules.EffectIds
+    or required("src.core.game3.battle.effect_ids")
   local MegaAbilities=modules and modules.MegaAbilities
   local Weather=modules and modules.MegaWeather
   if not Weather then
@@ -157,10 +164,16 @@ function Standalone.install(mod, game, modules, battleVisual)
         local function magic(targetCtx)
           return Reactive.withMagicBounce(game,targetCtx,body,Engine.hasFlag)
         end
-        if Tactical and Tactical.withInfiltrator then
-          return Tactical.withInfiltrator(game,ctx,magic)
+        local function infiltrate(c)
+          if Tactical and Tactical.withInfiltrator then
+            return Tactical.withInfiltrator(game,c,magic)
+          end
+          return magic(c)
         end
-        return magic(ctx)
+        if Specialized and Specialized.withMoldBreaker then
+          return Specialized.withMoldBreaker(game,ctx,infiltrate)
+        end
+        return infiltrate(ctx)
       end)
     end)
   end
@@ -233,11 +246,27 @@ function Standalone.install(mod, game, modules, battleVisual)
   if Secondary and type(Secondary.changeStat)=="function"
       and Tactical and Tactical.afterStatChange then
     wrap(Secondary,"changeStat",function(next,ad,b,stat,delta,flags)
-      local result=next(ad,b,stat,delta,flags)
+      local actual=delta
+      if enabled() and Specialized and Specialized.contraryDelta then
+        actual=Specialized.contraryDelta(game,b,delta)
+      end
+      local result=next(ad,b,stat,actual,flags)
       if enabled() then
-        Tactical.afterStatChange(game,Secondary,ad,b,stat,delta,flags,result)
+        Tactical.afterStatChange(game,Secondary,ad,b,stat,actual,flags,result)
       end
       return result
+    end)
+  end
+
+  -- Sheer Force suppresses only qualifying *additional* effects, while
+  -- leaving primary effects, PP, status moves and recoil untouched.
+  if Specialized and Specialized.suppressSecondary and Secondary
+      and type(Secondary.withChance)=="function" then
+    wrap(Secondary,"withChance",function(next,M,...)
+      if enabled() and Specialized.suppressSecondary(game,M,EffectIds) then
+        return false
+      end
+      return next(M,...)
     end)
   end
 
@@ -247,6 +276,12 @@ function Standalone.install(mod, game, modules, battleVisual)
       and Reactive.blockBulletproof then
     wrap(Hit,"run",function(next,M,...)
       if enabled() and Reactive.blockBulletproof(game,M) then return end
+      if enabled() and Specialized and Specialized.withSkillLink then
+        local args={...}
+        return Specialized.withSkillLink(game,M,function(ctx)
+          return next(ctx,(table.unpack or unpack)(args))
+        end,EffectIds)
+      end
       return next(M,...)
     end)
   end
@@ -308,6 +343,9 @@ function Standalone.install(mod, game, modules, battleVisual)
     local effectiveOpts=opts
     if MegaAbilities and MegaAbilities.baseOptions then
       effectiveOpts=MegaAbilities.baseOptions(game,attacker,move,opts)
+    end
+    if Specialized and Specialized.baseOptions then
+      effectiveOpts=Specialized.baseOptions(game,attacker,move,effectiveOpts,EffectIds)
     end
     local attackView=cloneBattler(attacker, game)
     if Weather and Weather.attackView then
