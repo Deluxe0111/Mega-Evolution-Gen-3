@@ -23,7 +23,6 @@ function Ui.install(mod, game, art, modules)
   if not Pokemon or not art or not art.picture then
     return nil,"Pokemon or Mega image provider not available"
   end
-  local installed={},true
   local replacements={}
   local function wrap(holder,key,callback)
     if not holder or type(holder[key])~="function" then return end
