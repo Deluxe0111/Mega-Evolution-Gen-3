@@ -53,11 +53,25 @@ function Ui.install(mod, game, art, modules)
     end
     return next(mon,form,kind)
   end)
+  local function female(mon)
+    if not mon then return false end
+    if mon.gender == "F" or mon.gender == "female" then return true end
+    if mon.gender == "M" or mon.gender == "male" then return false end
+    if type(Pokemon.gender) == "function" then
+      local species = type(Pokemon.speciesOf) == "function"
+        and Pokemon.speciesOf(mon) or mon.species
+      local ok, value = pcall(Pokemon.gender, species, mon.personality)
+      if ok then return value == "F" or value == "female" end
+    end
+    return false
+  end
+
   wrap(Pokemon,"monIcon",function(next,mon)
     local v=viewOf(mon)
     if v and art.icon then
-      local icon=art.icon(v.slug)
-      if icon then return icon end
+      local icon=art.icon(v.slug,shiny(mon),female(mon))
+      if icon and icon.image and icon.quads and icon.quads[0]
+          and icon.quads[1] then return icon end
     end
     return next(mon)
   end)
