@@ -26,15 +26,19 @@ core Gen3 move/ability engine changes. **Implemented does not mean battle-tested
 
 ## Confirmed integration gaps and restrictions
 
-1. **No Guard:** the accuracy-roll hook does not yet bypass native Fly/Dig/Dive
-   semi-invulnerable checks.
-2. **Prankster:** modern Dark-type immunity to targeted priority status moves
-   and priority on the initial Mega turn are unimplemented.
-3. **Parental Bond:** the native multi-hit loop performs the secondary-effect
-   check once for the attack, not once per successful hit.
-4. **Electric Terrain:** direct sleep is blocked for grounded Pokémon, but
-   indirect sleep (such as Yawn expiring at end of turn) still needs a native
-   `applyStatus` entrypoint test and possibly an additional guard.
+1. **No Guard:** Fly, Dig and Dive semi-invulnerable phases can now be
+   targeted by an active Mega No Guard user or target. The state is restored
+   after the individual attack; Protect and type immunities still apply.
+2. **Prankster:** opposing Dark-type Pokémon now reject eligible Prankster
+   status moves, while allies and non-Prankster attackers are unaffected.
+   Initial Mega activation-turn priority still needs gameplay confirmation.
+3. **Parental Bond:** qualifying effects now roll separately on each
+   successful, non-substitute damaging hit. Status and self-effect exceptions
+   stay on the native path; additional move-pack effects need in-game QA.
+4. **Electric Terrain:** direct Sleep and Yawn at cast time are blocked for
+   grounded Pokémon. A previously queued Yawn is also suppressed on its due
+   turn while terrain remains active. Other nonstandard forced sleep
+   mechanics supplied by third-party packs still require compatibility QA.
 5. **Thermal Exchange:** burn protection is currently scoped to native
    move-resolution; out-of-turn scripted status needs verification.
 6. **Power Construct:** both Mega Zygarde entries already activate with Complete
@@ -59,7 +63,7 @@ core Gen3 move/ability engine changes. **Implemented does not mean battle-tested
 | Mega Staraptor / Mega Malamar (Contrary) hit by Intimidate | Attack **rises by one**, up to +6. Mist/Substitute still block the interaction. |
 | Mega Falinks (Defiant) hit by Intimidate | Attack **falls by one, then rises by two** (net +1); do not trigger when blocked. |
 | Mega Audino (Healer), double battle, ally poisoned | At the holder's end-of-turn ability step, **30% chance** to cure the ally only. No activation in singles or when the ally is fainted. |
-| Mega Kangaskhan (Parental Bond), damaging single-target move | One PP, two hits (second 25%), one secondary roll in current Gen3 integration. |
+| Mega Kangaskhan (Parental Bond), damaging single-target move | One PP, two hits (second 25%); eligible secondary effects now roll once on each successful hit. |
 | Mega Eelektross (Eelevate) with a Ground attack | Immune through native Levitate checks; KO improves the highest non-HP stat once per foe. |
 | Mega Rayquaza (Delta Stream) active with opponent's Drought | Strong winds remain until Delta Stream leaves/faints. |
 | Mega Scovillain (Spicy Spray), opponent attacks through Substitute | No burn if only Substitute takes damage. |
