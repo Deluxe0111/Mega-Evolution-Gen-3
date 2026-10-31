@@ -1,4 +1,5 @@
--- Generated from pinned EBDX mega_forms.json. Do not edit battle stats by hand.
+-- Derived from pinned EBDX mega_forms.json with documented official stat errata.
+-- See data/mega_stat_errata.json and tests/check_mega_stats.py before regeneration.
 -- Stats order: HP/Atk/Def/Spe/SpA/SpD. Absence of an ability/type
 -- override means keep the original live battler value, not guess one.
 return {
@@ -159,7 +160,7 @@ return {
     stats={hp=80, attack=125, defense=85, speed=70, spAtk=135, spDef=95}, ability="INNARDS_OUT",
     types={} },
   { slug="mega_starmie", species="STARMIE", stone="STARMINITE", move="", baseForm=0, form=1,
-    stats={hp=60, attack=100, defense=105, speed=120, spAtk=130, spDef=105}, ability="HUGE_POWER",
+    stats={hp=60, attack=140, defense=105, speed=120, spAtk=130, spDef=105}, ability="HUGE_POWER",
     types={} },
   { slug="mega_dragonite", species="DRAGONITE", stone="DRAGONINITE", move="", baseForm=0, form=1,
     stats={hp=91, attack=124, defense=115, speed=100, spAtk=145, spDef=125}, ability="MULTISCALE",

@@ -13,6 +13,7 @@ From the repository root:
 ```powershell
 py -3 tests/check_project.py
 py -3 tools/validate_assets.py --root assets/source/ebdx --strict --no-report
+py -3 tests/check_mega_stats.py
 lua tests/test_mega_boss_roster.lua
 lua tests/test_mega_trainer_audit_menu.lua
 ```

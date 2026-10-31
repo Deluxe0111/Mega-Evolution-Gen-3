@@ -26,6 +26,11 @@ This project is a Gen1Recomp **Gen 3 content mod**, not a ROM hack or Pokémon E
 - **Compatibility:** No engine fork is needed, but this mod uses scoped wrappers on stock Gen1Recomp Lua entrypoints. Upstream changes to those entrypoints can break the integration.
 - **Dependency boundaries:** Optional mods register species/art/overworld/encounter features. They are enabled independently, loaded before Mega if present, and are never copied or bundled here.
 
+The 98 base-stat entries are checked against their pinned EBDX source
+with explicitly documented official corrections. See
+[Mega stat audit](MEGA_STAT_AUDIT.md) and
+`data/mega_stat_errata.json` before rebuilding form tables.
+
 ## Asset pipeline
 
 The committed source set in `assets/source/ebdx` retains attributed EBDX art, imported icons/cries, PBS metadata and a stable roster inventory. `tools/build_mega_atlas.py` converts that art into bounded PNG pages and Lua/JSON lookup tables under `assets/runtime`.
