@@ -1,7 +1,7 @@
 -- Pure, read-only navigation and text export for the imported-ROM audit.
 local Audit={}
 local FILTERS={"ALL","READY","NEEDS REVIEW"}
-local READY={existing=true,add=true}
+local READY={existing=true,add=true,replace=true}
 local SKIPPED={disabled_by_choice=true}
 function Audit.new(loader)
   local self={rows={},error=nil,filter=1,index=1,detail=false,
@@ -73,6 +73,10 @@ function Audit.new(loader)
         out[#out+1]="  PROPOSE: add "..tostring(row.slug)
           .." in slot "..tostring(row.slot)
           .." at Lv."..tostring(row.level)
+      elseif row.status=="replace" then
+        out[#out+1]="  PROPOSE: replace slot "..tostring(row.slot)
+          .." ("..tostring(row.replacedName or "?")..") with "
+          ..tostring(row.slug).." at Lv."..tostring(row.level)
       elseif row.status=="full_party_needs_approval" then
         out[#out+1]="  ACTION: replacement decision required; no swap made"
       elseif row.status=="disabled_by_choice" then
