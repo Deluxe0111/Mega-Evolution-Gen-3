@@ -256,8 +256,8 @@ for _,id in ipairs({271,794,795,796,797}) do
   local slot=(expected=="add") and #original+1 or 1
   assert(after.foe.party[slot].species==ids.MEOWSTIC
     and after.foe.party[slot].heldItem==nil)
-  assert(after.foe.party[#after.foe.party].species==ids.SOLROCK)
-  assert(after.foe.party[#after.foe.party-1].species==ids.LUNATONE)
+  assert(after.foe.party[#original].species==ids.SOLROCK)
+  assert(after.foe.party[#original-1].species==ids.LUNATONE)
   assert(original[1].species~=ids.MEOWSTIC)
   -- Two-owner doubles and incorrect native flags cannot be patched.
   before.twoOpponents=true
