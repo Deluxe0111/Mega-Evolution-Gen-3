@@ -4,12 +4,17 @@ First versioned beta of Mega Evolution for Gen1Recomp's FireRed, LeafGreen, Ruby
 
 ## Features
 
-- 98 Mega form entries, 92 Mega Stones and a Key Stone.
-- In-battle Mega button: select **FIGHT**, toggle Mega with **START** (or the on-screen control), then select a move.
-- Animated temporary forms, normal/shiny front/back graphics, party icons, Mega cries, battle stats and implemented ability effects.
-- One Mega Evolution per side per battle, switch persistence and end-of-battle reversion.
-- Oak/Birch laboratory aides selling a Key Stone and the Mega Stones.
-- Automatic trainer Megas, a curated Kanto/Hoenn boss roster and **START → MEGA AUDIT**.
+**Bring Mega Evolution to the original GBA adventures — without patching a ROM.**
+
+- **98 Mega form entries, 92 Mega Stones and a Key Stone:** supported variant forms, including special requirements such as Mega Rayquaza's Dragon Ascent.
+- **In-battle Mega controls:** toggle using **START**, the on-screen button or supported directional/mouse controls; select a move to evolve **before the attack**.
+- **Temporary battle forms:** Mega base stats, compatible type and ability changes; one Mega Evolution per side per battle, persisting through switches and reverting when the Pokémon faints or battle ends.
+- **New visual presentation:** animated emblem and white-silhouette transformation, normal/shiny front/back art, Mega HP-box indicator, party icons and cries.
+- **Accessible Mega Stones:** lab aides in Oak's and Birch's laboratories sell the Key Stone and matching Mega Stones.
+- **Mega-powered NPCs and bosses:** automatic eligible enemy Megas plus ROM-aware curated Gym Leaders, Elite Four, rival and villain fights in Kanto and Hoenn.
+- **Trainer audit menu:** inspect boss party matches and export diagnostics from **START → MEGA AUDIT**.
+- **Optional mod integrations:** National Dex Gen 3, G9 Battle Sprites, Gen 3 HD Sprites, Modern Spawns, Untamed Advanced and Nuzlocke. National Dex (or an equivalent compatible species provider) is required for post-Gen-3 species.
+
 
 ## Install
 
