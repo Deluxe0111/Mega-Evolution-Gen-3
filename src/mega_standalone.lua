@@ -40,6 +40,11 @@ function Standalone.install(mod, game, modules, battleVisual)
   local Engine = modules and modules.Engine or required("src.core.game3.battle.engine")
   local Damage = modules and modules.Damage or required("src.core.game3.battle.damage")
   local Battle = modules and modules.Battle or required("src.core.game3.battle")
+  local Interaction=modules and modules.MegaInteraction
+  if not Interaction then
+    local ok,module=pcall(req,"src.mega_ability_interactions")
+    if ok and type(module)=="table" then Interaction=module end
+  end
   local Field=modules and modules.MegaField
   if not Field then
     local ok,module=pcall(req,"src.mega_field_abilities")
@@ -322,13 +327,32 @@ function Standalone.install(mod, game, modules, battleVisual)
     end)
   end
 
-  -- Solar Power's HP chip occurs after the native ability end-turn event.
-  if Weather and Weather.endTurn and NativeAbilities
-      and type(NativeAbilities.endTurn)=="function" then
+  -- Keep the existing native ability end-turn action first. Solar Power
+  -- uses weather HP loss; Mega Audino's Healer cures an allied status in
+  -- doubles with an independent 30% roll at this same native boundary.
+  if NativeAbilities and type(NativeAbilities.endTurn)=="function"
+      and ((Weather and Weather.endTurn)
+        or (Interaction and Interaction.healerEndTurn)) then
     wrap(NativeAbilities,"endTurn",function(next,adapter,b)
       local result=next(adapter,b)
-      if enabled() and Weather.endTurn(game,adapter,b) then return true end
-      return result
+      if not enabled() then return result end
+      local solar=Weather and Weather.endTurn
+        and Weather.endTurn(game,adapter,b)
+      local healer=Interaction and Interaction.healerEndTurn
+        and Interaction.healerEndTurn(game,adapter,b)
+      return result or solar or healer or false
+    end)
+  end
+
+  -- Native Intimidate directly changes the opposing Attack stage instead
+  -- of using Secondary.changeStat. This narrow wrapper preserves Gen3's
+  -- Mist/Substitute/stat-cap checks and correctly applies Contrary/Defiant.
+  if Interaction and Interaction.withIntimidate and NativeAbilities
+      and type(NativeAbilities.runIntimidate)=="function" then
+    wrap(NativeAbilities,"runIntimidate",function(next,adapter)
+      if not enabled() then return next(adapter) end
+      return Interaction.withIntimidate(game,adapter,Secondary,
+        function()return next(adapter)end)
     end)
   end
 
