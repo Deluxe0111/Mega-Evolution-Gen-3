@@ -291,6 +291,12 @@ sample(901,"WALLY","POKéMON TRAINER",{mon("GARDEVOIR",45)})
 assert(assess(901,"emerald").status=="trainer_identity_unverified")
 sample(902,"WALLY","UNKNOWN CLASS",{mon("GARDEVOIR",40)})
 assert(assess(902,"emerald").status=="not_approved")
+-- The engine's own Emerald constants identify these six Wally slots,
+-- even when the imported ROM supplies a nonmatching name/class.
+for _,id in ipairs({519,656,657,658,659,660}) do
+  sample(id,"","UNKNOWN CLASS",{mon("PIDGEY",35)})
+  assert(assess(id,"emerald").status=="not_approved")
+end
 local emeraldAudit=assert(boss.audit("emerald"))
 local wallyFound={}
 for _,row in ipairs(emeraldAudit) do
@@ -299,7 +305,8 @@ for _,row in ipairs(emeraldAudit) do
     assert(row.status=="trainer_identity_unverified")
   end
 end
-assert(wallyFound[901] and wallyFound[902],
+assert(wallyFound[901] and wallyFound[902]
+  and wallyFound[519] and wallyFound[656] and wallyFound[660],
   "Wally candidate discovery must preserve actual trainer IDs")
 
 local audit=assert(boss.audit("firered"))
