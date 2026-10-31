@@ -44,6 +44,8 @@ return function(mod)
     mod.options:define({
       { key = "mega_tuner_enabled", label = "MEGA TUNER", type = "toggle",
         default = false },
+      { key = "mega_trainer_audit_enabled", label = "TRAINER MEGA AUDIT",
+        type = "toggle", default = true },
     })
   end
   local registeredById = {}
@@ -438,6 +440,31 @@ return function(mod)
     elseif mod.log then
       mod.log:warn("Mega battle calibrator unavailable: %s",
         tostring(ok and err or tuner))
+    end
+  end
+
+  -- Opt-out, read-only ROM trainer audit available from the ordinary
+  -- Gen3 start menu. No save edits and no guessed trainer IDs.
+  local AuditModel=loadSibling(mod,"src/mega_trainer_audit_model.lua")
+  local AuditScreen=loadSibling(mod,"src/mega_trainer_audit_screen.lua")
+  if AuditModel and AuditScreen and bossRoster then
+    local ok,auditTool,err=pcall(AuditScreen.install,mod,AuditModel,
+      exports.bossMegaAudit,{
+        isVisible=function()
+          if not (mod.options and type(mod.options.get)=="function") then
+            return true
+          end
+          return mod.options:get("mega_trainer_audit_enabled")~=false
+        end
+      })
+    if ok and auditTool then
+      exports.openMegaTrainerAudit=auditTool.open
+      exports.exportMegaTrainerAudit=auditTool.export
+      exports.megaTrainerAuditText=auditTool.report
+      if mod.log then mod.log:info("Trainer Mega Audit menu registered") end
+    elseif mod.log then
+      mod.log:warn("Trainer Mega Audit screen unavailable: %s",
+        tostring(ok and err or auditTool))
     end
   end
 
