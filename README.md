@@ -1,91 +1,104 @@
 # Mega Evolution Gen 3
 
-**Standalone Mega Evolution project for Gen1Recomp's Generation 3 games:** FireRed, LeafGreen, Ruby, Sapphire and Emerald.
+**Mega Evolution for Pokémon FireRed, LeafGreen, Ruby, Sapphire and Emerald in [Gen1Recomp](https://github.com/bryanthaboi/gen1recomp).**
 
-> **Status: experimental full 98-form Mega roster (PR #13). Mega Venusaur is gameplay tested; the other forms require in-game QA.**
-> Works against **stock Gen1Recomp** using scoped runtime wrappers on its existing Gen 3 Lua battle functions. No engine fork, binary patch, or custom Gen1Recomp hook PR is required. Engine internals can change between updates, so gameplay still needs in-game compatibility testing.
+> **Status: experimental / active development.** The mod currently contains 98 Mega form entries, 92 held Mega Stones plus a Key Stone, a battle Mega command, temporary Mega form/stats/art, trainer Mega behaviour and a ROM-aware curated boss roster. Headless tests and selected gameplay scenarios have been exercised, but **full cross-mod and five-game QA is not complete**. There is **no published GitHub Release** yet.
 
-## Project goal
+No patched GBA ROM, game binary modification or separate Gen1Recomp engine fork is needed. Battle integration uses existing Gen 3 Lua entrypoints and may need maintenance as the host engine evolves. The manifest explicitly requests Gen1Recomp's **engine_internals** permission because the mod wraps private battle functions; it does not request network permission.
 
-Build an optional Mega Evolution mod that works with the original Gen 3 games and cooperates with National Dex Gen 3, G9 Battle Sprites (Gen 3), Gen 3 HD Sprites, Untamed Advanced and Nuzlocke.
+## Quick start
 
-- Mega Evolution is a **temporary battle form**, not a change to the saved Pokémon's species, identity, shiny status or encounter provenance.
-- Support form-specific stats, types, abilities and triggers, including X/Y, Z and Mega Rayquaza.
-- Use animated Gen 5-style sprites wherever available, with a static fallback and corresponding normal/shiny, front/back and icon art.
-- Integrations are optional. The mod must fail safely when another mod is absent.
+1. Download this repository as a ZIP or clone it; import it from the Gen1Recomp launcher's **MODS** screen.
+2. Enable **Mega Evolution Gen 3** for a supported Gen 3 game.
+3. In Oak's Lab (FireRed/LeafGreen) or Birch's Lab (Ruby/Sapphire/Emerald), buy the **Key Stone (₽10,000)** and the Pokémon's **Mega Stone (₽5,000)** from the added lab aide.
+4. Give the Pokémon its Mega Stone, open **FIGHT**, toggle Mega with **START** (or the on-screen control), then select its move.
 
-## What's already in the repository
+The player gets **one Mega Evolution per battle**. The form appears before the move resolves, remains in battle through switching, and reverts after fainting/battle end. Mega Rayquaza instead requires Dragon Ascent, with that move supplied by the active game's move provider.
 
-- **98 EBDX Mega-form variants** (including alternate gender/form representations) with all six source-artwork variants per form: front, back, shiny front, shiny back, icon and shiny icon.
-- **92 Mega Stone icons**, 97 source Mega cries and selected UI reference graphics. Mega Slowbro has no separate cry at the pinned source revision.
-- Pinned EBDX source definitions and metrics, a generated Mega roster and the original upstream credits.
-- An asset import/checker tool, the **156-page converted atlas and its Lua/JSON indexes**, and a safe Gen1Recomp Mod API 2 art provider.
-- Explicit APIs for checking Mega forms, locating animation frames and rendering an isolated 64×64 picture entry, without changing G9 Battle Sprites' hooks.
-- **92 Mega Stones and one Key Stone** registered through the public Gen 3 item registry, with fixed numeric IDs and a strict read-only eligibility checker. A professor's lab aide offers the Key Stone for ₽10,000 and each Mega Stone for ₽5,000 through the native Poké Mart interface.
-- Experimental **full-roster Mega gameplay** in PR #13: all 98 form variants from the pinned EBDX definitions can be selected with their required stones/Key Stone (Mega Rayquaza uses Dragon Ascent), and have temporary calculated stats, live battler type/ability overrides where supported, and animated battle art. **No engine changes needed.** Stock Gen 3 does not implement all newer abilities or Fairy typing, so exact mechanics still require compatibility work.
+**[Detailed installation and troubleshooting →](docs/INSTALLATION.md)**
 
-**The original EBDX strips and converted PNG atlas pages are both committed.** The atlas has 24,018 frames across 156 pages; the provider loads only the requested pages. Having renderable art does **not** mean an in-game Mega transformation is implemented.
+## Dependencies
 
-## Repository layout
+**The base mod has no hard mod-to-mod dependencies.** Gen1Recomp is the host and is required. Additional Pokémon not in Gen 1–3 **do** require an active species provider (recommended: National Dex Gen 3). The mod's manifest declares the following verified optional IDs and source repositories so the launcher can show the correct dependencies:
 
-```text
-manifest.json                 Gen1Recomp mod metadata
-main.lua                      Mega art API, item registration and standalone bridge setup
-src/mega_standalone.lua        Stock Gen 3 battle wrappers; no engine source changes
-src/mega_battle.lua           Data-driven battle-only form controller for all 98 Megas
-data/mega_battle_forms.lua    Generated 98-form battle stat/type/ability catalogue
-src/mega_venusaur.lua        Legacy Mega Venusaur proof controller (tests only)
-src/mega_selection.lua        Per-battle toggle, move commitment and Mega allowance
-src/mega_atlas.lua            Lazy PNG atlas frame locator and picture renderer
-assets/
-  source/ebdx/
-    megas/                    Original EBDX form art + cries (committed)
-    mega_stones/              Item icons (committed)
-    ui_reference/             Reference UI artwork (committed)
-    source_metadata/          Original PBS definitions and upstream credits
-    mega_forms.json           Parsed source form definitions
-    mega_roster.csv           Stable form/filename mapping
-  runtime/                    Committed PNG atlases and frame index
-tools/
-  extract_ebdx_megas.py       Re-import/refresh source files from pinned revision
-  validate_assets.py         Verify artwork, icons and available cries
-tests/check_project.py        Verify scaffold metadata and source roster
-docs/                         Roadmap, asset-source contract, development notes
-```
+| Mod | When to use |
+| --- | --- |
+| [National Dex Gen 3](https://github.com/poooooby/national_dex_gen3) | **Feature requirement** for later-generation Mega candidates (e.g. Glimmora, Meowstic, Tatsugiri), modern species/moves/types |
+| [G9 Battle Sprites (Gen 3)](https://github.com/poooooby/g9-battle-sprites-gen3) | Expanded normal Pokémon artwork; **G9 itself requires National Dex Gen 3** |
+| [Gen 3 HD Sprites / WoobleView](https://github.com/poooooby/gen3-hd-sprites) | Larger, sharper battle/presentation drawing |
+| [Modern Spawns](https://github.com/poooooby/g1r_modern_spawns) | Broader wild encounter roster; complements expanded species |
+| [Untamed Advanced — compatible fork](https://github.com/Deluxe0111/untamed-advanced) | Followers and overworld wild encounters |
+| [Nuzlocke — Gen 3 fork](https://github.com/Deluxe0111/nuzlocke) | Nuzlocke run rules and randomiser integration |
 
-## Buying Mega Stones
+All six are **optional to install**, but National Dex is **necessary for features involving those extra species**. Dependencies are **not bundled** with the Mega mod and aren't installed automatically by the manifest. Each repository's manifest controls its own dependencies; for example, G9 requires National Dex.
 
-Visit **Professor Oak's Lab** in Pallet Town (FireRed/LeafGreen) or **Professor Birch's Lab** in Littleroot Town (Ruby/Sapphire/Emerald). An additional scientist aide raises funds for the lab by selling special stones. Speak to the aide to open a normal in-game shop.
+**[Exact mod IDs, install order, recommended setups and limitations →](docs/DEPENDENCIES.md)**
 
-- **Key Stone:** ₽10,000 (one needed to use Mega Evolution; hidden from the shop on later visits once owned).
-- **Mega Stones:** ₽5,000 each, all 92 varieties in alphabetical order.
+## Features
 
-The player pays using normal in-game money; purchases go to the appropriate Bag pocket. The Mega Stone must still be held by the corresponding Pokémon. The aide is placed at runtime on map entry without overwriting the starter-story NPCs, and does not appear without this mod.
+- **98 Mega form entries / 92 Mega Stones:** animated and static source coverage, normal/shiny front/back art, party icons, imported cries and variant-specific metadata.
+- **Player battle command:** eligibility check, Key Stone and held-stone verification, move selection, transformation and persistent temporary battle form.
+- **Mega combat data:** Mega base stats, type/ability overrides and focused modern ability implementations. Not all modern effects or Fairy interactions are certified with every installed species/move provider.
+- **Automatic enemy trainer Megas:** chooses the last eligible Pokémon by default; one Mega per enemy side, separate from the player.
+- **Curated notable trainer battles:** chosen Megas for Kanto and Hoenn leaders, Elite Four, rivals and bosses. Exact IDs, team species/levels and ROM edition are checked before any proposed addition or replacement.
+- **Trainer audit menu:** **START → MEGA AUDIT**, with trainer IDs, original parties, review statuses and a text export for troubleshooting.
+- **Scoped art/runtime integration:** Mega art and party icons without rewriting the saved Pokémon or taking permanent ownership of another mod's regular sprite provider.
 
-## Checking the imported artwork
+## Trainer roster at a glance
 
-Python 3 is required; the asset import and validation tools need no third-party packages.
+**FireRed:** the approved boss roster includes Brock, Misty, Surge, Erika, Koga, Sabrina, Blaine, Giovanni, the Elite Four and Champion Rival. The imported-ROM audit fixes Giovanni's early Rocket battle (#348, **no Mega**) and later Rocket battle (#349, **Mega Mewtwo Y**), filters a false Champion #38, and selects the last eligible duplicate Pokémon.
+
+**Emerald:** approved selections include Roxanne (Glimmora), Tate & Liza (Meowstic), Juan (Tatsugiri Curly), the Elite Four and major villains. Exact audited rematches now support safe replacement of Golem/Crawdaunt/Drowzee/Hypno in designated battles. Wally remains **Gardevoir selected but audit-only** until his imported-ROM trainer records are confirmed; the host's Emerald constant candidates are #519 and #656–660.
+
+For exact rules, party fingerprints, version caveats and the complete 32-entry roster, see **[Trainer Mega choices and audit](docs/MEGA_TRAINER_REVIEW.md)**.
+
+## Repository map
+
+| Folder / file | Purpose |
+| --- | --- |
+| `manifest.json`, `main.lua` | Mod metadata, integration and exported API |
+| `src/` | Temporary battle forms, Mega command, trainer roster, UI, art rendering, abilities and items |
+| `data/` | Form/stone catalogue, presentation settings, curated boss selections |
+| `assets/source/ebdx/` | Credited upstream art, icons, cries and source inventories; some assets are loaded at runtime |
+| `assets/runtime/` | Generated atlas pages and lookup indices used in-game |
+| `tools/` | Source-art import and atlas regeneration |
+| `tests/` | Python validation and Lua regression suites |
+| `docs/` | Installation, dependencies, architecture, playtesting and development |
+
+**Do not remove source artwork assuming it is only a build input.** Certain item icons and audio assets are loaded directly from `assets/source/ebdx` while battle animation is loaded from `assets/runtime`.
+
+## Development and testing
+
+With Python 3.11+ and Lua 5.4 available:
 
 ```powershell
 py -3 tests/check_project.py
-py -3 tools/validate_assets.py --root assets/source/ebdx --strict
+py -3 tools/validate_assets.py --root assets/source/ebdx --strict --no-report
+lua tests/test_mega_boss_roster.lua
+lua tests/test_mega_trainer_audit_menu.lua
 ```
 
-On Windows, `2_CHECK_EBDX_ASSETS.bat` runs the artwork checker. Reports go into the **ignored** `reports/` folder, not the committed artwork directory. CI uses `--no-report` to avoid generating files.
+The existing GitHub Actions workflows also check the art provider, animation inventory, runtime Lua tests and trainer roster. These tests **do not** replace live gameplay QA. See [Testing and release checklist](docs/TESTING.md) and [Development guide](docs/DEVELOPMENT.md).
 
-The source artwork has **already been imported**. `1_IMPORT_EBDX_ASSETS.bat` is for recovering or intentionally refreshing the pinned upstream set; `3_IMPORT_WITH_BASE_FORMS.bat` additionally downloads the normal/reversion form artwork. Avoid replacing hand-curated assets without reviewing the source and licences.
+## Documentation
 
-## Next milestones
+- [Install / quick start](docs/INSTALLATION.md)
+- [Dependencies / compatibility](docs/DEPENDENCIES.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Trainer Mega review and exact ROM audits](docs/MEGA_TRAINER_REVIEW.md)
+- [Testing / release checklist](docs/TESTING.md)
+- [Full-form mechanics and limitations](docs/ALL_MEGA_ROSTER.md)
+- [Animation pipeline](docs/ANIMATION_PIPELINE.md)
+- [Development](docs/DEVELOPMENT.md) · [Roadmap](docs/ROADMAP.md)
+- [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
+- [Credits and asset rights](CREDITS.md)
 
-1. Test the full-roster branch on an unmodified Gen1Recomp build, especially Charizard X/Y, Rayquaza, same-stone forms and post-Gen3 species.
-2. Validate G9/HD front/back/shiny presentation, switching, fainting, doubles and save isolation across the 98 forms.
-3. Implement and verify post-Gen3 typing/ability compatibility, including Fairy, for forms that need it.
-4. Add the full Mega transformation cinematic/audio, trainer Megas and individual form presentation calibration.
+## Rights and credits
 
-See [Full 98-form gameplay and limitations](docs/ALL_MEGA_ROSTER.md), [Mega Venusaur playtest](docs/PLAYTEST_MEGA_VENUSAUR.md), [ORAS-style Mega battle command design](docs/MEGA_BATTLE_COMMAND.md), [Roadmap](docs/ROADMAP.md), [Four-mod rendering integration research](docs/RENDERING_INTEGRATION.md), [Animation pipeline](docs/ANIMATION_PIPELINE.md), [Asset import](docs/ASSET_IMPORT.md), [Implementation notes](docs/IMPLEMENTATION_NOTES.md) and [Development guide](docs/DEVELOPMENT.md).
+Mega sprite attribution includes [Aronousqui20](https://www.deviantart.com/aronousqui20/gallery) and [mangalos810](https://www.deviantart.com/mangalos810/gallery/103628774/new-work), alongside the upstream EBDX, Pokémon Essentials and other contributor credits in [CREDITS.md](CREDITS.md) and [source_metadata/README.md](assets/source/ebdx/source_metadata/README.md).
 
-## Credits and rights
+Artwork, audio, UI assets and source code can have **different licence/permission terms**. Do not publish these as if one permissive code licence automatically covers third-party art, and never redistribute Pokémon ROM data.
 
-Mega artwork credits: [Aronousqui20](https://www.deviantart.com/aronousqui20/gallery) and [mangalos810](https://www.deviantart.com/mangalos810/gallery/103628774/new-work). See [CREDITS.md](CREDITS.md) and `assets/source/ebdx/source_metadata/README.md` for the wider EBDX contributor list. Artwork, audio, icons and code can have **different permissions**; do not treat those assets as one blanket-licensed package.
+---
 
-**Project repository:** [Deluxe0111/Mega-Evolution-Gen-3](https://github.com/Deluxe0111/Mega-Evolution-Gen-3).
+Maintained at [Deluxe0111/Mega-Evolution-Gen-3](https://github.com/Deluxe0111/Mega-Evolution-Gen-3). **Experimental mod, not an official Pokémon project.**
