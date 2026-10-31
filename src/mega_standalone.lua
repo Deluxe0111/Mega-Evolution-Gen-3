@@ -754,11 +754,13 @@ function Standalone.install(mod, game, modules, battleVisual)
     if not result[1] then error(result[2],0) end
     local st=Battle._st
     if st and Battle._active and report
-        and (report.status=="existing" or report.status=="add") then
+        and (report.status=="existing" or report.status=="add"
+          or report.status=="disabled_by_choice") then
       st.megaBossChoice={
         trainerId=report.trainerId,
         slot=report.slot,
         slug=report.slug,
+        disabled=report.status=="disabled_by_choice",
       }
       st.megaBossAudit=report
     end
