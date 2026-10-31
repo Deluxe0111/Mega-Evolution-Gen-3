@@ -27,14 +27,14 @@ Source animation PNGs, EBDX import tooling, local previews, test fixtures, GitHu
 
 After all art/audio rights are cleared, build and verify the distributable ZIP:
 
-\`\`\`powershell
+```powershell
 py -3 tests/check_project.py
 py -3 tests/check_docs.py
 py -3 tools/package_release.py --check
 py -3 tools/package_release.py --rights-cleared
-\`\`\`
+```
 
-The output is \`dist/mega-evolution-gen3-v<version>.zip\` plus a SHA-256 checksum. The ZIP contains root-level \`manifest.json\`, runtime Lua code, atlas pages, icons, cries and essential documentation. It omits development tooling and unneeded source animation PNGs. \`--check\` is safe to run in CI and never creates a distributable package; \`--rights-cleared\` is an explicit maintainer assertion, not an automatic rights check.
+The output is `dist/mega-evolution-gen3-v<version>.zip` plus a SHA-256 checksum. The ZIP contains root-level `manifest.json`, runtime Lua code, atlas pages, icons, cries and essential documentation. It omits development tooling and unneeded source animation PNGs. `--check` is safe to run in CI and never creates a distributable package; `--rights-cleared` is an explicit maintainer assertion, not an automatic rights check.
 
 ## Publication
 
