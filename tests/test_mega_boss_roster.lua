@@ -138,6 +138,8 @@ for _,x in ipairs(audit) do byKey[x.key]=x end
 assert(byKey.brock.trainerId==101 and byKey.misty.trainerId==102
   and byKey.giovanni_gym.trainerId==105
   and byKey.giovanni_rocket.trainerId==106)
+assert(byKey.erika.status=="trainer_identity_not_found",
+  "The ROM audit must list unverified/missing approved bosses")
 -- Runtime approved boss choice wins over generic "last eligible."
 local policy=Policy.new(Forms,{
   speciesName=function(id)return byId[id] end,
