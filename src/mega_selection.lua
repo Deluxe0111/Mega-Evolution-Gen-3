@@ -127,6 +127,21 @@ function Selection.new()
     return chosen.slug, "activated"
   end
 
+  -- Trainer AI has no FIGHT menu, but reaches the same native resolved
+  -- move boundary. This grants one enemy-side activation only AFTER an
+  -- eligible AI Pokémon actually attempts a move. No party/items mutation.
+  function self.activateNpc(side,monKey,slug)
+    side=sideKey(side)
+    if side~="enemy" or monKey==nil or type(slug)~="string"
+        or slug=="" or used[side] then
+      return nil,"ineligible"
+    end
+    used[side]=monKey
+    active[monKey]=slug
+    armed[side],committed[side]=nil,nil
+    return slug,"activated"
+  end
+
   -- Switching out preserves the active form. Fainting clears form but never
   -- refunds this side's single Mega Evolution for that battle.
   function self.faint(monKey)

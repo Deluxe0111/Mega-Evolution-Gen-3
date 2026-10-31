@@ -35,7 +35,7 @@ local function makeStats(mon, row)
 end
 Mega.megaStats=makeStats
 
-function Mega.new(selection, eligibility, art, catalogue, typeIds)
+function Mega.new(selection, eligibility, art, catalogue, typeIds, trainerPolicy)
   assert(selection and type(eligibility)=="function" and art
     and type(catalogue)=="table")
   local forms={}
@@ -90,6 +90,7 @@ function Mega.new(selection, eligibility, art, catalogue, typeIds)
       restore()
       battle=st
       selection.beginBattle()
+      if trainerPolicy and trainerPolicy.reset then trainerPolicy.reset() end
     end
     return true
   end
@@ -164,6 +165,30 @@ function Mega.new(selection, eligibility, art, catalogue, typeIds)
   end
   function self.beforeResolved(st,b,move,slot)
     if not self.begin(st) or not b or not b.mon then return false end
+    -- NPCs do not select moves through the player menu. The enemy Mega
+    -- candidate is chosen from its real party and activated on its first
+    -- resolved move, preserving the same timing and stat/ability hooks.
+    if b.side=="enemy" then
+      if not (trainerPolicy and trainerPolicy.formFor
+          and type(move)~="nil" and not b.fainted) then return false end
+      local mon=battlerIdentity(b)
+      local status=selection.status("enemy",mon)
+      if not status or status.used or status.active then
+        attach(b)
+        return false
+      end
+      local slug=trainerPolicy.formFor(st,b)
+      local row=slug and forms[slug]
+      if not row or not art.hasSprite(slug,"front")
+          or not art.hasSprite(slug,"back") then return false end
+      local stats=makeStats(b.mon,row)
+      if not stats then return false end
+      local activated=selection.activateNpc("enemy",mon,slug)
+      if activated~=slug then return false end
+      calculated[mon]=stats
+      attach(b)
+      return true
+    end
     local chosen=selection.pendingAction("player",battlerIdentity(b))
     if not chosen or chosen.kind~="move" or chosen.move~=move
         or chosen.slot~=slot then return false end
@@ -331,6 +356,7 @@ function Mega.new(selection, eligibility, art, catalogue, typeIds)
   function self.finish()
     restore()
     selection.finishBattle()
+    if trainerPolicy and trainerPolicy.reset then trainerPolicy.reset() end
     battle=nil
   end
   function self.activeForm(mon) return selection.activeForm(identity(mon)) end

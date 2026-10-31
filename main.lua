@@ -181,6 +181,28 @@ return function(mod)
   -- cooperative hooks; on older engines registration fails closed.
   local Selection = loadSibling(mod, "src/mega_selection.lua")
   local MegaBattle = loadSibling(mod, "src/mega_battle.lua")
+  local TrainerPolicy=loadSibling(mod,"src/mega_trainer_policy.lua")
+  local trainerChoices=loadSibling(mod,"data/mega_trainer_choices.lua")
+  local trainerPolicy=TrainerPolicy and battleForms and TrainerPolicy.new(
+    battleForms, {
+      choices=trainerChoices,
+      speciesName=function(species)
+        if type(species)=="string" then return species end
+        local okP,Pokemon=pcall(require,"src.core.game3.pokemon")
+        if okP and Pokemon and type(Pokemon.keyName)=="function" then
+          local ok,name=pcall(Pokemon.keyName,species)
+          if ok then return name end
+        end
+      end,
+      normalizeMove=function(move)
+        if type(move)=="string" then return move end
+        local okM,Moves=pcall(require,"src.core.game3.battle.moves")
+        if okM and Moves and type(Moves.normalizeId)=="function" then
+          local ok,name=pcall(Moves.normalizeId,move)
+          if ok then return name end
+        end
+      end,
+    }) or nil
   local typeIds = {}
   local okTypes, Types = pcall(require, "src.core.game3.battle.types")
   if okTypes and Types and type(Types.ID) == "table" then
@@ -196,7 +218,7 @@ return function(mod)
             return p.withBattleDraw(drawFn, ...)
           end
           return drawFn(...)
-        end }, battleForms, typeIds) or nil
+        end }, battleForms, typeIds, trainerPolicy) or nil
 
   local BattleVisual = loadSibling(mod, "src/mega_battle_ui.lua")
   local battleVisual = game and BattleVisual and BattleVisual.new(mod,game) or nil
