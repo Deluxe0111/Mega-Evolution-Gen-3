@@ -72,7 +72,6 @@ assert(patched~=nil and decision.status=="add"
   and patched.foe.party[3].heldItem==nil
   and #brockParty==originalCount)
 assert(patched.foe.party[1]==brockParty[1])
-assert(boss.prepare(opts(101,brockParty),"emerald")==nil or true)
 local same=opts(101,brockParty)
 local returned,wrong=boss.prepare(same,"emerald")
 assert(returned==same and wrong.status=="not_approved")
@@ -155,13 +154,15 @@ assert(policy.choose(state)==nil)
 -- Integration uses the native Battle.start boundary, and applies its
 -- report to st only AFTER a successful native start.
 local observed
-local Battle={_active=false,start=function(options)
+local Battle={_active=false}
+Battle.start=function(options)
   observed=options
   Battle._st={trainerId=options.trainerId,foeParty=options.foe.party,
     session={version=options.gameId}}
   Battle._active=true
   return "started"
-end,reset=function()end}
+end
+Battle.reset=function()end
 local Ui={handleInput=function()return false end,
  takeCommand=function()end,sidePic=function()end}
 local Engine={resolveMove=function()end,hasFlag=function()return false end}
