@@ -21,5 +21,6 @@ assets/source/ebdx/download_results.csv
 assets/source/ebdx/mega_coverage.csv
 assets/source/ebdx/missing_assets.csv
 assets/source/ebdx/repo_asset_audit.csv
-# Generated Mega animation atlas pages, indexes and previews
+# Generated Mega animation atlas pages and indexes are deliberately tracked.
+# Do not ignore assets/runtime/; ignore only scratch build/previews/reports above.
 
