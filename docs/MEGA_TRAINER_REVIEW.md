@@ -1,3 +1,48 @@
+## Emerald verified roster decisions — 31 October 2026 (latest)
+
+These supersede the older **add-only/no-replacements** policy below **for
+the exact trainer IDs and full six-slot party fingerprints listed here**.
+All records were transcribed from the user's exported imported-ROM
+`mega_trainer_audit(2).txt`. In every other game/encounter the original
+conservative add-only policy remains in force.
+
+| Trainer | Imported Emerald IDs | Approved action |
+| --- | --- | --- |
+| Juan | #800 (Lv.58 Crawdaunt), #801 (Lv.63 Crawdaunt) | Replace Crawdaunt in slot 5 with Tatsugiri (Curly) at the same level; keep Kingdra in slot 6 |
+| Roxanne | #773 (Lv.47 Golem) | Replace slot 2 Golem with Glimmora Lv.47; preserve Nosepass slot 6 |
+| Tate & Liza | #271 (4 Pokémon), #794 (5 Pokémon) | Append Meowstic using the former final party Pokémon's level |
+| Tate & Liza | #795 (Lv.53 Drowzee), #796 (Lv.58 Hypno), #797 (Lv.63 Hypno) | Replace slot 1 with Meowstic at the removed Pokémon's level; preserve Lunatone and Solrock |
+| Wally | Candidate IDs #519, #656–660 from Gen1Recomp Emerald constants; **not matched in supplied audit** | Keep Mega Gardevoir preference, but **no curated changes** until a fresh ROM audit confirms each trainer identity and party |
+
+### Safeguards
+
+- Emerald replacements/additions above check the **exact numeric ID,
+  trainer identity/class, and full ordered original party species/levels**.
+  A mismatched, edited, or alternate ROM remains unchanged.
+- Tate & Liza must be a *single* imported ROM double trainer
+  (`Trainers.get(id).doubleBattle == true`, with one shared party).
+  Gen1Recomp separately supports two-owner battles using `twoOpponents`,
+  `trainerIdB`, `foeHalf`, or `partyOwner`. Those layouts **fail closed**
+  rather than risking swapping Pokémon in the wrong owner's party.
+- Only one enemy Mega per battle, activated before that Pokémon's
+  first resolved move; no NPC Mega Stone or permanent save/ROM team mutation.
+  Newly generated Pokémon derive battle stats/moves from the native builder;
+  replaced Pokémon keep their level/IV baseline but do **not** transfer
+  their old held item or moves to the new species.
+- Other Emerald additions already approved by the add-only roster remain
+  unchanged. If a curated encounter fails verification, the generic NPC
+  Mega fallback must not pick an unrelated Mega instead.
+- Wally: `START → MEGA AUDIT → SELECT` now includes any Wally-name
+  or Wally-script candidate from the imported trainer pack with its actual
+  numeric ID, class, party species/levels. Status
+  `trainer_identity_unverified` is **not** an authorisation to edit.
+  If no candidate is found, the unresolved Wally record stays visible.
+- Battle rules verify against the active Gen1Recomp Gen 3 engine's
+  `Trainers.get` and `State.new` party ownership model. Live Emerald
+  gameplay validation is still required, especially Tate & Liza.
+
+---
+
 ## Verified FireRed ROM audit corrections — 31 October 2026
 
 These decisions are grounded in the exported `mega_trainer_audit.txt`

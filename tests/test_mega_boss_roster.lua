@@ -17,7 +17,12 @@ local ids={VENUSAUR=3,CHARIZARD=6,BLASTOISE=9,AERODACTYL=142,
  MANECTRIC=310,CAMERUPT=323,ALTARIA=334,MEOWSTIC=678,
  GYARADOS=130,TATSUGIRI=978,ABSOL=359,BANETTE=354,GLALIE=362,
  SALAMENCE=373,METAGROSS=376,HOUNDOOM=229,SHARPEDO=319,
- GARDEVOIR=282,PIDGEY=16,EKANS=23}
+ GARDEVOIR=282,PIDGEY=16,EKANS=23,
+ AERODACTYL=142,GOLEM=76,OMASTAR=139,KABUTOPS=141,NOSEPASS=299,
+ LAPRAS=131,WHISCASH=340,POLIWHIRL=61,WALREIN=365,CRAWDAUNT=342,
+ KINGDRA=230,POLITOED=186,CLAYDOL=344,XATU=178,LUNATONE=337,
+ SOLROCK=338,SLOWPOKE=79,DROWZEE=96,HYPNO=97,SLOWKING=199,
+ STEELIX=208}
 for name,id in pairs(ids) do byId[id]=name;byName[name]=id end
 local pokemon={
  keyName=function(id)return byId[id] end,
@@ -125,12 +130,12 @@ assert(noPatch==corrupted and mismatch.status=="rom_party_mismatch")
 -- remains queued, without inserting an invalid species ID.
 sample(107,"ROXANNE","LEADER",{mon("PIDGEY",13)})
 byName.GLIMMORA=nil
-assert(assess(107,"emerald").status=="species_not_registered")
+assert(assess(107,"ruby").status=="species_not_registered")
 byName.GLIMMORA=ids.GLIMMORA
-assert(assess(107,"emerald").status=="add")
+assert(assess(107,"ruby").status=="add")
 -- Tate & Liza's double battle needs owner/party partition review.
 sample(108,"TATE&LIZA","LEADER",{mon("PIDGEY",40)})
-assert(assess(108,"emerald").status=="double_party_review")
+assert(assess(108,"ruby").status=="double_party_review")
 -- The FireRed import contains a #38 CHAMPION placeholder with no name
 -- and one Lv.5 Ekans. That record is NOT the Champion Rival.
 sample(38,"","CHAMPION",{mon("EKANS",5)})
@@ -178,6 +183,132 @@ assert(assess(111,"ruby").status=="not_approved")
 sample(112,"WALLACE","LEADER",{mon("PIDGEY",44)})
 assert(assess(112,"ruby").slug=="mega_gyarados")
 assert(assess(112,"emerald").status=="not_approved")
+-- Emerald IDs below are from the user's actual exported ROM audit, not
+-- hard-coded guesses. Every changed roster is fingerprinted and verified.
+local function namedParty(...)
+  local out={}
+  for _,pair in ipairs({...}) do
+    local species,level=pair[1],pair[2]
+    out[#out+1]=mon(species,level)
+  end
+  return out
+end
+local roxanneFinal=namedParty({"AERODACTYL",47},{"GOLEM",47},
+  {"OMASTAR",47},{"KABUTOPS",50},{"STEELIX",50},{"NOSEPASS",52})
+sample(773,"ROXANNE","LEADER",roxanneFinal)
+local rx=assess(773,"emerald")
+assert(rx.status=="replace" and rx.slot==2
+  and rx.replacedName=="GOLEM" and rx.level==47)
+local rxBefore=opts(773,roxanneFinal,"emerald")
+local rxPatched,rxDecision=boss.prepare(rxBefore,"emerald")
+assert(rxDecision.status=="replace" and #rxPatched.foe.party==6
+  and rxPatched.foe.party[2].species==ids.GLIMMORA
+  and rxPatched.foe.party[2].level==47
+  and rxPatched.foe.party[2].heldItem==nil)
+assert(roxanneFinal[2].species==ids.GOLEM
+  and rxPatched.foe.party[6]==roxanneFinal[6],
+  "Keep Nosepass and never modify the original trainer pack")
+local juan800=namedParty({"LAPRAS",56},{"WHISCASH",58},
+  {"POLIWHIRL",56},{"WALREIN",58},{"CRAWDAUNT",58},
+  {"KINGDRA",61})
+local juan801=namedParty({"LAPRAS",61},{"WHISCASH",63},
+  {"POLITOED",61},{"WALREIN",63},{"CRAWDAUNT",63},
+  {"KINGDRA",66})
+sample(800,"JUAN","LEADER",juan800)
+sample(801,"JUAN","LEADER",juan801)
+for _,id in ipairs({800,801}) do
+  local original=rom[id].party
+  local checked=assess(id,"emerald")
+  assert(checked.status=="replace" and checked.slot==5
+    and checked.replacedName=="CRAWDAUNT")
+  local changed,rpt=boss.prepare(opts(id,original,"emerald"),"emerald")
+  assert(rpt.status=="replace" and #changed.foe.party==6
+    and changed.foe.party[5].species==ids.TATSUGIRI
+    and changed.foe.party[5].level==original[5].level
+    and changed.foe.party[6]==original[6]
+    and original[5].species==ids.CRAWDAUNT,
+    "Juan keeps his original Kingdra, untouched")
+end
+local tateSets={
+  [271]=namedParty({"CLAYDOL",41},{"XATU",41},
+    {"LUNATONE",42},{"SOLROCK",42}),
+  [794]=namedParty({"SLOWPOKE",48},{"CLAYDOL",49},
+    {"XATU",49},{"LUNATONE",50},{"SOLROCK",50}),
+  [795]=namedParty({"DROWZEE",53},{"SLOWPOKE",53},
+    {"CLAYDOL",54},{"XATU",54},{"LUNATONE",55},{"SOLROCK",55}),
+  [796]=namedParty({"HYPNO",58},{"CLAYDOL",59},
+    {"SLOWPOKE",58},{"XATU",59},{"LUNATONE",60},{"SOLROCK",60}),
+  [797]=namedParty({"HYPNO",63},{"CLAYDOL",64},
+    {"SLOWKING",63},{"XATU",64},{"LUNATONE",65},{"SOLROCK",65}),
+}
+for _,id in ipairs({271,794,795,796,797}) do
+  local original=tateSets[id]
+  sample(id,"TATE&LIZA","LEADER",original)
+  rom[id].doubleBattle=true
+  local checked=assess(id,"emerald")
+  local expected=(id==271 or id==794) and "add" or "replace"
+  assert(checked.status==expected and checked.doubleBattle)
+  local before=opts(id,original,"emerald")
+  before.foe.doubleBattle=true
+  local after,result=boss.prepare(before,"emerald")
+  assert(result.status==expected
+    and #after.foe.party==math.min(6,#original+1))
+  local slot=(expected=="add") and #original+1 or 1
+  assert(after.foe.party[slot].species==ids.MEOWSTIC
+    and after.foe.party[slot].heldItem==nil)
+  assert(after.foe.party[#original].species==ids.SOLROCK)
+  assert(after.foe.party[#original-1].species==ids.LUNATONE)
+  assert(original[1].species~=ids.MEOWSTIC)
+  -- Two-owner doubles and incorrect native flags cannot be patched.
+  before.twoOpponents=true
+  local blocked,why=boss.prepare(before,"emerald")
+  assert(blocked==before and why.status=="double_party_ownership_unverified")
+  before.twoOpponents=nil
+  before.foe.doubleBattle=false
+  local blockedFlag,whyFlag=boss.prepare(before,"emerald")
+  assert(blockedFlag==before
+    and whyFlag.status=="double_party_ownership_unverified")
+end
+-- The imported doubleBattle flag itself is mandatory, not merely a
+-- name/party match.
+rom[271].doubleBattle=false
+assert(assess(271,"emerald").status=="double_battle_flag_unverified")
+rom[271].doubleBattle=true
+-- Altered party data and unfamiliar trainer IDs never receive swaps.
+local changedRom=opts(800,namedParty({"LAPRAS",56},{"WHISCASH",58},
+  {"POLIWHIRL",56},{"WALREIN",58},{"CRAWDAUNT",59},
+  {"KINGDRA",61}),"emerald")
+local noPatch,wrongParty=boss.prepare(changedRom,"emerald")
+assert(noPatch==changedRom and wrongParty.status=="rom_party_mismatch")
+rom[800].party[5].level=59
+assert(assess(800,"emerald").status=="audited_party_mismatch")
+rom[800].party[5].level=58
+sample(802,"JUAN","LEADER",juan801)
+assert(assess(802,"emerald").status=="emerald_id_not_audited")
+-- No verified Wally IDs in the supplied Emerald export. Candidates must
+-- be discoverable by their genuine ROM ID, but never altered from guesses.
+sample(901,"WALLY","POKéMON TRAINER",{mon("GARDEVOIR",45)})
+assert(assess(901,"emerald").status=="trainer_identity_unverified")
+sample(902,"WALLY","UNKNOWN CLASS",{mon("GARDEVOIR",40)})
+assert(assess(902,"emerald").status=="not_approved")
+-- The engine's own Emerald constants identify these six Wally slots,
+-- even when the imported ROM supplies a nonmatching name/class.
+for _,id in ipairs({519,656,657,658,659,660}) do
+  sample(id,"","UNKNOWN CLASS",{mon("PIDGEY",35)})
+  assert(assess(id,"emerald").status=="not_approved")
+end
+local emeraldAudit=assert(boss.audit("emerald"))
+local wallyFound={}
+for _,row in ipairs(emeraldAudit) do
+  if row.key=="wally" then
+    wallyFound[row.trainerId]=row
+    assert(row.status=="trainer_identity_unverified")
+  end
+end
+assert(wallyFound[901] and wallyFound[902]
+  and wallyFound[519] and wallyFound[656] and wallyFound[660],
+  "Wally candidate discovery must preserve actual trainer IDs")
+
 local audit=assert(boss.audit("firered"))
 local byKey={}
 for _,x in ipairs(audit) do byKey[x.key]=x end

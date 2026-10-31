@@ -50,6 +50,17 @@ assert(model:exportText():find("RULE: no Mega Evolution",1,true))
 model:filterMove(1)
 assert(model:filterName()=="ALL" and model:selected().trainerId==109)
 
+local swapModel=Model.new(function() return {{
+  key="juan",trainerId=800,name="JUAN",className="LEADER",
+  slug="mega_tatsugiri_curly",status="replace",
+  slot=5,replacedName="CRAWDAUNT",level=58,
+  party={{name="CRAWDAUNT",level=58}}
+}} end)
+swapModel:refresh()
+assert(swapModel:counts().ready==1 and swapModel:counts().review==0)
+assert(swapModel:exportText():find(
+  "PROPOSE: replace slot 5 (CRAWDAUNT) with mega_tatsugiri_curly at Lv.58",
+  1,true))
 local registerKey,screenSpec,startHook,exportFile,exportBody
 local G=setmetatable({},{
   __index=function(_,name)

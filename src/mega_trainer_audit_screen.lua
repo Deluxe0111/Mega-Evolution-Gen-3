@@ -157,6 +157,7 @@ function ScreenModule.install(mod,modelModule,audit,opts)
         end
         local flag=row.status=="existing" and "OK"
           or row.status=="add" and "ADD"
+          or row.status=="replace" and "SWAP"
           or row.status=="disabled_by_choice" and "OFF" or "CHECK"
         text(shorten(string.format("%s  #%s %s",flag,
           tostring(row.trainerId or "?"),displayName(row)),36),5,y)
