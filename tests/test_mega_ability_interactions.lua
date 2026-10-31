@@ -62,7 +62,6 @@ local nativeIntimidate=function(adapter)
       local foes=adapter._st.double and adapter:foesOf(b)
         or {adapter:foeOf(b)}
       for _,target in ipairs(foes) do
-        if target.mon.hp>0 and not (target.substituteHP or 0)>0 then end
         if target.mon.hp>0 and (target.substituteHP or 0)<=0
             and (adapter:ownSide(target).expMistTurns or 0)<=0
             and (target.stages.attack or 0)>-6
