@@ -59,6 +59,8 @@ return {
     {key="wallace_champion",name="WALLACE",classes={"CHAMPION"},slug="mega_gyarados",games={"emerald"}},
     {key="maxie",name="MAXIE",classes={"MAGMA LEADER","MAGMALEADER"},slug="mega_houndoom"},
     {key="archie",name="ARCHIE",classes={"AQUA LEADER","AQUALEADER"},slug="mega_sharpedo"},
-    {key="wally",name="WALLY",classes={"POKEMON TRAINER","POKéMON TRAINER","PKMN TRAINER","POKEMONTRAINER","POKMONTRAINER"},slug="mega_gardevoir",auditOnly=true}
+    {key="wally",name="WALLY",classes={"POKEMON TRAINER","POKéMON TRAINER","PKMN TRAINER","POKEMONTRAINER","POKMONTRAINER"},slug="mega_gardevoir",auditOnly=true,
+      -- Verified against Gen1Recomp Emerald constants, not yet the user ROM.
+      candidateTrainerIds={emerald={519,656,657,658,659,660}}}
   }
 }
