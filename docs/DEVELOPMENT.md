@@ -26,6 +26,8 @@ For the full runtime suite and atlas checks, follow `.github/workflows/runtime-a
 - `src/mega_boss_roster.lua`: only operate on a **copied per-battle foe party**, after validating the imported ROM's real ID, species, level, class and game edition.
 - `src/mega_atlas.lua`: render temporary Mega forms, not the ordinary G9/HD art provider's generic Pokémon assets.
 
+The manifest declares `engine_internals`, as the mod requires and wraps Gen1Recomp's private battle modules. This is expected for the current architecture; the project does not need network access.
+
 The mod should **never change a Pokémon's saved species or encounter identity** when Mega Evolving. Track missing newer moves/types/abilities as integration gaps, not as if the base Gen3 engine supported them automatically. See [Architecture](ARCHITECTURE.md).
 
 ## Asset workflow
