@@ -3,7 +3,7 @@
 -- Exact Emerald IDs / party fingerprints below come from the imported ROM audit.
 -- Replacements are authorised ONLY for those fingerprint-matched encounters.
 -- Wally stays audit-only until his imported-ROM IDs are identified.
--- Kanto/Hoe nn battles are edition-specific.
+-- Kanto/Hoenn battles are edition-specific.
 return {
   firered={
     {key="brock",name="BROCK",classes={"LEADER"},slug="mega_aerodactyl"},
