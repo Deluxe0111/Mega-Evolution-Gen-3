@@ -40,6 +40,7 @@ function Standalone.install(mod, game, modules, battleVisual)
   local Engine = modules and modules.Engine or required("src.core.game3.battle.engine")
   local Damage = modules and modules.Damage or required("src.core.game3.battle.damage")
   local Battle = modules and modules.Battle or required("src.core.game3.battle")
+  local Anim = modules and modules.Anim or required("src.core.game3.battle.anim")
   local Boss=modules and modules.MegaBoss
   local BattleProfile=modules and modules.BattleProfile
     or required("src.core.game3.battle.profile")
@@ -137,6 +138,39 @@ function Standalone.install(mod, game, modules, battleVisual)
     local func = function(...) return body(prev, ...) end
     holder[key] = func
     wrapped[#wrapped + 1] = { holder = holder, key = key, ours = func, old = prev }
+  end
+
+  -- Gen3 emits battle.fainted at damage resolution, BEFORE calling the
+  -- native sprite sink/slide. Delay clearing the Mega form until the actual
+  -- Anim.faintMon completion, after the final Mega frame has been drawn.
+  -- Wrapping the callback does not delay native faint/replacement flow.
+  local faintAnimationHooked=false
+  if Anim and type(Anim.faintMon)=="function" then
+    faintAnimationHooked=true
+    wrap(Anim,"faintMon",function(next,key,opts)
+      if not enabled() or not (game.fainted and game.activeForm) then
+        return next(key,opts)
+      end
+      local st=Battle._st or Ui._st
+      local id=type(Anim.idOf)=="function" and Anim.idOf(key or "enemy")
+      if id==nil then
+        id=(key=="player" and 0) or (key=="enemy" and 1)
+          or tonumber(key)
+      end
+      local b=id~=nil and current(st,id) or nil
+      local mon=b and b.mon
+      if not (mon and game.activeForm(mon)) then return next(key,opts) end
+      local args={}
+      for k,v in pairs(opts or {}) do args[k]=v end
+      local original=args.onComplete
+      args.onComplete=function(...)
+        -- Anim.faintMon has already hidden the Pokémon at this point.
+        -- Restore its native form/ability before replacement and EXP flow.
+        game.fainted(mon)
+        if type(original)=="function" then return original(...) end
+      end
+      return next(key,args)
+    end)
   end
 
   wrap(Ui, "handleInput", function(next, input)
@@ -739,7 +773,7 @@ function Standalone.install(mod, game, modules, battleVisual)
     return next(...)
   end)
 
-  local bridge = {}
+  local bridge = {faintAnimationHooked=faintAnimationHooked}
   function bridge.uninstall()
     if not active then return end
     active = false
