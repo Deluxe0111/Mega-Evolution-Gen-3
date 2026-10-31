@@ -13,7 +13,7 @@ The repository's `manifest.json` is the authoritative machine-readable dependenc
 | [Untamed Advanced — compatible fork](https://github.com/Deluxe0111/untamed-advanced) | `untamed_advanced` | Overworld wild Pokémon and follower gameplay | Optional; battle and overworld integration need in-game checks |
 | [Nuzlocke — Gen 3 fork](https://github.com/Deluxe0111/nuzlocke) | `nuzlocke` | Challenge rules, randomiser, catch restrictions and run summaries | Optional; test permadeath, encounter identity and victory/defeat sequences |
 
-Sources above were checked against the repositories' own `manifest.json` IDs. The project records the user's compatible Untamed Advanced and Nuzlocke forks as the preferred sources; these may differ from other public releases.
+Sources above were checked against the repositories' own `manifest.json` IDs. The listed Untamed Advanced and Nuzlocke links point to the compatible forks used for integration; behaviour may differ from other branches or public releases.
 
 ## What the dependency fields mean
 

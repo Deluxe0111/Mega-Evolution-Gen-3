@@ -8,7 +8,7 @@ No patched GBA ROM, game binary modification or separate Gen1Recomp engine fork 
 
 ## Quick start
 
-1. Download this repository as a ZIP or clone it; import it from the Gen1Recomp launcher's **MODS** screen.
+1. Install a published release ZIP using Gen1Recomp's **MODS** screen. Until a release is published, use a checkout of the development repository for testing.
 2. Enable **Mega Evolution Gen 3** for a supported Gen 3 game.
 3. In Oak's Lab (FireRed/LeafGreen) or Birch's Lab (Ruby/Sapphire/Emerald), buy the **Key Stone (₽10,000)** and the Pokémon's **Mega Stone (₽5,000)** from the added lab aide.
 4. Give the Pokémon its Mega Stone, open **FIGHT**, toggle Mega with **START** (or the on-screen control), then select its move.
@@ -46,9 +46,9 @@ All six are **optional to install**, but National Dex is **necessary for feature
 
 ## Trainer roster at a glance
 
-**FireRed:** the approved boss roster includes Brock, Misty, Surge, Erika, Koga, Sabrina, Blaine, Giovanni, the Elite Four and Champion Rival. The imported-ROM audit fixes Giovanni's early Rocket battle (#348, **no Mega**) and later Rocket battle (#349, **Mega Mewtwo Y**), filters a false Champion #38, and selects the last eligible duplicate Pokémon.
+**FireRed:** the curated boss roster includes Brock, Misty, Surge, Erika, Koga, Sabrina, Blaine, Giovanni, the Elite Four and Champion Rival. The imported-ROM audit fixes Giovanni's early Rocket battle (#348, **no Mega**) and later Rocket battle (#349, **Mega Mewtwo Y**), filters a false Champion #38, and selects the last eligible duplicate Pokémon.
 
-**Emerald:** approved selections include Roxanne (Glimmora), Tate & Liza (Meowstic), Juan (Tatsugiri Curly), the Elite Four and major villains. Exact audited rematches now support safe replacement of Golem/Crawdaunt/Drowzee/Hypno in designated battles. Wally remains **Gardevoir selected but audit-only** until his imported-ROM trainer records are confirmed; the host's Emerald constant candidates are #519 and #656–660.
+**Emerald:** curated selections include Roxanne (Glimmora), Tate & Liza (Meowstic), Juan (Tatsugiri Curly), the Elite Four and major villains. Audited rematches support safe replacement of Golem/Crawdaunt/Drowzee/Hypno in designated battles. Wally remains **Gardevoir selected but audit-only** until his imported-ROM trainer records are confirmed; the host's Emerald constant candidates are #519 and #656–660.
 
 For exact rules, party fingerprints, version caveats and the complete 32-entry roster, see **[Trainer Mega choices and audit](docs/MEGA_TRAINER_REVIEW.md)**.
 
@@ -92,7 +92,7 @@ The existing GitHub Actions workflows also check the art provider, animation inv
 - [Animation pipeline](docs/ANIMATION_PIPELINE.md)
 - [Development](docs/DEVELOPMENT.md) · [Roadmap](docs/ROADMAP.md)
 - [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
-- [Credits and asset rights](CREDITS.md)
+- [Credits and asset rights](CREDITS.md) · [Release requirements](docs/RELEASE.md)
 
 ## Rights and credits
 
