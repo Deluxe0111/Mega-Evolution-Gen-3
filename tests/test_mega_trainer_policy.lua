@@ -90,6 +90,33 @@ local ray={mon(384)}
 assert(policy.choose({foeParty=ray})==nil)
 ray[1].moves={"DRAGON_ASCENT"}
 assert(policy.choose({foeParty=ray}).slug=="mega_rayquaza")
+-- Per-game reviewed override selects the requested existing form, but
+-- refuses incorrect slots/forms and supports explicit boss exemptions.
+local overrides={
+  firered={
+    [55]={slot=1,slug="mega_charizard_y"},
+    [56]={disabled=true},
+    [57]={slot=2,slug="mega_charizard_x"},
+  },
+}
+local curated=Policy.new(Forms,{
+  speciesName=function(sp)return names[sp]end,
+  normalizeMove=function(m)return m end,
+  choices=overrides,
+})
+local cp={mon(6),mon(130)}
+local ch={session={game="firered"},foeParty=cp,trainerId=55}
+assert(curated.choose(ch).slug=="mega_charizard_y")
+ch.trainerId=56
+assert(curated.choose(ch)==nil)
+ch.trainerId=57
+assert(curated.choose(ch)==nil,"mismatched curated Pokémon must fail closed")
+ch.trainerId=58
+assert(curated.choose(ch).slot==2,"uncurated foes choose last eligible")
+ch.session.game="emerald"
+ch.trainerId=55
+assert(curated.choose(ch).slot==2,"overrides must not bleed between games")
+
 -- A newly created battle resets the one-per-enemy limit.
 local newParty={mon(3)}
 st,b=makeState(newParty)
