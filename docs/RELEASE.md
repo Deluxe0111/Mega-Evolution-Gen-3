@@ -1,6 +1,6 @@
 # Release preparation
 
-`v1.0.0-Beta` is an **experimental pre-release** in the private development repository. Its automated packaging and regression checks do not constitute five-game, cross-mod or public redistribution certification.
+`v1.0.0-Beta` is a **Beta pre-release** in the private development repository. Its automated packaging and regression checks do not constitute five-game, cross-mod or public redistribution certification.
 
 ## Distribution prerequisites
 
@@ -9,7 +9,7 @@
 3. **Gameplay:** Run the acceptance and cross-mod matrix in [Testing](TESTING.md), including FireRed and Emerald with/without National Dex and G9/HD sprite providers.
 4. **Build health:** Confirm required GitHub Actions workflows pass. A green metadata check alone is insufficient.
 5. **Installability:** Test a clean extracted mod and the actual ZIP through Gen1Recomp's Mods UI. Check for the Key Stone shop, Mega button, animations, switch/faint behaviour and the party screen.
-6. **Version:** The Beta remains marked `experimental`. Do not label it stable or make the repository publicly downloadable until gameplay and asset-rights requirements are satisfied.
+6. **Version and category:** The Beta remains a GitHub pre-release, but its mod-manager category is `MECHANIC` and `experimental` is `false`. Do not make the repository publicly downloadable until gameplay and asset-rights requirements are satisfied.
 
 ## Runtime contents to preserve
 

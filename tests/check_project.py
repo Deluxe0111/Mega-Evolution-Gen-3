@@ -48,8 +48,10 @@ assert manifest.get("dependency_sources") == expected_deps, (
 assert not manifest.get("dependencies"), "Base game should remain standalone"
 assert manifest.get("permissions") == ["engine_internals"], (
     "Private Gen 3 battle requires must declare engine_internals")
-assert manifest.get("experimental") is True, (
-    "Do not publish an unverified build as stable")
+assert manifest.get("category") == "MECHANIC", (
+    "Mega Evolution must be grouped under the Gen1Recomp MECHANIC category")
+assert manifest.get("experimental") is False, (
+    "The Beta must not trigger the experimental activation prompt")
 for doc in [
     "docs/INSTALLATION.md", "docs/DEPENDENCIES.md", "docs/ARCHITECTURE.md",
     "docs/MEGA_TRAINER_REVIEW.md", "docs/TESTING.md",

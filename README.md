@@ -2,7 +2,7 @@
 
 **Mega Evolution for Pokémon FireRed, LeafGreen, Ruby, Sapphire and Emerald in [Gen1Recomp](https://github.com/bryanthaboi/gen1recomp).**
 
-> **Status: v1.0.0-Beta (experimental pre-release).** Includes 98 Mega form entries, 92 held Mega Stones plus a Key Stone, battle Mega selection, temporary form/stats/art, trainer Mega behaviour and curated boss encounters. Automated tests cover the current implementation, but **full cross-mod and five-game gameplay QA is not complete**. This release is currently available through the private development repository.
+> **Status: v1.0.0-Beta (pre-release).** Includes 98 Mega form entries, 92 held Mega Stones plus a Key Stone, battle Mega selection, temporary form/stats/art, trainer Mega behaviour and curated boss encounters. Automated tests cover the current implementation, but **full cross-mod and five-game gameplay QA is not complete**. This release is currently available through the private development repository.
 
 No patched GBA ROM, game binary modification or separate Gen1Recomp engine fork is needed. Battle integration uses existing Gen 3 Lua entrypoints and may need maintenance as the host engine evolves. The manifest explicitly requests Gen1Recomp's **engine_internals** permission because the mod wraps private battle functions; it does not request network permission.
 
@@ -103,4 +103,4 @@ Mega sprite attribution includes [Aronousqui20](https://www.deviantart.com/arono
 
 ---
 
-Maintained at [Deluxe0111/Mega-Evolution-Gen-3](https://github.com/Deluxe0111/Mega-Evolution-Gen-3). **Experimental mod, not an official Pokémon project.**
+Maintained at [Deluxe0111/Mega-Evolution-Gen-3](https://github.com/Deluxe0111/Mega-Evolution-Gen-3). **Beta mechanics mod; not an official Pokémon project.**

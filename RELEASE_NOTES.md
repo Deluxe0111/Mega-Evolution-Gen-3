@@ -17,7 +17,9 @@ First versioned beta of Mega Evolution for Gen1Recomp's FireRed, LeafGreen, Ruby
 
 The base game does not require other mods. **National Dex Gen 3** is needed for later-generation Pokémon and corresponding Mega boss choices. G9 Battle Sprites, Gen 3 HD Sprites, Modern Spawns, Untamed Advanced and Nuzlocke are optional. See `README.md` and `CREDITS.md` inside the ZIP.
 
-## Beta status and limitations
+## Category and Beta limitations
+
+Classified as a **Mechanics** mod in Gen1Recomp (`MECHANIC`), with no experimental enablement warning.
 
 This is a testing pre-release. FireRed/Emerald live verification and the complete five-game/cross-mod compatibility matrix are unfinished. Wally's Emerald curated encounter remains audit-only until his ROM records are confirmed. Modern Fairy/ability/move interactions depend on the installed provider, and compatibility may vary.
 

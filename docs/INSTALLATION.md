@@ -1,11 +1,11 @@
 # Installation and first battle
 
-This is an **experimental Gen1Recomp Mod API 2 mod** for FireRed, LeafGreen, Ruby, Sapphire and Emerald. It uses the current Gen 3 runtime, not a patched GBA ROM. It has no downloadable release attached to this repository yet; use a repository checkout or ZIP while the project is in development.
+This is a **Gen1Recomp Mod API 2 mechanics mod (v1.0.0-Beta)** for FireRed, LeafGreen, Ruby, Sapphire and Emerald. It uses the Gen 3 runtime, not a patched GBA ROM. Download the installable ZIP attached to the [Beta GitHub Release](https://github.com/Deluxe0111/Mega-Evolution-Gen-3/releases/tag/v1.0.0-Beta); the repository may require access.
 
 ## 1. Install Mega Evolution
 
 1. Obtain a compatible [Gen1Recomp](https://github.com/bryanthaboi/gen1recomp) build and import your own legally obtained Gen 3 game in the host application.
-2. On this repository's GitHub page, choose **Code → Download ZIP** (or clone the repository). The repository must be accessible to you; it may be private during development.
+2. On the [v1.0.0-Beta Release](https://github.com/Deluxe0111/Mega-Evolution-Gen-3/releases/tag/v1.0.0-Beta), download **mega-evolution-gen3-v1.0.0-Beta.zip**, not GitHub's source-code ZIP.
 3. In the Gen1Recomp launcher, open **MODS** and import the ZIP. The launcher accepts a mod with `manifest.json` at the ZIP root or inside one top-level folder.
 4. Enable **Mega Evolution Gen 3** in the launcher; start FireRed, LeafGreen, Ruby, Sapphire or Emerald.
 5. Confirm the Mega mod is active. The regular Pokémon and save data remain separate from this mod's temporary in-battle forms.

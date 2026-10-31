@@ -8,7 +8,7 @@
   "games": [
     "gen3"
   ],
-  "category": "OTHER",
+  "category": "MECHANIC",
   "priority": 260,
   "permissions": [
     "engine_internals"
@@ -23,7 +23,7 @@
     "nuzlocke"
   ],
   "conflicts": [],
-  "description": "Temporary battle Mega Evolution for 98 forms in Gen 3, with 92 Mega Stones, animation and curated trainer Megas. Extra species require a compatible National Dex mod; gameplay integration is experimental.",
+  "description": "Temporary battle Mega Evolution for 98 forms in Gen 3, with 92 Mega Stones, animation and curated trainer Megas. Extra species require a compatible National Dex mod; includes battle mechanics and curated trainer Megas.",
   "github": "Deluxe0111/Mega-Evolution-Gen-3",
   "dependency_sources": {
     "national_dex_gen3": "poooooby/national_dex_gen3",
@@ -33,5 +33,5 @@
     "untamed_advanced": "Deluxe0111/untamed-advanced",
     "nuzlocke": "Deluxe0111/nuzlocke"
   },
-  "experimental": true
+  "experimental": false
 }
