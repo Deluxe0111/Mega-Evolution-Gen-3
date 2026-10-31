@@ -87,6 +87,7 @@ The existing GitHub Actions workflows also check the art provider, animation inv
 - [Architecture](docs/ARCHITECTURE.md)
 - [Trainer Mega review and exact ROM audits](docs/MEGA_TRAINER_REVIEW.md)
 - [Testing / release checklist](docs/TESTING.md)
+- [Verified Mega base stats and source corrections](docs/MEGA_STAT_AUDIT.md)
 - [Full-form mechanics and limitations](docs/ALL_MEGA_ROSTER.md)
 - [Animation pipeline](docs/ANIMATION_PIPELINE.md)
 - [Development](docs/DEVELOPMENT.md) · [Roadmap](docs/ROADMAP.md)
