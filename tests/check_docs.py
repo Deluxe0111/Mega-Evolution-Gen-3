@@ -35,8 +35,8 @@ for name in SOURCES:
 assert verified >= 15, "Expected a navigable local documentation set"
 # Public-facing documentation must not include drafting or conversation artefacts.
 EDITORIAL_ARTIFACTS = re.compile(
-    r"\\b(?:chatgpt|openai|ai[- ]generated|as requested|send me|user(?:'s)? "
-    r"(?:asked|submitted)|we previously|what we must decide together)\\b",
+    r"\b(?:chatgpt|openai|ai[- ]generated|as requested|send me|user(?:'s)? "
+    r"(?:asked|submitted)|we previously|what we must decide together)\b",
     re.IGNORECASE,
 )
 for doc in [ROOT / "README.md", ROOT / "CREDITS.md", *sorted((ROOT / "docs").rglob("*.md"))]:

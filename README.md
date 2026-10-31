@@ -17,6 +17,8 @@ The player gets **one Mega Evolution per battle**. The form appears before the m
 
 **[Detailed installation and troubleshooting →](docs/INSTALLATION.md)**
 
+The player ZIP is generated from a vetted runtime-file inventory, not from GitHub's full source archive. See [release preparation](docs/RELEASE.md).
+
 ## Dependencies
 
 **The base mod has no hard mod-to-mod dependencies.** Gen1Recomp is the host and is required. Additional Pokémon not in Gen 1–3 **do** require an active species provider (recommended: National Dex Gen 3). The mod's manifest declares the following verified optional IDs and source repositories so the launcher can show the correct dependencies:

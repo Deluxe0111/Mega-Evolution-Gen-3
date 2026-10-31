@@ -16,6 +16,8 @@ jobs:
         run: python tests/check_project.py
       - name: Validate documentation links and dependency references
         run: python tests/check_docs.py
+      - name: Check distributable file inventory (without packaging assets)
+        run: python tools/package_release.py --check
       - name: Validate all 98 Mega base stats and documented official errata
         run: python tests/check_mega_stats.py
       - name: Install Lua for runtime policy regressions
