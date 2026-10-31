@@ -138,7 +138,7 @@ enemyState.enemy=npc
 local Engine={
   resolveMove=function(user,target,move,slot,adapter,st)
     engineHits=engineHits+1
-    enemyBeforeAttack[#enemyBeforeAttack]={ability=user.ability,
+    enemyBeforeAttack[#enemyBeforeAttack+1]={ability=user.ability,
       form=game.activeForm(user.mon)}
     return "attack-done"
   end,
