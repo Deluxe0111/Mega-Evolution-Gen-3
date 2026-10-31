@@ -481,7 +481,7 @@ function Standalone.install(mod, game, modules, battleVisual)
         Reactive.onDamaged(game,M,before,after,Secondary)
       end
       if Edge and Edge.parentalHitSecondary then
-        Edge.parentalHitSecondary(game,M,dealt,Secondary,EffectIds)
+        Edge.parentalHitSecondary(game,M,dealt,Secondary,EffectIds,hadSub)
       end
       if Champions and Champions.afterDamage then
         Champions.afterDamage(game,M,dealt,hadSub)
