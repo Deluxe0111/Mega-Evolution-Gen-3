@@ -14,5 +14,11 @@ jobs:
           python-version: '3.11'
       - name: Check manifest and artwork inventory format
         run: python tests/check_project.py
+      - name: Install Lua for runtime policy regressions
+        run: sudo apt-get update -qq && sudo apt-get install -y lua5.4
+      - name: Check Emerald trainer Mega roster and in-game audit
+        run: |
+          lua tests/test_mega_boss_roster.lua
+          lua tests/test_mega_trainer_audit_menu.lua
       - name: Check imported artwork if present
         run: python tools/validate_assets.py --root assets/source/ebdx --strict --no-report
