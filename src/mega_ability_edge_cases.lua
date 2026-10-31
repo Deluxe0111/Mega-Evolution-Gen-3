@@ -69,7 +69,7 @@ end
 -- The native Gen3 multi-hit loop calls Secondary.withChance ONCE after
 -- all hits. Parental Bond's cloned two-hit move should instead roll the
 -- qualifying non-self secondary separately after each damaging hit.
-function Edge.parentalHitSecondary(game,M,dealt,Secondary,EffectIds)
+function Edge.parentalHitSecondary(game,M,dealt,Secondary,EffectIds,hitSubstitute)
   if not (M and M._megaParentalBond
       and ability(game,M.user)=="PARENTAL_BOND"
       and M.target and M.user~=M.target
@@ -80,7 +80,11 @@ function Edge.parentalHitSecondary(game,M,dealt,Secondary,EffectIds)
   end
   local spec=EffectIds.SECONDARY[M.effect]
   if not (spec and spec.eff and not spec.user) then return false end
-  if (tonumber(dealt) or 0)<=0 or M.hitSubstitute then return false end
+  -- M.hitSubstitute may remain set after the first hit broke a
+  -- substitute. The per-hit pre-damage substitute snapshot is authoritative
+  -- for the second hit and prevents suppressing a legitimate HP hit.
+  if hitSubstitute==nil then hitSubstitute=M.hitSubstitute end
+  if (tonumber(dealt) or 0)<=0 or hitSubstitute then return false end
   -- The native post-loop roll must be skipped even if this hit KO'd
   -- its target (in which case no secondary can be inflicted).
   M._megaParentalSecondaryApplied=true
