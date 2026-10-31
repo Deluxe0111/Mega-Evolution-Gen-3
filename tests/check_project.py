@@ -46,6 +46,8 @@ assert set(optional) == set(expected_deps), (
 assert manifest.get("dependency_sources") == expected_deps, (
     "Missing/stale GitHub dependency source hints")
 assert not manifest.get("dependencies"), "Base game should remain standalone"
+assert manifest.get("permissions") == ["engine_internals"], (
+    "Private Gen 3 battle requires must declare engine_internals")
 assert manifest.get("experimental") is True, (
     "Do not publish an unverified build as stable")
 for doc in [
