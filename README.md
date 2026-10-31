@@ -4,7 +4,7 @@
 
 > **Status: experimental / active development.** The mod currently contains 98 Mega form entries, 92 held Mega Stones plus a Key Stone, a battle Mega command, temporary Mega form/stats/art, trainer Mega behaviour and a ROM-aware curated boss roster. Headless tests and selected gameplay scenarios have been exercised, but **full cross-mod and five-game QA is not complete**. There is **no published GitHub Release** yet.
 
-No patched GBA ROM, game binary modification or separate Gen1Recomp engine fork is needed. Battle integration uses existing Gen 3 Lua entrypoints and may need maintenance as the host engine evolves.
+No patched GBA ROM, game binary modification or separate Gen1Recomp engine fork is needed. Battle integration uses existing Gen 3 Lua entrypoints and may need maintenance as the host engine evolves. The manifest explicitly requests Gen1Recomp's **engine_internals** permission because the mod wraps private battle functions; it does not request network permission.
 
 ## Quick start
 
@@ -90,6 +90,7 @@ The existing GitHub Actions workflows also check the art provider, animation inv
 - [Full-form mechanics and limitations](docs/ALL_MEGA_ROSTER.md)
 - [Animation pipeline](docs/ANIMATION_PIPELINE.md)
 - [Development](docs/DEVELOPMENT.md) · [Roadmap](docs/ROADMAP.md)
+- [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
 - [Credits and asset rights](CREDITS.md)
 
 ## Rights and credits
