@@ -1,72 +1,42 @@
-# Full Mega roster — experimental stock Gen1Recomp gameplay
+# Complete Mega form roster: gameplay and limitations
 
-This branch enables **all 98 EBDX form keys** instead of only Mega Venusaur.
-There are 92 distinct held Mega Stone items already registered, and the Key
-Stone remains required in the Bag. The 98 variants include the X/Y/Z forms,
-several same-stone original-form variants and Mega Rayquaza.
+The mod declares **98 Mega form entries** derived from the committed EBDX source inventory and registers **92 distinct Mega Stone items** plus the Key Stone. These include X/Y/Z-style variants, different original-form representations and Mega Rayquaza. The form and item source of truth lives in `data/mega_forms.lua`, `data/mega_battle_forms.lua` and `data/mega_items.lua`.
 
-## How to use
+## How Mega Evolution works
 
-1. Install the full-roster Mega mod branch and a compatible species pack for
-   Pokémon absent from original Gen III (e.g. National Dex Gen 3).
-2. Give the trainer Key Stone (item ID 1599) in the Key Items pocket.
-3. Give the Pokémon the exact Mega Stone registered for its species/variant.
-   Mega Rayquaza instead needs to know Dragon Ascent and cannot hold a
-   competing Mega Stone. Dragon Ascent must exist in the move provider.
-4. Open FIGHT, press START (or click the available Mega label), choose a move.
-   Transform before move resolution; keep the temporary Mega until faint/end.
+1. The player must own the Key Stone in the Bag. The Pokémon usually must hold its matching Mega Stone; Mega Rayquaza instead requires Dragon Ascent from the installed move provider.
+2. During an eligible battle, toggle Mega from the **FIGHT** menu and commit an ordinary move.
+3. Transform **before the attack resolves**; apply the Mega's temporary stats, compatible types/abilities, art and cry.
+4. A Mega form persists through switching out and back in, until it faints or the battle ends. Fainting does not restore the one-Mega allowance.
+5. Only **one Mega per side per battle**. Eligible ordinary NPC trainers can use one too, with reviewed overrides for notable trainers.
 
-## Implementation and rules
+Temporary battle data must not rewrite a permanent Pokémon species slot, nickname, IV/EV, shiny identity, encounter provenance or save/PC records.
 
-- `data/mega_battle_forms.lua` is generated from pinned EBDX PBS metadata:
-  all 98 slugs, exact stones and original forms, 6 base stats, types, abilities.
-- `src/mega_battle.lua` replaces the single-form controller. Never changes
-  a permanent species slot, saved mon data, nickname, IV/EV, or provenance.
-- Non-HP Mega stats are calculated from the **Mega form's** base stats and the
-  Pokémon's current level, personality (nature), IVs, and EVs. Max HP remains
-  unchanged in battle. Turn-order code sees the new speed from the **next**
-  turn, while the activation turn retains pre-Mega Speed.
-- The live battler's ability and recognized types temporarily change. On
-  switch-in the same Mega form is restored. On faint/end the original live
-  battler fields are restored, with no refund of the one-Mega allowance.
-- Per-form front, back, shiny art all use the existing animation atlas. The
-  excellent tested Mega Venusaur presentation is unchanged. Untuned Mega art
-  gets first-pass per-animation dimensions using common alpha bounds, retaining
-  the original transparent bottom gap for deliberate flying/hovering. The full
-  roster must be visually calibrated species by species.
-- Same-stone variations (Meowstic, Zygarde, Magearna, Tatsugiri) are selected
-  **only** if the original mon's `form`/`formId` matches the pinned source
-  base-form number. This avoids silently picking the wrong representation.
-- Native Gen3 on-entry effects are dispatched only when the existing engine
-  knows the ability. There is no attempt to fabricate effects for new abilities.
+## Form and species requirements
 
-## Known gameplay gaps — important
+- Base-game Mega candidates such as Venusaur, Blastoise and Gengar can work without a separate species pack when all required native abilities/moves exist.
+- Later-generation candidates, including **Glimmora, Meowstic and Tatsugiri**, require an active compatible species provider, preferably [National Dex Gen 3](https://github.com/poooooby/national_dex_gen3).
+- Where multiple Mega entries share a stone or species (for example X/Y, Meowstic forms, Tatsugiri forms or Zygarde), the base form/held stone and specifically selected form must be respected. Do not silently choose the wrong variant.
+- Sprite presence **does not imply** that the species, form, move or corresponding modern mechanics exist in the current game.
 
-Enabling a form does **not** imply all post-Gen-III mechanics work:
-- Stock Gen 3 has no Fairy type ID or Fairy type-effectiveness chart. If a Mega
-  gains Fairy, we leave its current battle typing unchanged rather than use
-  a bogus type number. Type-expansion integration is required for correct Fairy.
-- A number of EBDX abilities (e.g. Pixilate, Tough Claws, Parental Bond and
-  original abilities from later generations) do not have native Gen3 engine
-  implementations. Ability identity changes, but such effects do not magically
-  exist. Native abilities work to the extent the engine implements them.
-- No opponent/trainer Mega commands, full transformation cinematic, dedicated
-  cries or moves not available from installed move providers.
-- Original battle presentation of many Megas remains a *first-pass estimate*.
-  Hovering/airborne sprites are **never automatically grounded**.
-- Rayquaza works only if the currently installed move pack exposes Dragon
-  Ascent in its move IDs and the mon actually knows it.
-- Testing in headless Lua mocks and CI is not a substitute for Emerald/FireRed
-  playtests, especially doubles, changed typing and cross-mod interactions.
+## Combat compatibility
 
-## Testing checklist
+Base Mega stats are calculated as temporary battler state. The current mod also implements numerous modern effects in its focused Mega ability modules; [ability audit](MEGA_ABILITY_AUDIT.md) is the feature-level inventory.
 
-- Test Venusaur as a regression first, then Charizard X/Y, Blastoise, Rayquaza,
-  Meowstic's two forms, Zygarde, Magearna and all three Tatsugiri.
-- Test Gen I-III and National Dex species with the G9 and HD mods both
-  enabled, then disable HD. Watch for animation clipping and enemy sprite scale.
-- Confirm stats of the *live battler* change; original party record and save do
-  not. Test switch/faint/restart, wrong stone, no Key Stone, cancelled move,
-  different opponent and doubled-target selection.
-- Check unsupported abilities and Fairy as **known limitations** and do not
-  describe them as faithfully implemented until their effects exist.
+Not every post-Gen3 interaction is identical across host engine and content-pack versions. Especially test Fairy type/effectiveness, move providers, priority, weather, immunity and multi-hit interactions. Changes to modern ability handlers or added moves can require new hooks.
+
+## Visual presentation
+
+Normal/shiny front/back Mega sprites and icons come from the source set and atlas provider. Frame positioning, hover behaviour, health-box indicator, switch menu and cry playback have been developed; **every species/form still needs live visual QA**. Normal, non-Mega Pokémon should keep their active G9/HD artwork ownership.
+
+The source artwork, item icons and cries are committed. Do not delete `assets/source/ebdx` while packaging merely because the battle animation atlas exists.
+
+## Trainer roster
+
+The mod supports the selected 32 famous trainer identities with per-ROM audit, add-only defaults and **explicit approved Emerald replacements**. Full parties are not silently rewritten. See [Trainer Mega review](MEGA_TRAINER_REVIEW.md) for FireRed Giovanni, Emerald Juan/Roxanne/Tate & Liza, Wally and the remaining per-battle decisions.
+
+## Test priorities
+
+Start with Venusaur, both Charizard variants, Blastoise, both Mewtwos, Rayquaza, Meowstic, all Tatsugiri, then large/hovering art and shiny gender variants. Run with no optional mods, then with National Dex, G9 and HD, and test faint/switch/save isolation and boss battles.
+
+See [Testing](TESTING.md) for a reproducible matrix and [Dependencies](DEPENDENCIES.md) for prerequisite mod IDs and links.
