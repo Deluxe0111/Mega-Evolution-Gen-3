@@ -1,18 +1,23 @@
 # Changelog
 
-## Unreleased — public release preparation
+## v1.0.0-Beta — 31 October 2026
 
-- Consolidated documentation around current battle behaviour, dependencies, installation and test coverage.
-- Removed superseded prototype guides and conversational development notes.
-- Clarified distribution prerequisites and preservation of third-party credits.
-- Added a release packaging and verification procedure. No public build has been certified.
+First versioned Gen1Recomp Gen 3 Mega Evolution pre-release.
 
-## 0.1.0 — development preview (unreleased)
+- 98 Mega form entries with battle presentation and 92 Mega Stones plus a Key Stone.
+- In-battle Mega selection, temporary form stats, abilities, animations, shiny art, party icons and cries.
+- Oak/Birch laboratory Mega Stone shops and one Mega Evolution per trainer side per battle.
+- ROM-aware curated Kanto/Hoenn trainer roster and in-game MEGA AUDIT.
+- Compatibility integrations for optional National Dex, G9 art, HD sprites, Untamed Advanced, Modern Spawns and Nuzlocke packs.
+- Minimal installable ZIP with only runtime Lua, indexed atlas pages, directly-loaded UI/icon/audio, README and full attribution; includes SHA-256 checksum.
 
-- Implemented temporary Mega Evolution in Gen 3 battles, with Key Stone and Mega Stone handling.
-- Added 98 Mega form entries, 92 Mega Stones, animated art, shiny variants, party icons and cries.
-- Added the Mega selection command, battle-specific stats and abilities, and per-side Mega limits.
-- Added automatic trainer Mega behaviour, curated boss rosters and an in-game trainer audit.
-- Added a lab aide shop, Mega Tuner, regression tests and integration support for optional Gen 3 content mods.
+**Beta limitations:** Full five-game and cross-mod gameplay certification is outstanding. Source art/audio permissions must be established before wider redistribution; this pre-release is intended for testing in the private repository.
 
-This changelog tracks repository changes, not a published or certified player release.
+## Earlier development preview
+
+- Ported Mega Evolution functionality into the Gen 3 runtime without a separate ROM patch.
+- Added save-isolated temporary battle form handling, status corrections, atlas generation and Lua regression tests.
+- Corrected FireRed Giovanni/Champion matches and Emerald Roxanne/Juan/Tate & Liza team changes.
+- Added trainer audit and Mega presentation tuning tools.
+
+See [Testing](docs/TESTING.md) and [Credits](CREDITS.md) for outstanding verification and attribution.

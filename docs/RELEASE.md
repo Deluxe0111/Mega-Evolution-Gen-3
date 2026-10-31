@@ -1,6 +1,6 @@
 # Release preparation
 
-The current manifest version is `0.1.0` and the build is marked `experimental`. The repository is not yet a certified public release.
+`v1.0.0-Beta` is an **experimental pre-release** in the private development repository. Its automated packaging and regression checks do not constitute five-game, cross-mod or public redistribution certification.
 
 ## Distribution prerequisites
 
@@ -9,7 +9,7 @@ The current manifest version is `0.1.0` and the build is marked `experimental`. 
 3. **Gameplay:** Run the acceptance and cross-mod matrix in [Testing](TESTING.md), including FireRed and Emerald with/without National Dex and G9/HD sprite providers.
 4. **Build health:** Confirm required GitHub Actions workflows pass. A green metadata check alone is insufficient.
 5. **Installability:** Test a clean extracted mod and the actual ZIP through Gen1Recomp's Mods UI. Check for the Key Stone shop, Mega button, animations, switch/faint behaviour and the party screen.
-6. **Version:** Only after release evidence exists should a version tag and GitHub Release be created. Keep the manifest's `experimental` flag until the gameplay matrix warrants a stable label.
+6. **Version:** The Beta remains marked `experimental`. Do not label it stable or make the repository publicly downloadable until gameplay and asset-rights requirements are satisfied.
 
 ## Runtime contents to preserve
 
@@ -44,8 +44,8 @@ py -3 tools/package_release.py --rights-cleared
 
 The output is `dist/mega-evolution-gen3-v<version>.zip` plus a SHA-256 checksum. The ZIP contains root-level `manifest.json`, runtime Lua code, atlas pages, direct-source party icons, cries and short attribution documentation. It omits development tooling and unused source animation PNGs. `--check` is safe to run in CI and never creates a distributable package; `--rights-cleared` is an explicit maintainer assertion, not an automatic rights check.
 
-## Publication
+## Beta publication
 
-Check the archive inventory, calculate a SHA-256 checksum, attach the tested ZIP and checksum to the versioned GitHub Release, and document the exact Gen1Recomp build and supported games. Keep links to required optional content packs in [Dependencies](DEPENDENCIES.md). Publish only after permissions and live tests are recorded.
+The versioned private-repository pre-release is produced by `.github/workflows/publish-beta.yml` on the main branch. It builds the minimal player ZIP, runs inventory, manifest and documentation checks, confirms repository privacy, and attaches the ZIP and SHA-256 checksum to tag `v1.0.0-Beta`. The workflow refuses to publish if the repository is public, pending third-party redistribution clearance. For a future public/stable release, verify rights and live gameplay, use `--rights-cleared` with the ZIP packager, and document supported Gen1Recomp/mod versions.
 
 Release blockers must remain visible rather than converting untested features into release claims.

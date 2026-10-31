@@ -1,0 +1,99 @@
+name: Publish Mega Evolution Gen 3 v1.0.0-Beta
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'manifest.json'
+      - 'RELEASE_NOTES.md'
+      - '.github/workflows/publish-beta.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mega-v1-beta-release
+  cancel-in-progress: false
+
+jobs:
+  publish-beta:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: v1.0.0-Beta
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Restrict Beta publication to the private repository
+        shell: bash
+        run: |
+          if [ "$(gh api "repos/$GITHUB_REPOSITORY" --jq '.private')" != "true" ]; then
+            echo 'Asset redistribution permissions are unresolved. Publishing to a public repository is disabled.'
+            exit 1
+          fi
+      - name: Confirm exact release version
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          version = json.loads(Path('manifest.json').read_text(encoding='utf-8'))['version']
+          assert version == '1.0.0-Beta', version
+          assert Path('RELEASE_NOTES.md').is_file()
+          PY
+      - name: Validate project and source inventory
+        run: python tests/check_project.py
+      - name: Validate documentation and credits
+        run: python tests/check_docs.py
+      - name: Validate Mega base statistics
+        run: python tests/check_mega_stats.py
+      - name: Verify runtime asset references
+        run: python tools/package_release.py --check
+      - name: Build private-repository Beta player archive
+        run: python tools/package_release.py --private-preview
+      - name: Rename and verify versioned ZIP and checksum
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import hashlib
+          old = Path('dist/mega-evolution-gen3-v1.0.0-Beta-private-preview.zip')
+          new = Path('dist/mega-evolution-gen3-v1.0.0-Beta.zip')
+          assert old.is_file()
+          old.rename(new)
+          old_checksum = Path(str(old) + '.sha256')
+          old_checksum.unlink(missing_ok=True)
+          with ZipFile(new) as archive:
+              entries = set(archive.namelist())
+              assert archive.testzip() is None
+              assert 'manifest.json' in entries and 'main.lua' in entries
+              assert 'assets/runtime/mega_atlas_index.lua' in entries
+              assert 'assets/source/ebdx/megas/mega_venusaur/icon.png' in entries
+              assert 'assets/source/ebdx/megas/mega_venusaur/cry.ogg' in entries
+              assert not any(n.startswith(('tools/', 'tests/', '.github/', 'docs/')) for n in entries)
+              assert len(entries) > 500, len(entries)
+          checksum = hashlib.sha256(new.read_bytes()).hexdigest()
+          Path(str(new) + '.sha256').write_text(f'{checksum}  {new.name}\n', encoding='utf-8')
+          print(f'Beta package: {new.name} ({len(entries)} runtime files); SHA-256 {checksum}')
+          PY
+      - name: Create GitHub pre-release and upload player files
+        shell: bash
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists; refusing to overwrite it."
+            exit 1
+          fi
+          gh release create "$TAG" \
+            dist/mega-evolution-gen3-v1.0.0-Beta.zip \
+            dist/mega-evolution-gen3-v1.0.0-Beta.zip.sha256 \
+            --target "$GITHUB_SHA" \
+            --title 'Mega Evolution Gen 3 — v1.0.0-Beta' \
+            --notes-file RELEASE_NOTES.md \
+            --prerelease
+      - name: Confirm published release
+        run: gh release view "$TAG" --json url,name,tagName,isPrerelease,assets
