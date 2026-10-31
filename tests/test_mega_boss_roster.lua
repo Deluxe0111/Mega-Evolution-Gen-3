@@ -209,7 +209,11 @@ state.megaBossChoice={trainerId=348,disabled=true}
 assert(policy.choose(state)==nil,
   "Disabling Giovanni #348 must override the general trainer Mega rule")
 state.trainerId=349
-state.foeParty=lateOpts.foe.party
+-- Battle.start normalises newly added mons and computes their HP.
+state.foeParty={
+  mon("PIDGEY",37),mon("KANGASKHAN",35),
+  mon("PIDGEY",37),mon("PIDGEY",41),mon("MEWTWO",41),
+}
 state.megaBossChoice={trainerId=349,slot=5,slug="mega_mewtwo_y"}
 assert(policy.choose(state).slot==5
   and policy.choose(state).slug=="mega_mewtwo_y")
