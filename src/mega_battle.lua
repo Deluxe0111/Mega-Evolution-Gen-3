@@ -58,6 +58,9 @@ function Mega.new(selection, eligibility, art, catalogue, typeIds, trainerPolicy
   end
   local battle
   local changes,calculated={},{}
+  -- Faint events are emitted before the engine's faint sprite animation.
+  -- Keep the transformed art until the native animation completes.
+  local pendingFaints=setmetatable({},{__mode="k"})
   -- The Gen3 battle uses a moves-only proxy while PartyMenu uses the
   -- original session.party Pokémon. Both must share the same Mega key.
   local proxyToParty = setmetatable({}, { __mode = "k" })
@@ -81,6 +84,7 @@ function Mega.new(selection, eligibility, art, catalogue, typeIds, trainerPolicy
   local function restore()
     for b in pairs(changes) do restoreOne(b) end
     calculated={}
+    pendingFaints=setmetatable({},{__mode="k"})
     proxyToParty = setmetatable({}, { __mode = "k" })
   end
   local self={}
@@ -344,9 +348,20 @@ function Mega.new(selection, eligibility, art, catalogue, typeIds, trainerPolicy
     return s.armed and "MEGA READY" or "START: MEGA",true
   end
   function self.turnEnded() selection.cancel("player") end
+  function self.faintPending(mon)
+    if not mon then return false end
+    local key=identity(mon)
+    if not selection.activeForm(key) then return false end
+    pendingFaints[key]=true
+    return true
+  end
+  function self.faintPendingFor(mon)
+    return mon and pendingFaints[identity(mon)]==true or false
+  end
   function self.fainted(mon)
     if not mon then return end
     local key = identity(mon)
+    pendingFaints[key]=nil
     selection.faint(key)
     calculated[key]=nil
     for b in pairs(changes) do
