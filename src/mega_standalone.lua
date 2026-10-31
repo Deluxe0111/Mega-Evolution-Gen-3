@@ -40,6 +40,13 @@ function Standalone.install(mod, game, modules, battleVisual)
   local Engine = modules and modules.Engine or required("src.core.game3.battle.engine")
   local Damage = modules and modules.Damage or required("src.core.game3.battle.damage")
   local Battle = modules and modules.Battle or required("src.core.game3.battle")
+  local Edge=modules and modules.MegaEdge
+  if not Edge then
+    local ok,module=pcall(req,"src.mega_ability_edge_cases")
+    if ok and type(module)=="table" then Edge=module end
+  end
+  local Residuals=modules and modules.Residuals
+    or required("src.core.game3.battle.residuals")
   local Interaction=modules and modules.MegaInteraction
   if not Interaction then
     local ok,module=pcall(req,"src.mega_ability_interactions")
@@ -203,6 +210,8 @@ function Standalone.install(mod, game, modules, battleVisual)
     wrap(Engine,"forEachTarget",function(next,M,body)
       if not enabled() then return next(M,body) end
       return next(M,function(ctx)
+        if Edge and Edge.blockPrankster
+            and Edge.blockPrankster(game,ctx,Types) then return end
         local function magic(targetCtx)
           return Reactive.withMagicBounce(game,targetCtx,body,Engine.hasFlag)
         end
@@ -219,10 +228,16 @@ function Standalone.install(mod, game, modules, battleVisual)
           return infiltrate(c)
         end
         local function nativeGuard(c)
-          if Precision and Precision.withUnseenFist then
-            return Precision.withUnseenFist(game,c,mold)
+          local function guard(x)
+            if Precision and Precision.withUnseenFist then
+              return Precision.withUnseenFist(game,x,mold)
+            end
+            return mold(x)
           end
-          return mold(c)
+          if Edge and Edge.withNoGuard then
+            return Edge.withNoGuard(game,c,guard)
+          end
+          return guard(c)
         end
         if not (Champions and Champions.withPiercingProtect) then
           return nativeGuard(ctx)
@@ -311,6 +326,28 @@ function Standalone.install(mod, game, modules, battleVisual)
     end)
   end
 
+  -- The native Yawn move is a status effect separate from Sleep; stop
+  -- its initial application against grounded Electric Terrain targets.
+  if Edge and Edge.blockTerrainYawn and Status
+      and type(Status.yawn)=="function" then
+    wrap(Status,"yawn",function(next,ctx)
+      if enabled() and Edge.blockTerrainYawn(Weather,ctx) then return end
+      return next(ctx)
+    end)
+  end
+
+  -- A Yawn queued before terrain activation expires at end of turn and
+  -- uses a forced sleep path (bypasses canApplyStatus). Intercept that
+  -- one due event at the native residual entrypoint, not every status.
+  if Edge and Edge.suppressDueYawn and Residuals
+      and type(Residuals.collectEvents)=="function" then
+    wrap(Residuals,"collectEvents",function(next,adapter)
+      if not enabled() then return next(adapter) end
+      return Edge.suppressDueYawn(Weather,adapter,
+        function(ad)return next(ad)end)
+    end)
+  end
+
   -- Electric Terrain prevents a grounded Pokémon falling asleep from a
   -- direct move, without reassigning the engine's terrain ID.
   if Weather and Weather.terrainBlocksSleep and Status
@@ -377,11 +414,15 @@ function Standalone.install(mod, game, modules, battleVisual)
   -- leaving primary effects, PP, status moves and recoil untouched.
   if Specialized and Specialized.suppressSecondary and Secondary
       and type(Secondary.withChance)=="function" then
-    wrap(Secondary,"withChance",function(next,M,...)
+    wrap(Secondary,"withChance",function(next,M,eff,...)
+      if enabled() and Edge and Edge.skipPostParentalSecondary
+          and Edge.skipPostParentalSecondary(game,M,eff,EffectIds) then
+        return false
+      end
       if enabled() and Specialized.suppressSecondary(game,M,EffectIds) then
         return false
       end
-      return next(M,...)
+      return next(M,eff,...)
     end)
   end
 
@@ -438,6 +479,9 @@ function Standalone.install(mod, game, modules, battleVisual)
       local after=target and adapter and adapter.hp and adapter:hp(target)
       if before and after then
         Reactive.onDamaged(game,M,before,after,Secondary)
+      end
+      if Edge and Edge.parentalHitSecondary then
+        Edge.parentalHitSecondary(game,M,dealt,Secondary,EffectIds)
       end
       if Champions and Champions.afterDamage then
         Champions.afterDamage(game,M,dealt,hadSub)
