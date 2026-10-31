@@ -123,4 +123,45 @@ st,b=makeState(newParty)
 assert(game.beforeResolved(st,b,"TACKLE",1))
 assert(game.activeForm(b.mon)=="mega_venusaur")
 game.finish()
-print("PASS: NPC trainer eligibility, ace selection, enemy activation, excluded battles, no items, one Mega, re-entry and reset")
+
+-- Check the actual standalone Gen3 resolveMove wrapper: transformation
+-- must complete before the AI-selected move deals damage, and resetting
+-- the battle must return the original battler identity and ability.
+local Standalone=dofile("src/mega_standalone.lua")
+local engineHits=0
+local enemyBeforeAttack={}
+local enemyParty={mon(16),mon(3)}
+local enemyState,first=makeState(enemyParty)
+local npc={side="enemy",id=1,mon=enemyParty[2],species=3,
+  partyIndex=2,ability="OVERGROW",type1=12,type2=3,item=0}
+enemyState.enemy=npc
+local Engine={
+  resolveMove=function(user,target,move,slot,adapter,st)
+    engineHits=engineHits+1
+    enemyBeforeAttack[#enemyBeforeAttack]={ability=user.ability,
+      form=game.activeForm(user.mon)}
+    return "attack-done"
+  end,
+  hasFlag=function()return false end,
+}
+local Damage={base=function()return 100 end}
+local Ui={_st=enemyState,handleInput=function()return false end,
+  takeCommand=function()return nil end,
+  sidePic=function()return nil end}
+local Battle={_st=enemyState,_active=true,
+  start=function()return "started" end,
+  reset=function()return "reset" end}
+local mod={enabled=true}
+local originalResolve=Engine.resolveMove
+local bridge=assert(Standalone.install(mod,game,
+  {Ui=Ui,Engine=Engine,Damage=Damage,Battle=Battle}))
+assert(Engine.resolveMove(npc,nil,"TACKLE",1,{},enemyState)=="attack-done")
+assert(engineHits==1 and enemyBeforeAttack[1].form=="mega_venusaur")
+assert(enemyBeforeAttack[1].ability==bySlug.mega_venusaur.ability)
+assert(npc.mon.item==0 and npc.mon.species==3)
+assert(Engine.resolveMove(npc,nil,"TACKLE",1,{},enemyState)=="attack-done")
+assert(engineHits==2 and enemyBeforeAttack[2].form=="mega_venusaur")
+assert(npc.mon.item==0)
+bridge.uninstall()
+assert(Engine.resolveMove==originalResolve and npc.ability=="OVERGROW")
+print("PASS: NPC trainer eligibility, ace selection, enemy activation, excluded battles, one Mega, re-entry, reset and native resolveMove")
