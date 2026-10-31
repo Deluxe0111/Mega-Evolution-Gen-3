@@ -1,3 +1,29 @@
+## In-game trainer Mega audit
+
+Open **START → MEGA AUDIT** (shown by default; can be disabled using
+the `TRAINER MEGA AUDIT` mod option). The screen reads the currently
+imported ROM's actual trainer pack; it never grants Pokémon or alters
+trainer teams.
+
+- **Up/Down:** select a matching trainer. **Left/Right:** move by seven.
+- **L/R:** filter ALL / READY / NEEDS REVIEW.
+- **A:** show the trainer's verified numeric ROM ID, selected Mega, audit
+  status, and each original party Pokémon's species/level. **B:** back.
+- **START:** refresh the import audit after a ROM/content-pack change.
+- **SELECT:** export a full text report to
+  `exports/mega_trainer_audit.txt` in the mod's cache (or a compatibility
+  filesystem fallback). The report includes every encountered variant,
+  party entries, and flags for a required team replacement.
+- If an approved trainer ID cannot be matched, it appears as
+  `trainer_identity_not_found`, not silently omitted.
+
+**Battle fix:** Mega Evolution now stays visually active until the
+native faint sink/slide animation has completed, then restores the
+original form before battle replacement/cleanup. A KO no longer shows
+a brief normal Charizard/other base sprite during the death animation.
+
+---
+
 ## Approved selections — 31 October 2026
 
 All **32 submitted choices** are recorded in
