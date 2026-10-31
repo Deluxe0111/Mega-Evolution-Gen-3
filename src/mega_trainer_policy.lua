@@ -75,6 +75,9 @@ function TrainerMega.new(catalog,opts)
     if not battleAllowed(st) then return nil end
     local boss=st.megaBossChoice
     if boss and tonumber(boss.trainerId)==tonumber(st.trainerId) then
+      -- Explicit story-boss exclusions beat the ordinary trainer rule.
+      -- Otherwise Giovanni #348 could still Mega Evolve Kangaskhan.
+      if boss.disabled then return nil end
       local slot=tonumber(boss.slot)
       local mon=slot and st.foeParty[slot]
       if mon then
