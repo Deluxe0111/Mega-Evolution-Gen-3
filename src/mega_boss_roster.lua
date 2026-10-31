@@ -215,11 +215,19 @@ function Boss.new(approved,formRows,opts)
     local all=pack and pack.trainers
     if type(all)~="table" then return nil,"trainer_extract_not_loaded" end
     local rows={}
+    local found={}
     for trainerId,row in pairs(all) do
       local entry=findApproved(row,game)
       if entry then
         local report=self.assess(game,trainerId,row.party,row)
         rows[#rows+1]=report
+        found[entry.key]=true
+      end
+    end
+    for _,entry in ipairs(approved[region(game) or ""] or {}) do
+      if allowedGame(entry,game) and not found[entry.key] then
+        rows[#rows+1]={key=entry.key,slug=entry.slug,
+          status="trainer_identity_not_found"}
       end
     end
     table.sort(rows,function(a,b)
