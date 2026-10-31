@@ -36,6 +36,9 @@ function TrainerMega.new(catalog,opts)
   end
   local speciesName=opts.speciesName
   local normalizeMove=opts.normalizeMove
+  -- Optional per-game, per-trainer decisions. Empty by default; reviewed
+  -- boss choices can be added without changing the generic trainer logic.
+  local choices=opts.choices or {}
   local selectionCache=setmetatable({},{__mode="k"})
   local function battleAllowed(st)
     return type(st)=="table" and not st.wild and not st.link
@@ -45,27 +48,49 @@ function TrainerMega.new(catalog,opts)
       and not st.secretBase and not st.frontierTrainer
       and type(st.foeParty)=="table"
   end
-  local function candidateForMon(mon)
+  local function candidatesForMon(mon)
     if not (type(mon)=="table" and (tonumber(mon.hp) or 0)>0)
-        or mon.transformed then return nil end
+        or mon.transformed then return {} end
     local species=speciesName and speciesName(mon.species or mon.speciesId)
       or (type(mon.species)=="string" and mon.species)
     local forms=bySpecies[norm(species)] or {}
     local form=baseForm(mon)
+    local matches={}
     for _,row in ipairs(forms) do
       if (tonumber(row.baseForm or row.base_form) or 0)==form
           and (not row.move or row.move==""
             or moveKnown(mon,row.move,normalizeMove)) then
-        return row.slug
+        matches[#matches+1]=row.slug
       end
     end
-    return nil
+    return matches
+  end
+  local function candidateForMon(mon)
+    return candidatesForMon(mon)[1]
   end
 
   local self={}
   function self.candidateForMon(mon) return candidateForMon(mon) end
   function self.choose(st)
     if not battleAllowed(st) then return nil end
+    local game=st.session and (st.session.game or st.session.gameId)
+    local gameChoices=game and choices[game] or nil
+    local override=gameChoices and gameChoices[tonumber(st.trainerId)]
+    if type(override)=="table" then
+      if override.disabled==true then return nil end
+      local slot=tonumber(override.slot)
+      local mon=slot and st.foeParty[slot]
+      if mon then
+        for _,slug in ipairs(candidatesForMon(mon)) do
+          if slug==override.slug then
+            return {slot=slot,slug=slug,curated=true}
+          end
+        end
+      end
+      -- A stale/mismatched trainer ID must fail closed rather than
+      -- accidentally select a different boss Pokémon.
+      return nil
+    end
     -- Deterministic ace rule: last Pokémon in the party that can Mega.
     -- This respects the real trainer party without adding a replacement.
     local chosen
@@ -93,7 +118,11 @@ function TrainerMega.new(catalog,opts)
     if not chosen or b.partyIndex~=chosen.slot then return nil end
     -- Revalidate current identity/HP/form when the selected Pokémon
     -- actually attempts a move; never trust a pre-battle cached slug.
-    if candidateForMon(b.mon)~=chosen.slug then return nil end
+    local matched=false
+    for _,slug in ipairs(candidatesForMon(b.mon)) do
+      if slug==chosen.slug then matched=true; break end
+    end
+    if not matched then return nil end
     return chosen.slug
   end
   function self.reset()
