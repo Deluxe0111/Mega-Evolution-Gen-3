@@ -126,7 +126,14 @@ function Boss.new(approved,formRows,opts)
     end
     local report={key=entry.key,trainerId=id,name=row.name,
       className=row.className,slug=entry.slug,
-      originalPartySize=#(row.party or {})}
+      originalPartySize=#(row.party or {}),party={}}
+    for i,m in ipairs(row.party or {}) do
+      report.party[i]={
+        slot=i, species=tonumber(m.species),
+        name=keyName(m.species) or ("SPECIES "..tostring(m.species)),
+        level=tonumber(m.level) or 0,
+      }
+    end
     if not sameNativeParty(row.party,actualParty) then
       report.status="rom_party_mismatch"
       return report
@@ -216,7 +223,11 @@ function Boss.new(approved,formRows,opts)
     if type(all)~="table" then return nil,"trainer_extract_not_loaded" end
     local rows={}
     local found={}
-    for trainerId,row in pairs(all) do
+    for trainerId,raw in pairs(all) do
+      -- The *raw* import often omits className: it is resolved from
+      -- pack.classNames only by Trainers.get. Use the same native
+      -- resolved identity as the live Battle.start hook.
+      local row=trainers.get and trainers.get(trainerId) or raw
       local entry=findApproved(row,game)
       if entry then
         local report=self.assess(game,trainerId,row.party,row)
