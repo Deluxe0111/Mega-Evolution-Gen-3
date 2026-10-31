@@ -12,7 +12,7 @@ conservative add-only policy remains in force.
 | Roxanne | #773 (Lv.47 Golem) | Replace slot 2 Golem with Glimmora Lv.47; preserve Nosepass slot 6 |
 | Tate & Liza | #271 (4 Pokémon), #794 (5 Pokémon) | Append Meowstic using the former final party Pokémon's level |
 | Tate & Liza | #795 (Lv.53 Drowzee), #796 (Lv.58 Hypno), #797 (Lv.63 Hypno) | Replace slot 1 with Meowstic at the removed Pokémon's level; preserve Lunatone and Solrock |
-| Wally | Not identified in supplied audit | Keep Mega Gardevoir preference, but **no curated changes** until a fresh ROM audit identifies his exact trainer IDs and parties |
+| Wally | Candidate IDs #519, #656–660 from Gen1Recomp Emerald constants; **not matched in supplied audit** | Keep Mega Gardevoir preference, but **no curated changes** until a fresh ROM audit confirms each trainer identity and party |
 
 ### Safeguards
 
