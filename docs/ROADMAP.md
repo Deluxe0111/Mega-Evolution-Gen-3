@@ -1,49 +1,48 @@
-# Roadmap
+# Roadmap — Mega Evolution Gen 3
 
-## Milestone 0 — Repository foundation
+This roadmap describes the **current implementation** rather than the original Mega Venusaur-only prototype. A checked item means code/assets exist; it does **not** guarantee that every real-ROM scenario passed testing.
 
-- [x] Mod metadata and non-invasive entry point
-- [x] Credited EBDX asset intake
-- [x] Asset inventory and missing-file validation
-- [x] Import and commit the source-art folders to the repository
-- [x] Separate generated machine-specific audit reports from source artwork and CI
+## Foundations and asset pipeline
 
-## Milestone 1 — Animation pipeline
+- [x] Mod API 2 entry point for all five Gen 3 games without an engine fork
+- [x] Source art intake and original contributor attribution
+- [x] 98 form entries, 92 Mega Stone icons, source-backed cries and complete asset inventory
+- [x] Bounded PNG atlas pages, Lua/JSON index and lazy Mega art provider
+- [x] Normal, shiny, front/back and party icon pipeline with per-form presentation calibration
+- [ ] Finish visual QA for all 98 forms, including hovering, male/female variants and sprite scale
 
-- [x] Implement strict geometry audit and inspect all imported PNG strip dimensions in CI
-- [x] Convert Mega front/back, normal/shiny and party-icon PNG strips into lossless bounded atlas pages
-- [x] Add a one-click full-roster launcher and index/page integrity checker
-- [x] Emit stable form-keyed Lua/JSON animation index without touching species/save data
-- [x] Export Mega Venusaur GIF previews and test frame-order/alpha preservation
-- [ ] Visually review EBDX timing and normal/shiny alignment; use static fallback when required
-- [x] Build a lazy-loaded form-keyed Lua picture provider with bounded GPU memory and no conflicting engine hooks
-- [x] Integrate the provider into existing Ui.sidePic by Pokémon identity without replacing G9 Battle Sprites
-- [ ] Verify animated front/back/shiny position in an actual Emerald/FireRed battle
+## Player Mega battle experience
 
-## Milestone 2 — Mega Venusaur proof of concept
+- [x] Key Stone and Mega Stone registration with fixed item IDs
+- [x] Native Oak/Birch lab aide shop and source item icons
+- [x] FIGHT → Mega toggle → select move → activate before move resolution
+- [x] Temporary form stats, artwork, cry and battle-lifecycle integration
+- [x] Switch/re-entry, one-Mega allowance and delayed Mega faint visual cleanup
+- [x] Many modern Mega ability modules and targeted edge-case regressions
+- [ ] Complete live testing of all X/Y/Z and original-form exceptions
+- [ ] Certify modern Fairy type, move and ability interoperability across selected National Dex versions
+- [ ] Complete live UI, sound, shiny and party-swap visual regression across all five Gen 3 games
 
-- [x] Audit Gen1Recomp's normal move selection, double-battle targeting and action-resolution seams
-- [x] Implement a standalone, tested Mega request/commit/cancel state controller (wired to the standalone Venusaur proof)
-- [x] Register 92 fixed-ID Mega Stones and a Key Stone through the native Gen 3 item registry
-- [x] Implement read-only live eligibility checks against held item, species and actual Bag Key Stone possession
-- [x] Implement the standalone START Mega toggle and move selection bridge without any engine PR
-- [x] Preserve move intent across stock-engine turn planning and transform before selected move resolution
-- [x] Implement Mega Venusaur's temporary stats, types, Thick Fat and animated battle art (headless tests)
-- [ ] Replace placeholder indicator with native-looking battle control and full transformation animation/name
-- [ ] Verify battle end, switching and saved species identity in an actual Emerald session
-- [ ] Test switching, fainting, capture, reconnect, shiny status and save/load
+## Trainer Megas and curated bosses
 
-## Milestone 3 — Complete Mega roster
+- [x] Automatic single enemy Mega for eligible standard trainers
+- [x] 32 notable Kanto and Hoenn curated choices, subject to imported-ROM verification
+- [x] FireRed Giovanni #348/#349 corrections, false Champion filter and last eligible duplicate
+- [x] Emerald Juan, Roxanne and Tate & Liza audited add/replace decisions
+- [x] START → MEGA AUDIT menu and text export with reviewed/mismatch statuses
+- [ ] Confirm Wally's actual imported-ROM identity/party before any curated roster change
+- [ ] In-game QA of Tate & Liza double battles and all scripted rematches
+- [ ] Review additional notable rivals, villain encounters and other postgame trainers
+- [ ] Approve replacements for other six-member boss parties case by case
 
-- [ ] Import every supported Mega Stone/form and exceptions (X/Y, Z, Rayquaza)
-- [ ] Add battle-once Mega rules, trainer Megas, opponent support and transformation animation
-- [ ] Add detailed gameplay tests in FireRed and Emerald, then all five Gen 3 editions
+## Cross-mod integration and packaging
 
-## Milestone 4 — Optional integrations
+- [x] Declare exact optional dependency IDs and verified GitHub sources
+- [x] Document base-vs-expanded National Dex requirements and G9's transitive dependency
+- [x] Preserve G9/HD ownership of normal sprites and keep Mega artwork scoped
+- [ ] Full FireRed/Emerald test matrix with National Dex, G9, HD, Untamed Advanced, Nuzlocke and Modern Spawns
+- [ ] Verify Ruby, Sapphire and LeafGreen battle/roster variants
+- [ ] Audit distribution rights for every art/audio category and record permitted release contents
+- [ ] Publish a tested player ZIP and versioned GitHub Release **only after** a full installation smoke test
 
-- [ ] National Dex Gen 3 species/form metadata
-- [ ] G9 Battle Sprites and HD sprite drawing ownership
-- [ ] Untamed Advanced follower/overworld visuals when relevant
-- [ ] Nuzlocke randomiser/encounter/permadeath and results display compatibility
-
-**No mechanic is complete merely because its sprites are present.**
+**Maintained references:** [Install](INSTALLATION.md), [Dependencies](DEPENDENCIES.md), [Trainer roster](MEGA_TRAINER_REVIEW.md), [Testing](TESTING.md). Older design files in this directory remain as implementation history.
