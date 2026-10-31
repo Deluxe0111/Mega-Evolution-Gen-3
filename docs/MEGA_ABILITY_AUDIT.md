@@ -56,8 +56,8 @@ core Gen3 move/ability engine changes. **Implemented does not mean battle-tested
 
 | Scenario | Expected result |
 | --- | --- |
-| Mega Serperior (Contrary) hit by Intimidate | Attack **rises by one**, up to +6. Mist/Substitute still block the interaction. |
-| Mega Kingambit (Defiant) hit by Intimidate | Attack **falls by one, then rises by two** (net +1); do not trigger when blocked. |
+| Mega Staraptor / Mega Malamar (Contrary) hit by Intimidate | Attack **rises by one**, up to +6. Mist/Substitute still block the interaction. |
+| Mega Falinks (Defiant) hit by Intimidate | Attack **falls by one, then rises by two** (net +1); do not trigger when blocked. |
 | Mega Audino (Healer), double battle, ally poisoned | At the holder's end-of-turn ability step, **30% chance** to cure the ally only. No activation in singles or when the ally is fainted. |
 | Mega Kangaskhan (Parental Bond), damaging single-target move | One PP, two hits (second 25%), one secondary roll in current Gen3 integration. |
 | Mega Eelektross (Eelevate) with a Ground attack | Immune through native Levitate checks; KO improves the highest non-HP stat once per foe. |
