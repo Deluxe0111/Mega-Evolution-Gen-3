@@ -19,9 +19,17 @@ The installed mod requires:
 - every runtime `src/*.lua` and `data/*.lua` module;
 - `assets/runtime/mega_atlas_index.lua` and all referenced `assets/runtime/atlas/*.png` pages;
 - `assets/source/ebdx/mega_stones/*.png`, the Key Stone and battle UI images in `assets/source/ebdx/ui_reference/`, and `assets/source/ebdx/megas/*/cry.ogg`;
-- `README.md`, `CREDITS.md`, this release guide and retained upstream `assets/source/ebdx/source_metadata/README.md`.
+- `README.md`, `CREDITS.md` and retained upstream `assets/source/ebdx/source_metadata/README.md`. The release guide remains in the source repository.
 
 Source animation PNGs, EBDX import tooling, local previews, test fixtures, GitHub workflows and transient reports need not be in the player archive unless a runtime path references them. Never remove files based only on their location under `assets/source`.
+
+## Minimal runtime ZIP
+
+The player package contains only the mod manifest/entrypoint, runtime Lua modules and data, the referenced battle atlas PNG pages, Mega Stone/Key Stone icons, the three battle UI images, the direct-source Mega party icon strips, available Mega cries, and the README/required source credits. It omits prototype files, tests, Python build tools, GitHub workflows, raw front/back sprite sheets, PBS source definitions, preview images and redundant atlas JSON.
+
+The source `icon.png` and `icon_shiny.png` files are essential because the party/summary UI reads them directly. The ZIP builder validates that all 98 Mega forms have both strips.
+
+A private test ZIP can be built with `py -3 tools/package_release.py --private-preview`; that does not certify public redistribution. Use `--rights-cleared` only after confirming applicable asset permissions. The private preview workflow uploads the installable ZIP and checksum as a GitHub Actions artifact.
 
 ## Player archive
 
@@ -34,7 +42,7 @@ py -3 tools/package_release.py --check
 py -3 tools/package_release.py --rights-cleared
 ```
 
-The output is `dist/mega-evolution-gen3-v<version>.zip` plus a SHA-256 checksum. The ZIP contains root-level `manifest.json`, runtime Lua code, atlas pages, icons, cries and essential documentation. It omits development tooling and unneeded source animation PNGs. `--check` is safe to run in CI and never creates a distributable package; `--rights-cleared` is an explicit maintainer assertion, not an automatic rights check.
+The output is `dist/mega-evolution-gen3-v<version>.zip` plus a SHA-256 checksum. The ZIP contains root-level `manifest.json`, runtime Lua code, atlas pages, direct-source party icons, cries and short attribution documentation. It omits development tooling and unused source animation PNGs. `--check` is safe to run in CI and never creates a distributable package; `--rights-cleared` is an explicit maintainer assertion, not an automatic rights check.
 
 ## Publication
 

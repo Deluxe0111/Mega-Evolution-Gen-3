@@ -15,11 +15,9 @@ ROOT = Path(__file__).resolve().parent.parent
 ALLOWED = (
     "src/*.lua",
     "data/*.lua",
-    "data/*.json",
-    "docs/*.md",
     "assets/runtime/atlas/*.png",
     "assets/source/ebdx/mega_stones/*.png",
-    "assets/source/ebdx/ui_reference/**/*.png",
+    "assets/source/ebdx/megas/*/icon*.png",
     "assets/source/ebdx/megas/*/cry.ogg",
 )
 REQUIRED = (
@@ -27,15 +25,13 @@ REQUIRED = (
     "main.lua",
     "README.md",
     "CREDITS.md",
-    "CHANGELOG.md",
-    "CONTRIBUTING.md",
-    "assets/runtime/mega_atlas_index.json",
     "assets/runtime/mega_atlas_index.lua",
+    "assets/source/ebdx/ui_reference/Graphics/EBDX/Pictures/UI/megaButton.png",
+    "assets/source/ebdx/ui_reference/Graphics/EBDX/Pictures/UI/symMega.png",
+    "assets/source/ebdx/ui_reference/Graphics/EBDX/Pictures/mega_sym.png",
+    "assets/source/ebdx/ui_reference/Graphics/Items/MEGARING.png",
     "assets/source/ebdx/SOURCE_AND_CREDITS.txt",
     "assets/source/ebdx/source_metadata/README.md",
-    "docs/INSTALLATION.md",
-    "docs/DEPENDENCIES.md",
-    "docs/RELEASE.md",
 )
 
 
@@ -63,6 +59,16 @@ def inventory():
             for segment in spec.get("segments", []):
                 referenced.add(f"assets/runtime/atlas/battle_{variant}_{segment['sheet']}.png")
     included = {path.relative_to(ROOT).as_posix() for path in files}
+    # Party and summary icons load directly from source strips, not only the atlas.
+    # Omitting these images makes Mega icons disappear in FireRed/other party menus.
+    missing_icons = sorted(
+        f"assets/source/ebdx/megas/{slug}/{name}"
+        for slug in forms
+        for name in ("icon.png", "icon_shiny.png")
+        if f"assets/source/ebdx/megas/{slug}/{name}" not in included
+    )
+    if missing_icons:
+        raise ValueError("Missing direct party-icon strips:\n  " + "\n  ".join(missing_icons))
     missing_pages = referenced - included
     if missing_pages:
         raise ValueError("Missing referenced atlas pages:\n  " + "\n  ".join(sorted(missing_pages)))
@@ -85,6 +91,8 @@ def main():
     parser.add_argument("--check", action="store_true", help="Audit runtime package inventory only; write nothing")
     parser.add_argument("--rights-cleared", action="store_true",
                         help="Confirm distribution rights have been checked for bundled artwork/audio")
+    parser.add_argument("--private-preview", action="store_true",
+                        help="Build an installable test archive for private review; not a rights-cleared public release")
     parser.add_argument("--out-dir", type=Path, default=ROOT / "dist")
     args = parser.parse_args()
     files, version, pages = inventory()
@@ -92,10 +100,11 @@ def main():
     print(f"Inventory OK: {len(files)} files, {pages} referenced atlas pages, {cries} imported Mega cries.")
     if args.check:
         return
-    if not args.rights_cleared:
-        parser.error("Refusing to package third-party assets without --rights-cleared; see docs/RELEASE.md")
+    if args.rights_cleared == args.private_preview:
+        parser.error("Use --private-preview for a private test ZIP or --rights-cleared for a public release ZIP")
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    name = f"mega-evolution-gen3-v{version}.zip"
+    suffix = "-private-preview" if args.private_preview else ""
+    name = f"mega-evolution-gen3-v{version}{suffix}.zip"
     output = args.out_dir / name
     with ZipFile(output, "w", compression=ZIP_DEFLATED, compresslevel=9) as archive:
         for file in files:
