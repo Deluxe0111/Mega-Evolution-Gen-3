@@ -753,14 +753,17 @@ function Standalone.install(mod, game, modules, battleVisual)
       or {pcall(next,modified)}
     if not result[1] then error(result[2],0) end
     local st=Battle._st
-    if st and Battle._active and report
-        and (report.status=="existing" or report.status=="add"
-          or report.status=="disabled_by_choice") then
+    if st and Battle._active and report and report.key
+        and report.status~="trainer_identity_unverified" then
+      local ready=report.status=="existing" or report.status=="add"
+        or report.status=="replace"
+      -- A failed curated verification must not silently fall back to
+      -- the ordinary NPC ace (possibly a different Mega species).
       st.megaBossChoice={
         trainerId=report.trainerId,
         slot=report.slot,
         slug=report.slug,
-        disabled=report.status=="disabled_by_choice",
+        disabled=not ready,
       }
       st.megaBossAudit=report
     end
