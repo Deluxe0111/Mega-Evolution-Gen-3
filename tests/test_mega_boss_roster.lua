@@ -246,7 +246,6 @@ assert(observed~=current and #observed.foe.party==3)
 assert(Battle._st.megaBossChoice.trainerId==101
   and Battle._st.megaBossChoice.slug=="mega_aerodactyl"
   and Battle._st.megaBossChoice.slot==3)
-bridge.uninstall()
 assert(#brockParty==2)
 Battle._active=false
 assert(Battle.start(opts(348,earlyRocket))=="started")
