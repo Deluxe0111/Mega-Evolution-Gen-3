@@ -40,6 +40,9 @@ function Standalone.install(mod, game, modules, battleVisual)
   local Engine = modules and modules.Engine or required("src.core.game3.battle.engine")
   local Damage = modules and modules.Damage or required("src.core.game3.battle.damage")
   local Battle = modules and modules.Battle or required("src.core.game3.battle")
+  local Boss=modules and modules.MegaBoss
+  local BattleProfile=modules and modules.BattleProfile
+    or required("src.core.game3.battle.profile")
   local Edge=modules and modules.MegaEdge
   if not Edge then
     local ok,module=pcall(req,"src.mega_ability_edge_cases")
@@ -703,7 +706,29 @@ function Standalone.install(mod, game, modules, battleVisual)
       game.finish()
       if battleVisual and battleVisual.resetTransform then battleVisual:resetTransform() end
     end
-    return next(opts)
+    if not (enabled() and Boss and Boss.prepare and type(opts)=="table") then
+      return next(opts)
+    end
+    local version=opts.gameId
+    if not version and BattleProfile and BattleProfile.get then
+      local ok,p=pcall(BattleProfile.get,opts.session)
+      if ok and p then version=p.gameId end
+    end
+    local modified,report=Boss.prepare(opts,version)
+    local result=table.pack and table.pack(pcall(next,modified))
+      or {pcall(next,modified)}
+    if not result[1] then error(result[2],0) end
+    local st=Battle._st
+    if st and Battle._active and report
+        and (report.status=="existing" or report.status=="add") then
+      st.megaBossChoice={
+        trainerId=report.trainerId,
+        slot=report.slot,
+        slug=report.slug,
+      }
+      st.megaBossAudit=report
+    end
+    return (table.unpack or unpack)(result,2,result.n or #result)
   end)
 
   wrap(Battle, "reset", function(next, ...)

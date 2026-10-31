@@ -73,6 +73,21 @@ function TrainerMega.new(catalog,opts)
   function self.candidateForMon(mon) return candidateForMon(mon) end
   function self.choose(st)
     if not battleAllowed(st) then return nil end
+    local boss=st.megaBossChoice
+    if boss and tonumber(boss.trainerId)==tonumber(st.trainerId) then
+      local slot=tonumber(boss.slot)
+      local mon=slot and st.foeParty[slot]
+      if mon then
+        for _,slug in ipairs(candidatesForMon(mon)) do
+          if slug==boss.slug then
+            return {slot=slot,slug=slug,curated=true}
+          end
+        end
+      end
+      -- Never automatically choose an unrelated Mega if the verified
+      -- ROM boss preference did not match the actual live battler.
+      return nil
+    end
     local game=st.session and (st.session.game or st.session.gameId)
     local gameChoices=game and choices[game] or nil
     local override=gameChoices and gameChoices[tonumber(st.trainerId)]

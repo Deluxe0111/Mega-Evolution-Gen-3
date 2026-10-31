@@ -183,6 +183,25 @@ return function(mod)
   local MegaBattle = loadSibling(mod, "src/mega_battle.lua")
   local TrainerPolicy=loadSibling(mod,"src/mega_trainer_policy.lua")
   local trainerChoices=loadSibling(mod,"data/mega_trainer_choices.lua")
+  local BossRoster=loadSibling(mod,"src/mega_boss_roster.lua")
+  local bossSelections=loadSibling(mod,"data/mega_boss_selections.lua")
+  local bossRoster
+  if BossRoster and bossSelections and formCatalog then
+    local okP,Pokemon=pcall(require,"src.core.game3.pokemon")
+    local okT,Trainers=pcall(require,"src.core.game3.scripting.trainers")
+    if okP and okT then
+      bossRoster=BossRoster.new(bossSelections,formCatalog,
+        {pokemon=Pokemon,trainers=Trainers})
+    end
+  end
+  exports.bossMegaAudit=function()
+    if not bossRoster then return nil,"boss_roster_unavailable" end
+    local okP,BattleProfile=pcall(require,"src.core.game3.battle.profile")
+    if not okP or not BattleProfile then
+      return nil,"battle_profile_unavailable"
+    end
+    return bossRoster.audit(BattleProfile.get().gameId)
+  end
   local trainerPolicy=TrainerPolicy and battleForms and TrainerPolicy.new(
     battleForms, {
       choices=trainerChoices,
@@ -250,7 +269,7 @@ return function(mod)
         MegaTactical=MegaTactical, MegaWeather=MegaWeather,
         MegaSpecialized=MegaSpecialized, MegaPrecision=MegaPrecision, MegaChampions=MegaChampions,
         MegaField=MegaField, MegaInteraction=MegaInteraction,
-        MegaEdge=MegaEdge }, battleVisual)
+        MegaEdge=MegaEdge, MegaBoss=bossRoster }, battleVisual)
     if not ok then bridgeError = tostring(installed)
     elseif installed then bridge, bridgeError = installed, nil
     else bridgeError = err end
