@@ -22,6 +22,18 @@ for _,row in ipairs(Forms) do
     and row.stats.speed>0,row.slug)
   if row.stone~="" then assert(byStone[row.stone],row.slug) end
 end
+-- Independent official Z-A correction: EBDX shipped Starmie Attack 100,
+-- but the confirmed released Mega base Attack is 140 (BST 660).
+local starmie=assert(bySlug.mega_starmie)
+assert(starmie.stats.hp==60 and starmie.stats.attack==140
+  and starmie.stats.defense==105 and starmie.stats.spAtk==130
+  and starmie.stats.spDef==105 and starmie.stats.speed==120)
+local starmieStat=Mega.megaStats({
+  level=50,personality=0,ivs={atk=31,def=31,spa=31,spd=31,spe=31},
+  evs={atk=0,def=0,spa=0,spd=0,spe=0}
+},starmie)
+assert(starmieStat.attack==160,
+  "Mega Starmie Lv.50 neutral-nature 31 IV Attack must use base 140")
 local checker=Eligibility.new(FormKeys,Items)
 local drawScopes=0
 local art={
