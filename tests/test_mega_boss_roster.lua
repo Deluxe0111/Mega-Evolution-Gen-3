@@ -17,7 +17,7 @@ local ids={VENUSAUR=3,CHARIZARD=6,BLASTOISE=9,AERODACTYL=142,
  MANECTRIC=310,CAMERUPT=323,ALTARIA=334,MEOWSTIC=678,
  GYARADOS=130,TATSUGIRI=978,ABSOL=359,BANETTE=354,GLALIE=362,
  SALAMENCE=373,METAGROSS=376,HOUNDOOM=229,SHARPEDO=319,
- GARDEVOIR=282,PIDGEY=16}
+ GARDEVOIR=282,PIDGEY=16,EKANS=23}
 for name,id in pairs(ids) do byId[id]=name;byName[name]=id end
 local pokemon={
  keyName=function(id)return byId[id] end,
@@ -96,9 +96,27 @@ assert(returnedFull==originalOpts and #full==6)
 sample(104,"BROCK","HIKER",{mon("PIDGEY")})
 assert(assess(104,"firered").status=="not_approved")
 sample(105,"GIOVANNI","LEADER",{mon("KANGASKHAN")})
-sample(106,"GIOVANNI","BOSS",{mon("PIDGEY")})
+local earlyRocket={
+  mon("PIDGEY",25),mon("PIDGEY",24),mon("KANGASKHAN",29)}
+sample(348,"GIOVANNI","BOSS",earlyRocket)
+local laterRocket={
+  mon("PIDGEY",37),mon("KANGASKHAN",35),
+  mon("PIDGEY",37),mon("PIDGEY",41)}
+sample(349,"GIOVANNI","BOSS",laterRocket)
 assert(assess(105,"firered").slug=="mega_kangaskhan")
-assert(assess(106,"firered").slug=="mega_mewtwo_y")
+local early=assess(348,"firered")
+assert(early.status=="disabled_by_choice" and early.slug==nil)
+local earlyOpts=opts(348,earlyRocket)
+local unchanged,earlyReport=boss.prepare(earlyOpts,"firered")
+assert(unchanged==earlyOpts and earlyReport.status=="disabled_by_choice")
+local later=assess(349,"firered")
+assert(later.slug=="mega_mewtwo_y" and later.status=="add"
+  and later.slot==5 and later.level==41)
+local lateOpts,lateReport=boss.prepare(opts(349,laterRocket),"firered")
+assert(lateReport.status=="add" and #lateOpts.foe.party==5
+  and lateOpts.foe.party[5].species==ids.MEWTWO)
+assert(assess(349,"leafgreen").status=="not_approved",
+  "Don't guess unverified LeafGreen Rocket trainer IDs")
 -- Even with the correct ID, altered party species/levels fails closed.
 local corrupted=opts(101,{mon("PIDGEY",7),mon("PIDGEY",14)})
 local noPatch,mismatch=boss.prepare(corrupted,"firered")
@@ -113,15 +131,43 @@ assert(assess(107,"emerald").status=="add")
 -- Tate & Liza's double battle needs owner/party partition review.
 sample(108,"TATE&LIZA","LEADER",{mon("PIDGEY",40)})
 assert(assess(108,"emerald").status=="double_party_review")
--- Rival Champion: detect actual starter, no auto-add to missing team.
-sample(109,"TERRY","CHAMPION",{mon("CHARIZARD",60)})
+-- The FireRed import contains a #38 CHAMPION placeholder with no name
+-- and one Lv.5 Ekans. That record is NOT the Champion Rival.
+sample(38,"","CHAMPION",{mon("EKANS",5)})
+assert(assess(38,"firered").status=="not_approved")
+-- Real six-mon Rival Champion: select actual fully evolved starter.
+local function rivalParty(starter)
+  return {mon("PIDGEY",59),mon("PIDGEY",57),
+    mon("PIDGEY",59),mon("PIDGEY",59),
+    mon("PIDGEY",61),mon(starter,63)}
+end
+sample(109,"TERRY","CHAMPION",rivalParty("CHARIZARD"))
 assert(assess(109,"firered").slug=="mega_charizard_x")
-rom[109].party={mon("BLASTOISE",60)}
+rom[109].party=rivalParty("BLASTOISE")
 assert(assess(109,"firered").slug=="mega_blastoise")
-rom[109].party={mon("VENUSAUR",60)}
+rom[109].party=rivalParty("VENUSAUR")
 assert(assess(109,"firered").slug=="mega_venusaur")
-rom[109].party={mon("PIDGEY",60)}
-assert(assess(109,"firered").status=="starter_not_present")
+rom[109].party=rivalParty("PIDGEY")
+assert(assess(109,"firered").status=="not_approved",
+  "Champion must have a final-stage starter to qualify")
+-- Last of two matching Pokémon is the chosen Mega, not the first.
+sample(412,"AGATHA","ELITE FOUR",{
+  mon("GENGAR",54),mon("PIDGEY",54),mon("PIDGEY",53),
+  mon("EKANS",56),mon("GENGAR",58)})
+assert(assess(412,"firered").slot==5)
+sample(737,"AGATHA","ELITE FOUR",{
+  mon("GENGAR",66),mon("PIDGEY",66),mon("PIDGEY",65),
+  mon("EKANS",68),mon("GENGAR",70)})
+assert(assess(737,"firered").slot==5)
+sample(738,"LANCE","ELITE FOUR",{
+  mon("PIDGEY",68),mon("DRAGONITE",66),mon("PIDGEY",66),
+  mon("PIDGEY",70),mon("DRAGONITE",72)})
+assert(assess(738,"firered").slot==5)
+-- The dynamic rival fallback also selects the LAST starter in a team.
+sample(440,"TERRY","CHAMPION",{
+  mon("CHARIZARD",59),mon("PIDGEY",57),mon("PIDGEY",59),
+  mon("PIDGEY",59),mon("PIDGEY",61),mon("CHARIZARD",63)})
+assert(assess(440,"firered").slot==6)
 -- Pokemon variants and original trainer class are game-aware.
 sample(110,"JUAN","LEADER",{mon("PIDGEY",43)})
 assert(assess(110,"emerald").slug=="mega_tatsugiri_curly")
@@ -137,9 +183,13 @@ local byKey={}
 for _,x in ipairs(audit) do byKey[x.key]=x end
 assert(byKey.brock.trainerId==101 and byKey.misty.trainerId==102
   and byKey.giovanni_gym.trainerId==105
-  and byKey.giovanni_rocket.trainerId==106)
+  and byKey.giovanni_rocket.trainerId==349)
 assert(byKey.erika.status=="trainer_identity_not_found",
   "The ROM audit must list unverified/missing approved bosses")
+for _,row in ipairs(audit) do
+  assert(row.trainerId~=38,
+    "Fake Champion #38 must be absent from the Mega audit")
+end
 -- Runtime approved boss choice wins over generic "last eligible."
 local policy=Policy.new(Forms,{
   speciesName=function(id)return byId[id] end,
@@ -153,6 +203,16 @@ assert(policy.choose(state).slot==1 and
   policy.choose(state).slug=="mega_starmie")
 state.megaBossChoice={trainerId=102,slot=1,slug="mega_beedrill"}
 assert(policy.choose(state)==nil)
+state.trainerId=348
+state.foeParty=earlyRocket
+state.megaBossChoice={trainerId=348,disabled=true}
+assert(policy.choose(state)==nil,
+  "Disabling Giovanni #348 must override the general trainer Mega rule")
+state.trainerId=349
+state.foeParty=lateOpts.foe.party
+state.megaBossChoice={trainerId=349,slot=5,slug="mega_mewtwo_y"}
+assert(policy.choose(state).slot==5
+  and policy.choose(state).slug=="mega_mewtwo_y")
 -- Integration uses the native Battle.start boundary, and applies its
 -- report to st only AFTER a successful native start.
 local observed
@@ -184,4 +244,16 @@ assert(Battle._st.megaBossChoice.trainerId==101
   and Battle._st.megaBossChoice.slot==3)
 bridge.uninstall()
 assert(#brockParty==2)
-print("PASS: 32 approved Megas, verified ROM IDs/parties, safe add, no replacement, class/edition, National Dex, rival variants and native start")
+Battle._active=false
+assert(Battle.start(opts(348,earlyRocket))=="started")
+assert(Battle._st.megaBossChoice.trainerId==348
+  and Battle._st.megaBossChoice.disabled==true)
+assert(policy.choose(Battle._st)==nil,
+  "Early Giovanni must not Mega Evolve after native Battle.start")
+Battle._active=false
+assert(Battle.start(opts(349,laterRocket))=="started")
+assert(Battle._st.megaBossChoice.trainerId==349
+  and Battle._st.megaBossChoice.slug=="mega_mewtwo_y"
+  and Battle._st.megaBossChoice.slot==5)
+bridge.uninstall()
+print("PASS: 32 boss choices, Giovanni #348 blocked / #349 Mewtwo Y, false #38 excluded, final duplicate ace, native start")
