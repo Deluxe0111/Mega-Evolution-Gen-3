@@ -28,7 +28,7 @@ This project is a Gen1Recomp **Gen 3 content mod**, not a ROM hack or Pokémon E
 
 ## Asset pipeline
 
-The committed source set in `assets/source/ebdx` retains attributed EBDX art, imported icons/cries, PB​​S metadata and a stable roster inventory. `tools/build_mega_atlas.py` converts that art into bounded PNG pages and Lua/JSON lookup tables under `assets/runtime`.
+The committed source set in `assets/source/ebdx` retains attributed EBDX art, imported icons/cries, PBS metadata and a stable roster inventory. `tools/build_mega_atlas.py` converts that art into bounded PNG pages and Lua/JSON lookup tables under `assets/runtime`.
 
 `src/mega_atlas.lua` loads only requested pages and uses per-form presentation metrics. The runtime **also accesses some source-backed icons and cries**, so do not delete source art directories simply because the atlas exists.
 
