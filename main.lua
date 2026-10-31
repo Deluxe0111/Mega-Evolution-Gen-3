@@ -386,7 +386,15 @@ return function(mod)
       local id = ev and tonumber(ev.battlerId)
       local b = st and id and (st.battlers and st.battlers[id]
         or (id == 0 and st.player) or (id == 1 and st.enemy))
-      if b and b.mon then game.fainted(b.mon) end
+      if b and b.mon then
+        if bridge.faintAnimationHooked and game.faintPending
+            and game.faintPending(b.mon) then
+          -- A Mega faint animation is still forthcoming. The native
+          -- Anim.faintMon completion will clear the form.
+        else
+          game.fainted(b.mon)
+        end
+      end
     end)
   end
 
