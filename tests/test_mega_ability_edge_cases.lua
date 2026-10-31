@@ -153,13 +153,13 @@ Secondary.withChance=function(M,eff)
   return true
 end
 local hitCount=0
-local Hit={
-  dealDamage=function(M,amount)
+local Hit={}
+Hit.dealDamage=function(M,amount)
     local before=M.target.mon.hp
     M.target.mon.hp=math.max(0,before-amount)
     return before-M.target.mon.hp
-  end,
-  run=function(M)
+  end
+Hit.run=function(M)
     local count=tonumber(M.move.hits) or 1
     for i=1,count do
       local amount=Damage.calc(M.user,M.target,M.move,{})
@@ -168,8 +168,7 @@ local Hit={
     end
     Secondary.withChance(M,"FLINCH",false,false)
     return count
-  end,
-}
+  end
 local Engine={
   resolveMove=function()return "normal"end,
   hasFlag=function()return false end,
