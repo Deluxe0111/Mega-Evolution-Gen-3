@@ -1,6 +1,6 @@
 # Development and contribution guide
 
-**Current status:** This is an experimental, playable Gen 3 Mega Evolution mod with 98 Mega form entries, a battle command, item/shop registration, runtime art, modern ability integrations and a ROM-aware trainer roster. The older prototype-only statements have been superseded.
+**Current status:** This is a Beta Gen 3 Mega Evolution mechanics mod with 98 Mega form entries, a battle command, item/shop registration, runtime art, modern ability integrations and a ROM-aware trainer roster. The older prototype-only statements have been superseded.
 
 ## Checkout and validation
 

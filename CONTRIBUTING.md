@@ -1,6 +1,6 @@
 # Contributing
 
-This is an experimental Gen1Recomp Gen 3 Mega Evolution mod. Please open a focused pull request rather than committing unreviewed ROM, save or asset changes directly to `main`.
+This is a Beta Gen1Recomp Gen 3 Mega Evolution mechanics mod. Please open a focused pull request rather than committing unreviewed ROM, save or asset changes directly to `main`.
 
 Before contributing, read the [development guide](docs/DEVELOPMENT.md), [runtime architecture](docs/ARCHITECTURE.md), [dependency policy](docs/DEPENDENCIES.md), [test matrix](docs/TESTING.md), and [art rights](CREDITS.md).
 

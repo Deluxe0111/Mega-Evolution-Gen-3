@@ -10,6 +10,7 @@ First versioned Gen1Recomp Gen 3 Mega Evolution pre-release.
 - ROM-aware curated Kanto/Hoenn trainer roster and in-game MEGA AUDIT.
 - Compatibility integrations for optional National Dex, G9 art, HD sprites, Untamed Advanced, Modern Spawns and Nuzlocke packs.
 - Minimal installable ZIP with only runtime Lua, indexed atlas pages, directly-loaded UI/icon/audio, README and full attribution; includes SHA-256 checksum.
+- Classified as `MECHANIC` in Gen1Recomp; no experimental activation warning.
 
 **Beta limitations:** Full five-game and cross-mod gameplay certification is outstanding. Source art/audio permissions must be established before wider redistribution; this pre-release is intended for testing in the private repository.
 

@@ -81,19 +81,30 @@ jobs:
           Path(str(new) + '.sha256').write_text(f'{checksum}  {new.name}\n', encoding='utf-8')
           print(f'Beta package: {new.name} ({len(entries)} runtime files); SHA-256 {checksum}')
           PY
-      - name: Create GitHub pre-release and upload player files
+      - name: Create or refresh GitHub pre-release and player files
         shell: bash
         run: |
           if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release $TAG already exists; refusing to overwrite it."
-            exit 1
+            # Update the existing Beta in place rather than publishing a second version.
+            gh release upload "$TAG" \
+              dist/mega-evolution-gen3-v1.0.0-Beta.zip \
+              dist/mega-evolution-gen3-v1.0.0-Beta.zip.sha256 \
+              --clobber
+            gh release edit "$TAG" \
+              --title 'Mega Evolution Gen 3 — v1.0.0-Beta' \
+              --notes-file RELEASE_NOTES.md \
+              --prerelease
+            # Keep the tag and its installable archive on the same source revision.
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/$TAG" \
+              -f sha="$GITHUB_SHA" -F force=true >/dev/null
+          else
+            gh release create "$TAG" \
+              dist/mega-evolution-gen3-v1.0.0-Beta.zip \
+              dist/mega-evolution-gen3-v1.0.0-Beta.zip.sha256 \
+              --target "$GITHUB_SHA" \
+              --title 'Mega Evolution Gen 3 — v1.0.0-Beta' \
+              --notes-file RELEASE_NOTES.md \
+              --prerelease
           fi
-          gh release create "$TAG" \
-            dist/mega-evolution-gen3-v1.0.0-Beta.zip \
-            dist/mega-evolution-gen3-v1.0.0-Beta.zip.sha256 \
-            --target "$GITHUB_SHA" \
-            --title 'Mega Evolution Gen 3 — v1.0.0-Beta' \
-            --notes-file RELEASE_NOTES.md \
-            --prerelease
       - name: Confirm published release
         run: gh release view "$TAG" --json url,name,tagName,isPrerelease,assets
