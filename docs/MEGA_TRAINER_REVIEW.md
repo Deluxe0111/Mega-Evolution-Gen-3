@@ -1,3 +1,84 @@
+## Approved selections — 31 October 2026
+
+All **32 submitted choices** are recorded in
+`data/mega_boss_selections.lua`. This overrides the earlier proposals in
+this document. Approval covers the selected Mega form and **adding a new
+Pokémon only when the verified trainer party has fewer than six slots**;
+**no replacements are authorised**. Existing Pokémon are preferred.
+The runtime `exports.bossMegaAudit()` reads the ROM-generated trainer
+pack and returns each candidate's actual numeric trainer ID, class,
+existing party size and one of these statuses:
+
+- `existing`: selected species already on the trainer team; select it.
+- `add`: verified original team has room; add at its final member's level,
+  without changing or deleting any existing Pokémon.
+- `full_party_needs_approval`: leave team untouched, request a replacement
+  decision for that exact original party.
+- `species_not_registered`: the selected National Dex Pokémon is not
+  available; leave team unchanged.
+- `trainer_identity_not_found`, `rom_party_mismatch`,
+  `ambiguous_boss_match`: skip changes until actual ROM trainer IDs,
+  classes and party composition are resolved.
+- `double_party_review`: Tate & Liza require the original double-battle
+  party ownership boundaries to be checked before adding Meowstic.
+- `starter_not_present`: the Champion Rival has no suitable final-stage
+  starter; do not silently substitute an unrelated Pokémon.
+
+### Kanto choices
+
+| Trainer | Approved Mega |
+| --- | --- |
+| Brock | Aerodactyl |
+| Misty | Starmie |
+| Lt. Surge | Raichu X |
+| Erika | Victreebel |
+| Koga | Beedrill |
+| Sabrina | Alakazam |
+| Blaine | Pyroar |
+| Giovanni (Gym) | Kangaskhan |
+| Lorelei | Slowbro |
+| Bruno | Steelix (add if absent; do not replace Onix without approval) |
+| Agatha | Gengar |
+| Lance | Dragonite |
+| Champion Rival | Their fully evolved starter (Charizard X where applicable) |
+| Giovanni (Team Rocket) | Mewtwo Y |
+
+### Hoenn choices
+
+| Trainer | Approved Mega |
+| --- | --- |
+| Roxanne | Glimmora |
+| Brawly | Medicham |
+| Wattson | Manectric |
+| Flannery | Camerupt |
+| Norman | Kangaskhan |
+| Winona | Altaria |
+| Tate & Liza | Meowstic (double-party insertion needs review) |
+| Wallace (Ruby/Sapphire Gym) | Gyarados |
+| Juan (Emerald Gym) | Tatsugiri (Curly) |
+| Sidney | Absol |
+| Phoebe | Banette |
+| Glacia | Glalie |
+| Drake | Salamence |
+| Champion Steven (Ruby/Sapphire) | Metagross |
+| Champion Wallace (Emerald) | Gyarados |
+| Maxie | Houndoom |
+| Archie | Sharpedo |
+| Wally | Gardevoir |
+
+**Verification detail:** The repository does not contain the player's
+generated GBA ROM trainer pack. We do **not** invent trainer IDs or assume
+a generic ROM's party exactly matches theirs. Trainer IDs, class names,
+party species and levels are checked against the **loaded imported ROM**
+at battle start. Only matching `existing` and `add` entries execute.
+
+No item is added to NPC storage. Added trainer Pokémon receive the
+original ace's level; the native Gen3 party builder derives legal moves
+and battle stats. The generated boss audit allows exact encounter-by-
+encounter review before any replacement or special double-team patch.
+
+---
+
 # Enemy trainer Mega Evolution: automatic rule and boss roster review
 
 ## Rules implemented in the first trainer-Mega foundation
