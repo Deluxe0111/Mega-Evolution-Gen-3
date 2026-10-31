@@ -2,13 +2,13 @@
 
 **Mega Evolution for Pokémon FireRed, LeafGreen, Ruby, Sapphire and Emerald in [Gen1Recomp](https://github.com/bryanthaboi/gen1recomp).**
 
-> **Status: experimental / active development.** The mod currently contains 98 Mega form entries, 92 held Mega Stones plus a Key Stone, a battle Mega command, temporary Mega form/stats/art, trainer Mega behaviour and a ROM-aware curated boss roster. Headless tests and selected gameplay scenarios have been exercised, but **full cross-mod and five-game QA is not complete**. There is **no published GitHub Release** yet.
+> **Status: v1.0.0-Beta (experimental pre-release).** Includes 98 Mega form entries, 92 held Mega Stones plus a Key Stone, battle Mega selection, temporary form/stats/art, trainer Mega behaviour and curated boss encounters. Automated tests cover the current implementation, but **full cross-mod and five-game gameplay QA is not complete**. This release is currently available through the private development repository.
 
 No patched GBA ROM, game binary modification or separate Gen1Recomp engine fork is needed. Battle integration uses existing Gen 3 Lua entrypoints and may need maintenance as the host engine evolves. The manifest explicitly requests Gen1Recomp's **engine_internals** permission because the mod wraps private battle functions; it does not request network permission.
 
 ## Quick start
 
-1. Install a published release ZIP using Gen1Recomp's **MODS** screen. Until a release is published, use a checkout of the development repository for testing.
+1. Download the `mega-evolution-gen3-v1.0.0-Beta.zip` **release asset** (not GitHub's automatic Source code ZIP) and import it from the Gen1Recomp **MODS** screen.
 2. Enable **Mega Evolution Gen 3** for a supported Gen 3 game.
 3. In Oak's Lab (FireRed/LeafGreen) or Birch's Lab (Ruby/Sapphire/Emerald), buy the **Key Stone (₽10,000)** and the Pokémon's **Mega Stone (₽5,000)** from the added lab aide.
 4. Give the Pokémon its Mega Stone, open **FIGHT**, toggle Mega with **START** (or the on-screen control), then select its move.
@@ -17,7 +17,7 @@ The player gets **one Mega Evolution per battle**. The form appears before the m
 
 **[Detailed installation and troubleshooting →](docs/INSTALLATION.md)**
 
-The player ZIP is generated from a vetted runtime-file inventory, not from GitHub's full source archive. See [release preparation](docs/RELEASE.md).
+The player ZIP is generated from a vetted runtime-file inventory, not from GitHub's full source archive. See [release and testing policy](docs/RELEASE.md).
 
 ## Dependencies
 
