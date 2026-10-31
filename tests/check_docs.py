@@ -33,4 +33,15 @@ for name in SOURCES:
         assert destination.exists(), f"Broken Markdown link: {name} -> {target}"
         verified += 1
 assert verified >= 15, "Expected a navigable local documentation set"
-print(f"PASS: {len(SOURCES)} maintained documents, {verified} local links")
+# Public-facing documentation must not include drafting or conversation artefacts.
+EDITORIAL_ARTIFACTS = re.compile(
+    r"\\b(?:chatgpt|openai|ai[- ]generated|as requested|send me|user(?:'s)? "
+    r"(?:asked|submitted)|we previously|what we must decide together)\\b",
+    re.IGNORECASE,
+)
+for doc in [ROOT / "README.md", ROOT / "CREDITS.md", *sorted((ROOT / "docs").rglob("*.md"))]:
+    content = doc.read_text(encoding="utf-8")
+    match = EDITORIAL_ARTIFACTS.search(content)
+    assert match is None, f"Conversational/editorial residue: {doc.relative_to(ROOT)} ({match.group(0)})"
+
+print(f"PASS: {len(SOURCES)} maintained documents, {verified} local links; editorial scan passed")

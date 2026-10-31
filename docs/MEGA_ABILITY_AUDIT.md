@@ -48,7 +48,7 @@ core Gen3 move/ability engine changes. **Implemented does not mean battle-tested
    Intimidate text/animation may still describe a decrease when Contrary raised
    Attack. Requires visual/gameplay QA.
 8. **Fairy:** Pixilate, Fairy Aura and the Mega forms with Fairy typing depend
-   on a separately installed Fairy type provider. We must not assign a
+   on a separately installed Fairy type provider. Do not assign a
    competing numeric ID.
 9. **Eelevate:** reuses Levitate for Gen3 hit and Spikes checks. Additional
    hazards supplied by content packs may require explicit compatibility.

@@ -4,11 +4,11 @@ Every pinned EBDX Mega form is now explicitly listed in
 `data/mega_presentation.lua`, with independent `back` and `front` settings.
 
 - **scale = 1** on every entry, including Mega Venusaur and Mega Mewtwo X,
-  as requested. This is an artistic first pass, **not** a guarantee every
+  as the default. This is a presentation baseline, **not** a guarantee every
   sprite fits the battle screen at 1×. Large forms can be oversized.
 - **feet** is determined from the complete animation's shared alpha envelope
   (`cy + fh` in the normalised atlas). All frames of a species/side share the
-  same anchor. We never recrop or centre frames separately, so the animation's
+  same anchor. Frames are not recropped or centred separately, so the animation's
   authored movement survives.
 - For a small, explicit set of airborne species, up to **six pixels of
   original transparent clearance** beneath the animated art are retained as

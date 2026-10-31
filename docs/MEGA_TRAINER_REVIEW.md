@@ -1,10 +1,10 @@
-# Trainer Mega Evolution — approved roster and ROM audit
+# Trainer Mega Evolution — curated roster and ROM audit
 
 **Current implementation:** One eligible Mega per enemy trainer side in normal supported battles, selected as the last eligible Pokémon unless a verified boss choice explicitly overrides it. Famous trainer teams are selected by **imported ROM name/class/ID and party**. Only approved edits are permitted, without changing save data or the original ROM trainer pack.
 
-This reference supersedes the earlier rolling proposal notes, now preserved in [the historical archive](archive/MEGA_TRAINER_REVIEW_HISTORY.md). **Not every selection is guaranteed to execute:** a species may be absent, a full party may be awaiting a decision, or an imported-ROM trainer record may differ.
+The listed choices require verification against the active imported-ROM trainer records. **Not every selection is guaranteed to execute:** a species may be absent, a full party may be awaiting a decision, or an imported-ROM trainer record may differ.
 
-## 1. Approved FireRed selections (14)
+## 1. Curated FireRed selections (14)
 
 | Trainer | Mega choice | Notes |
 | --- | --- | --- |
@@ -31,7 +31,7 @@ This reference supersedes the earlier rolling proposal notes, now preserved in [
 - With duplicate eligible Pokémon, use the **last matching party slot** (Agatha's and Lance's rematch examples).
 - Exact Rocket ID exceptions are restricted to **FireRed**. Do not apply them to LeafGreen without a separate audit.
 
-## 2. Approved Hoenn selections (18)
+## 2. Curated Hoenn selections (18)
 
 | Trainer | Mega choice | Edition / caveat |
 | --- | --- | --- |
@@ -77,7 +77,7 @@ Exact full party signatures are encoded in `data/mega_boss_selections.lua`. The 
 
 ### Wally status
 
-Chosen Mega: **Mega Gardevoir**. The user's submitted Emerald audit did **not** resolve Wally's actual trainer records. Gen1Recomp's Emerald constants identify plausible trainer IDs **#519 and #656–660**. These IDs are included in candidate discovery, but **they are not proof that the imported ROM data matches**. The in-game audit displays available candidate IDs and parties with `trainer_identity_unverified`; no curated Wally team change is enabled.
+Chosen Mega: **Mega Gardevoir**. The Emerald trainer audit has **not** resolved Wally's actual trainer records. Gen1Recomp's Emerald constants identify plausible trainer IDs **#519 and #656–660**. These IDs are included in candidate discovery, but **they are not proof that the imported ROM data matches**. The in-game audit displays available candidate IDs and parties with `trainer_identity_unverified`; no curated Wally team change is enabled.
 
 ## 3. Battle and data safety rules
 
