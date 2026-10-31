@@ -118,8 +118,8 @@ function ScreenModule.install(mod,modelModule,audit,opts)
     G.rectangle("fill",0,25,240,2)
     local counts=m:counts()
     text("TRAINER MEGA AUDIT",4,1)
-    text(string.format("%d MATCHES  %d READY  %d REVIEW",
-      counts.total,counts.ready,counts.review),4,14)
+    text(string.format("%d TOTAL %d READY %d REVIEW %d OFF",
+      counts.total,counts.ready,counts.review,counts.skipped or 0),4,14)
     if m.error then
       text("NO ROM TRAINER DATA",5,37)
       text(shorten(m.error,34),5,53)
@@ -156,7 +156,8 @@ function ScreenModule.install(mod,modelModule,audit,opts)
           G.rectangle("fill",2,y,236,14)
         end
         local flag=row.status=="existing" and "OK"
-          or row.status=="add" and "ADD" or "CHECK"
+          or row.status=="add" and "ADD"
+          or row.status=="disabled_by_choice" and "OFF" or "CHECK"
         text(shorten(string.format("%s  #%s %s",flag,
           tostring(row.trainerId or "?"),displayName(row)),36),5,y)
       end
