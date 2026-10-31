@@ -340,6 +340,16 @@ function Boss.new(approved,formRows,opts)
     if type(all)~="table" then return nil,"trainer_extract_not_loaded" end
     local rows={}
     local found={}
+    local wallyCandidates
+    if game=="emerald" then
+      for _,entry in ipairs(approved.hoenn or {}) do
+        if entry.key=="wally" then
+          wallyCandidates=entry.candidateTrainerIds
+            and entry.candidateTrainerIds.emerald
+          break
+        end
+      end
+    end
     for trainerId,raw in pairs(all) do
       -- The *raw* import often omits className: it is resolved from
       -- pack.classNames only by Trainers.get. Use the same native
@@ -356,7 +366,8 @@ function Boss.new(approved,formRows,opts)
         -- another trainer by Gardevoir species or a guessed ID.
         local name=norm(row.name)
         local script=norm(row.scriptKey)
-        if name=="WALLY" or (script and script:find("WALLY",1,true)) then
+        if name=="WALLY" or (script and script:find("WALLY",1,true))
+            or idListed(wallyCandidates,trainerId) then
           local candidate={key="wally",trainerId=tonumber(trainerId),
             name=row.name,className=row.className,
             slug="mega_gardevoir",status="trainer_identity_unverified",
