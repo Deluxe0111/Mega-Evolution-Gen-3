@@ -10,7 +10,7 @@ local function activeAbility(game,b)
   return view and view.ability or nil
 end
 
-local function packed(f,...)
+local function packed(...)
   return {n=select("#",...),...}
 end
 local function unpacked(values,start)
