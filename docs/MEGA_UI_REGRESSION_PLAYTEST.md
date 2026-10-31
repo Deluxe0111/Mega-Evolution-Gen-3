@@ -1,4 +1,4 @@
-# Mega battle/UI rendering regression (PR follow-up)
+# Mega battle/UI rendering regression checks
 
 A full-roster Emerald/FireRed playtest showed:
 
@@ -11,7 +11,7 @@ A full-roster Emerald/FireRed playtest showed:
 ## Root causes and resolution
 
 The G9 battle sprite provider lazily installs its own persistent
-`love.graphics.draw` interception. We previously installed a temporary
+`love.graphics.draw` interception. An earlier build installed a temporary
 Mega-origin shim on *every* `Ui.draw` frame, including the very first normal
 battle frame. If G9 installed while the shim was active, it could capture the
 temporary function as its permanent predecessor. That order can distort

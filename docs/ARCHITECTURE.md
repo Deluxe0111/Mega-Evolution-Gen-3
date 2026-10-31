@@ -46,4 +46,4 @@ The committed source set in `assets/source/ebdx` retains attributed EBDX art, im
 - [Development and contributing](DEVELOPMENT.md)
 - [Artwork attribution](../CREDITS.md)
 
-The older design and milestone notes in `docs/` are retained for technical history; when they contradict the above documents, current code and the maintained references take precedence.
+The maintained references above describe the current implementation. Consult the source and tests for detailed runtime behaviour.

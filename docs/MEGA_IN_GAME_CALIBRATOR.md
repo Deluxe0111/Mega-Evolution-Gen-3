@@ -9,7 +9,7 @@ consumes items or touches the saved game.
 
 ## Opening it
 
-1. Install the `feature/mega-in-game-calibrator` branch of this mod and fully
+1. Install this mod and fully
    restart Gen1Recomp.
 2. Open the Mod Manager/options for **Mega Evolution Gen 3** and turn on
    **MEGA TUNER** (off by default), or start Gen1Recomp in developer mode.
@@ -63,8 +63,8 @@ the file can still be retrieved from the mod cache.
 
 The mod also exposes `exportMegaTuning()` / `megaTuningText()` for
 connected tools. **Neither export automatically changes the installed mod**.
-Send me the generated `.lua` file here and I can apply the values,
-review outliers and make a PR.
+Review the generated `.lua` file and apply calibrated values to
+`data/mega_presentation.lua` in a reviewed mod update. Check outliers before merging.
 
 ## Notes
 

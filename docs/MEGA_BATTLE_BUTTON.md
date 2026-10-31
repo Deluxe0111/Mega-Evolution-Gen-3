@@ -1,7 +1,6 @@
 # Mega battle button and symbols
 
-This change replaces the old text block `START: MEGA` / `MEGA READY` in
-the move-select overlay with the original EBDX art:
+The move-select overlay uses the original EBDX button artwork:
 
 | Asset | Source in this mod | Placement |
 | --- | --- | --- |
@@ -34,9 +33,7 @@ The emblem's white-silhouette sequence is **render-only**: the original Pokémon
 The badge uses **nearest-neighbour** filtering and uniform half-size rendering of the 26×34 EBDX source. It stays below the nickname/gender row rather than stretching into it.
 
 The badge is positioned from Gen1Recomp's own `Healthbox.center()`
-together with animation offsets, including double battles. We do not
-override `Pokemon.frontPic`, `Pokemon.backPic`, battle backgrounds or G9
-sprite scaling. The transform emblem is a brief *cosmetic* flourish, not
+together with animation offsets, including double battles. The mod does not override `Pokemon.frontPic`, `Pokemon.backPic`, battle backgrounds or G9 sprite scaling. The transform emblem is a brief *cosmetic* flourish, not
 a change to turn order or a new cutscene; it requires live testing for
 timing against the battle text.
 
@@ -77,7 +74,7 @@ unfinished audio cue. It does **not** delay move resolution.
 
 ## Playtest
 
-1. Fully restart Gen1Recomp with this feature branch and the same G9/HD
+1. Fully restart Gen1Recomp with the installed mod and the same G9/HD
    mods used for the rest of the Mega tests.
 2. In FireRed or Emerald, give a Pokémon its correct Mega Stone and have
    a Key Stone in the Bag.

@@ -2,7 +2,7 @@
 
 ## Approach
 
-[G9 Battle Sprites (Gen 3)](https://github.com/poooooby/g9-battle-sprites-gen3) packages animated Pokémon as PNG atlas pages, with a Lua index and runtime frame selection. Our EBDX input art is likewise packaged as PNG strips of square frames. This builder follows that general technique but maintains **form-keyed Mega sprites**, rather than introducing permanent species IDs.
+[G9 Battle Sprites (Gen 3)](https://github.com/poooooby/g9-battle-sprites-gen3) packages animated Pokémon as PNG atlas pages, with a Lua index and runtime frame selection. The EBDX input art is likewise packaged as PNG strips of square frames. This builder follows that general technique but maintains **form-keyed Mega sprites**, rather than introducing permanent species IDs.
 
 All six original EBDX sprite kinds are supported: front, back, front shiny, back shiny, party icon and shiny party icon.
 
@@ -24,9 +24,9 @@ From the repository root:
     py -3 tools/build_mega_atlas.py --normalize-padding
     py -3 -m unittest discover -s tests -p "test_mega_atlas.py"
 
-The first command checks all 588 source PNGs. The second makes a legacy six-variant preview; the third demonstrates **motion-safe transparent-padding normalisation** for Mega Venusaur. The fourth builds the full 98-variant roster with shared-border packing. **Use this full build before installing normalised atlases**: this branch's committed runtime pages are still legacy-packed until regenerated. The new format is opt-in, so older bundled atlases work unchanged. Alternatively, on Windows run `5_BUILD_ALL_MEGA_ATLASES.bat` for the complete collection. The repository also includes a separately triggered **Full Mega atlas build** workflow, which checks that every frame range and generated PNG page resolves correctly. For locally generated output, run `py -3 tests/check_full_mega_atlas.py` after the full build.
+The first command checks all 588 source PNGs. The second makes a six-variant preview; the third demonstrates **motion-safe transparent-padding normalisation** for Mega Venusaur. The fourth builds the full 98-form roster with shared-border packing. **Rebuild the complete atlas and validate the generated index before replacing the committed runtime artwork.** The normalised format remains opt-in; existing atlas pages remain supported. Alternatively, on Windows run `5_BUILD_ALL_MEGA_ATLASES.bat` for the complete collection. The repository also includes a separately triggered **Full Mega atlas build** workflow, which checks that every frame range and generated PNG page resolves correctly. For locally generated output, run `py -3 tests/check_full_mega_atlas.py` after the full build.
 
-The packer uses 2048px atlas pages by default, with configurable 256–4096px page size. Large strips can be split across segments without losing a frame. Generated pages are not yet committed or packaged as a player release.
+The packer uses 2048px atlas pages by default, with configurable 256–4096px page size. Large strips can be split across segments without losing a frame. Generated atlas pages and indexes are committed under `assets/runtime/`. The release archive must include every runtime page referenced by the index.
 
 ## Generated files
 
@@ -91,6 +91,6 @@ atlas is rebuilt, validated and visually reviewed.
 
 ## What is still missing
 
-This milestone provides atlas conversion, metadata, tests and visual previews. It does **not yet display Megas in a running battle**. Next we need to integrate a deliberately composed renderer into G9's picture pipeline, including front/back anchors, sizing and shiny flags. A temporary Mega battle form must never overwrite the Pokémon's saved species identity.
+The runtime uses the indexed frames to render temporary in-battle Mega forms. Changing atlas geometry requires testing front/back anchors, shiny art, party icons and interactions with the installed G9/HD graphics providers. A temporary Mega battle form must never overwrite the Pokémon's saved species identity.
 
 CI creates a Mega Venusaur proof artifact for inspection. Original sprite and audio credits remain in CREDITS.md and the EBDX source metadata.

@@ -45,4 +45,4 @@ This roadmap describes the **current implementation** rather than the original M
 - [ ] Audit distribution rights for every art/audio category and record permitted release contents
 - [ ] Publish a tested player ZIP and versioned GitHub Release **only after** a full installation smoke test
 
-**Maintained references:** [Install](INSTALLATION.md), [Dependencies](DEPENDENCIES.md), [Trainer roster](MEGA_TRAINER_REVIEW.md), [Testing](TESTING.md). Older design files in this directory remain as implementation history.
+**Maintained references:** [Install](INSTALLATION.md), [Dependencies](DEPENDENCIES.md), [Trainer roster](MEGA_TRAINER_REVIEW.md), [Testing](TESTING.md). Refer to [Release requirements](RELEASE.md) before publishing a player build.
