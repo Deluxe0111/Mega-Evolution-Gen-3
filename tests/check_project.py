@@ -29,4 +29,29 @@ for form in forms:
     assert form["source_filename"].endswith(".png")
     assert form["slug"].startswith("mega_")
 
-print("Manifest, scaffold safety, artist credits and 98-form source inventory: PASS")
+# The documented cross-mod dependencies must be discoverable by the
+# Gen1Recomp launcher using the exact IDs from their own manifests.
+expected_deps = {
+    "national_dex_gen3": "poooooby/national_dex_gen3",
+    "g9-battle-sprites-gen3": "poooooby/g9-battle-sprites-gen3",
+    "gen3-hd-sprites": "poooooby/gen3-hd-sprites",
+    "modern_spawns": "poooooby/g1r_modern_spawns",
+    "untamed_advanced": "Deluxe0111/untamed-advanced",
+    "nuzlocke": "Deluxe0111/nuzlocke",
+}
+optional = manifest.get("optional_dependencies", [])
+assert len(optional) == len(set(optional)), "Duplicate optional mod IDs"
+assert set(optional) == set(expected_deps), (
+    "Optional dependencies changed: update verified sources + docs")
+assert manifest.get("dependency_sources") == expected_deps, (
+    "Missing/stale GitHub dependency source hints")
+assert not manifest.get("dependencies"), "Base game should remain standalone"
+assert manifest.get("experimental") is True, (
+    "Do not publish an unverified build as stable")
+for doc in [
+    "docs/INSTALLATION.md", "docs/DEPENDENCIES.md", "docs/ARCHITECTURE.md",
+    "docs/MEGA_TRAINER_REVIEW.md", "docs/TESTING.md",
+]:
+    assert (ROOT / doc).is_file(), "Missing maintained guide: " + doc
+
+print("Manifest, source roster, optional dependency IDs and docs: PASS")
