@@ -10,6 +10,8 @@ This is an **experimental Gen1Recomp Mod API 2 mod** for FireRed, LeafGreen, Rub
 4. Enable **Mega Evolution Gen 3** in the launcher; start FireRed, LeafGreen, Ruby, Sapphire or Emerald.
 5. Confirm the Mega mod is active. The regular Pokémon and save data remain separate from this mod's temporary in-battle forms.
 
+The launcher may identify this mod as using **engine internals**. This is declared intentionally: its battle integration wraps private Gen 3 Lua functions, so updates to the host can require a compatibility patch.
+
 For a manual development installation, the mod directory must contain `manifest.json`, `main.lua`, `src/`, `data/` and `assets/` directly beneath the mod folder. Prefer the launcher import rather than assuming a particular Windows or portable install path.
 
 **Do not install just `main.lua` or the `assets/runtime` folder.** The runtime index, atlas pages, Mega Stone icons, source-backed cries and scripts must stay together. Do not delete `assets/source/ebdx` as part of a cleanup: some runtime item artwork is loaded from that folder.
