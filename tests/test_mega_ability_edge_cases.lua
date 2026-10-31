@@ -91,6 +91,13 @@ assert(not Edge.skipPostParentalSecondary(game,bond,"BURN",Effects))
 bond.hitSubstitute=true
 assert(not Edge.parentalHitSecondary(game,bond,15,Secondary,Effects))
 assert(calls==2)
+-- First Parental Bond hit breaks Substitute; second damages HP.
+-- The native M.hitSubstitute flag can remain set, so use the per-hit
+-- snapshot to allow the second secondary roll.
+bond.hitSubstitute=true
+local before=calls
+assert(Edge.parentalHitSecondary(game,bond,10,Secondary,Effects,false))
+assert(calls==before+1)
 bond.hitSubstitute=nil
 foe.mon.hp=0
 assert(not Edge.parentalHitSecondary(game,bond,15,Secondary,Effects))
