@@ -182,8 +182,10 @@ return function(mod)
   local Selection = loadSibling(mod, "src/mega_selection.lua")
   local MegaBattle = loadSibling(mod, "src/mega_battle.lua")
   local TrainerPolicy=loadSibling(mod,"src/mega_trainer_policy.lua")
+  local trainerChoices=loadSibling(mod,"data/mega_trainer_choices.lua")
   local trainerPolicy=TrainerPolicy and battleForms and TrainerPolicy.new(
     battleForms, {
+      choices=trainerChoices,
       speciesName=function(species)
         if type(species)=="string" then return species end
         local okP,Pokemon=pcall(require,"src.core.game3.pokemon")
