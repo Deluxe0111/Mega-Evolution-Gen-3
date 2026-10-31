@@ -2,6 +2,7 @@
 local Audit={}
 local FILTERS={"ALL","READY","NEEDS REVIEW"}
 local READY={existing=true,add=true}
+local SKIPPED={disabled_by_choice=true}
 function Audit.new(loader)
   local self={rows={},error=nil,filter=1,index=1,detail=false,
     loaded=false}
@@ -9,8 +10,9 @@ function Audit.new(loader)
     local items={}
     for _,row in ipairs(self.rows) do
       local ready=READY[row.status]==true
+      local skipped=SKIPPED[row.status]==true
       if self.filter==1 or (self.filter==2 and ready)
-          or (self.filter==3 and not ready) then
+          or (self.filter==3 and not ready and not skipped) then
         items[#items+1]=row
       end
     end
@@ -43,11 +45,13 @@ function Audit.new(loader)
     self.detail=false
   end
   function self:counts()
-    local ready,review=0,0
+    local ready,review,skipped=0,0,0
     for _,row in ipairs(self.rows) do
-      if READY[row.status] then ready=ready+1 else review=review+1 end
+      if READY[row.status] then ready=ready+1
+      elseif SKIPPED[row.status] then skipped=skipped+1
+      else review=review+1 end
     end
-    return {total=#self.rows,ready=ready,review=review}
+    return {total=#self.rows,ready=ready,review=review,skipped=skipped}
   end
   function self:exportText()
     local out={"MEGA TRAINER AUDIT","READ ONLY / IMPORTED ROM",
@@ -71,6 +75,8 @@ function Audit.new(loader)
           .." at Lv."..tostring(row.level)
       elseif row.status=="full_party_needs_approval" then
         out[#out+1]="  ACTION: replacement decision required; no swap made"
+      elseif row.status=="disabled_by_choice" then
+        out[#out+1]="  RULE: no Mega Evolution for this encounter"
       end
     end
     return table.concat(out,"\n").."\n"
