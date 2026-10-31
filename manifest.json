@@ -23,7 +23,7 @@
     "nuzlocke"
   ],
   "conflicts": [],
-  "description": "Temporary battle Mega Evolution for 98 forms in Gen 3, with 92 Mega Stones, animation and curated trainer Megas. Extra species require a compatible National Dex mod; includes battle mechanics and curated trainer Megas.",
+  "description": "Bring Mega Evolution to Gen 3: 98 Mega form entries, 92 Mega Stones, animated transformations, modern battle mechanics and curated boss Megas. Later-generation Pokémon require a compatible species mod.",
   "github": "Deluxe0111/Mega-Evolution-Gen-3",
   "dependency_sources": {
     "national_dex_gen3": "poooooby/national_dex_gen3",

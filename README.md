@@ -1,6 +1,8 @@
 # Mega Evolution Gen 3
 
-**Mega Evolution for Pokémon FireRed, LeafGreen, Ruby, Sapphire and Emerald in [Gen1Recomp](https://github.com/bryanthaboi/gen1recomp).**
+**Bring Mega Evolution to Pokémon FireRed, LeafGreen, Ruby, Sapphire and Emerald with [Gen1Recomp](https://github.com/bryanthaboi/gen1recomp).**
+
+Experience the classic Gen 3 adventures with Mega Stones, in-battle transformations, enhanced Pokémon forms and surprise Mega-powered trainer battles — **without modifying a GBA ROM**. This mechanics mod adds **98 Mega form entries** and **92 Mega Stones**, alongside animated sprites, new battle presentation and optional integration with expanded Pokémon content packs.
 
 > **Status: v1.0.0-Beta (pre-release).** Includes 98 Mega form entries, 92 held Mega Stones plus a Key Stone, battle Mega selection, temporary form/stats/art, trainer Mega behaviour and curated boss encounters. Automated tests cover the current implementation, but **full cross-mod and five-game gameplay QA is not complete**. This release is currently available through the private development repository.
 
@@ -38,13 +40,29 @@ All six are **optional to install**, but National Dex is **necessary for feature
 
 ## Features
 
-- **98 Mega form entries / 92 Mega Stones:** animated and static source coverage, normal/shiny front/back art, party icons, imported cries and variant-specific metadata.
-- **Player battle command:** eligibility check, Key Stone and held-stone verification, move selection, transformation and persistent temporary battle form.
-- **Mega combat data:** Mega base stats, type/ability overrides and focused modern ability implementations. Not all modern effects or Fairy interactions are certified with every installed species/move provider.
-- **Automatic enemy trainer Megas:** chooses the last eligible Pokémon by default; one Mega per enemy side, separate from the player.
-- **Curated notable trainer battles:** chosen Megas for Kanto and Hoenn leaders, Elite Four, rivals and bosses. Exact IDs, team species/levels and ROM edition are checked before any proposed addition or replacement.
-- **Trainer audit menu:** **START → MEGA AUDIT**, with trainer IDs, original parties, review statuses and a text export for troubleshooting.
-- **Scoped art/runtime integration:** Mega art and party icons without rewriting the saved Pokémon or taking permanent ownership of another mod's regular sprite provider.
+### Mega Evolution battle mechanics
+
+- **98 Mega form entries, 92 Mega Stones and the Key Stone.** Includes multiple variant forms where supported; the available Mega depends on the Pokémon and its required stone or move.
+- **In-battle Mega selection.** An on-screen Mega button appears alongside move selection for eligible Pokémon. Activate it with **START**, the directional controls or a mouse/touch click, then choose a move.
+- **Transform before attacking.** Mega Evolution applies temporary base stats, type and ability changes in battle. Mega-specific ability integrations are implemented, with some newer interactions dependent on compatible move/type providers.
+- **One Mega Evolution per side, per battle.** The transformation persists when a Pokémon switches out and back in, and ends on fainting or battle completion. Permanent Pokémon data and saves are not overwritten.
+- **Mega Rayquaza support.** Its special condition uses **Dragon Ascent** instead of a held Mega Stone, when that move is available from the active game/mod provider.
+
+### Art, animation and items
+
+- **Animated Mega transformations.** A Mega emblem and white-silhouette reveal introduce the new form, followed by its own cry where available.
+- **Normal and shiny battle artwork.** Front and back Mega sprites, battle health-box indicators, plus matching animated party/switch icons and their shiny variants.
+- **Mega Stone shop.** Find a new lab aide in **Professor Oak's Lab** (Kanto) or **Professor Birch's Lab** (Hoenn) to purchase the **Key Stone (₽10,000)** and individual **Mega Stones (₽5,000)**.
+
+### Trainers, replayability and compatibility
+
+- **Enemy trainers can Mega Evolve.** Opponents have an independent Mega allowance, with automatic selection for eligible ordinary trainers.
+- **Curated Kanto and Hoenn boss Megas.** Selected Gym Leaders, Elite Four members, rivals and villains use ROM-aware team matching. Some additions require National Dex species, and unverified or incompatible trainer records are deliberately skipped rather than changed blindly.
+- **Built-in trainer audit.** Open **START → MEGA AUDIT** to inspect available trainer parties, Mega selections and compatibility status; export a diagnostic report when needed.
+- **Optional content-pack integration.** Compatible with the project’s supported **National Dex Gen 3**, **G9 Battle Sprites**, **Gen 3 HD Sprites**, **Modern Spawns**, **Untamed Advanced** and **Nuzlocke** integrations. The base mod has no additional mandatory mod dependency; later-generation Pokémon require a species provider such as National Dex.
+- **ROM-safe installation.** Installs as a Gen1Recomp Mechanics mod via a release ZIP, with no ROM patch or separate engine fork.
+
+**Beta note:** The core release is functional and covered by automated tests, but not every Mega, boss encounter, newer-generation ability interaction or combination of optional mods has completed live testing. See [Testing](docs/TESTING.md) and [Dependencies](docs/DEPENDENCIES.md).
 
 ## Trainer roster at a glance
 
