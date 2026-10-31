@@ -1,0 +1,12 @@
+{
+  "mega_starmie": {
+    "base_stats_source": "assets/source/ebdx/mega_forms.json",
+    "pbs_key": "STARMIE,1",
+    "field": "attack",
+    "imported_value": 100,
+    "corrected_value": 140,
+    "source": "https://www.serebii.net/legendsz-a/megaevolutions.shtml",
+    "corroboration": "https://pokejungle.net/pokemon-legends-z-a/new-mega-evolutions/",
+    "note": "Pinned EBDX PBS source has a legacy Mega Starmie Attack value. The released Legends Z-A base Attack is 140, total BST 660. Preserve the upstream source file unmodified; use the corrected runtime value."
+  }
+}
