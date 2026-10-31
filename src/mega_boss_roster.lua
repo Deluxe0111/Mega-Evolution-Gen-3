@@ -38,6 +38,13 @@ local function matchesClass(entry,className)
   end
   return false
 end
+local function idListed(ids,id)
+  id=tonumber(id)
+  for _,allowed in ipairs(ids or {}) do
+    if tonumber(allowed)==id then return true end
+  end
+  return false
+end
 
 function Boss.new(approved,formRows,opts)
   opts=opts or {}
@@ -61,22 +68,53 @@ function Boss.new(approved,formRows,opts)
     if keyName(id)~=norm(name) then return nil end
     return id
   end
-  local function match(entry,trainer,game)
-    return entry and trainer and allowedGame(entry,game)
-      and matchesName(entry,trainer.name)
-      and matchesClass(entry,trainer.className)
+  local function match(entry,trainer,game,id)
+    if not (entry and trainer and allowedGame(entry,game)
+        and matchesName(entry,trainer.name)
+        and matchesClass(entry,trainer.className)) then return nil end
+    -- Names alone are not sufficient for the FRLG CHAMPION class:
+    -- the ROM pack also contains a blank-name, single-Ekans #38 row.
+    local trainerName=norm(trainer.name)
+    if entry.requireNamed and (not trainerName or trainerName=="") then
+      return nil
+    end
+    if entry.minPartySize and #(trainer.party or {})<entry.minPartySize then
+      return nil
+    end
+    if entry.requiresStarter then
+      local containsStarter=false
+      for _,m in ipairs(trainer.party or {}) do
+        local name=keyName(m.species)
+        if name=="CHARIZARD" or name=="BLASTOISE" or name=="VENUSAUR" then
+          containsStarter=true
+          break
+        end
+      end
+      if not containsStarter then return nil end
+    end
+    -- These IDs come from the user's actual FireRed ROM audit.
+    -- An early Giovanni is explicitly prevented from using a Mega;
+    -- otherwise the generic trainer rule could select Kangaskhan.
+    if entry.noMegaTrainerIds and idListed(entry.noMegaTrainerIds[game],id) then
+      return "disabled_by_choice"
+    end
+    if entry.onlyTrainerIds and not idListed(entry.onlyTrainerIds[game],id) then
+      return nil
+    end
+    return "approved"
   end
-  local function findApproved(trainer,game)
+  local function findApproved(trainer,game,id)
     local g=region(game)
     if not g then return nil end
-    local found
+    local found,disposition
     for _,entry in ipairs(approved[g] or {}) do
-      if match(entry,trainer,game) then
+      local verdict=match(entry,trainer,game,id)
+      if verdict then
         if found then return nil,"ambiguous_boss_match" end
-        found=entry
+        found,disposition=entry,verdict
       end
     end
-    return found
+    return found,disposition
   end
   local function sameNativeParty(rom,party)
     if type(rom)~="table" or type(party)~="table"
@@ -92,7 +130,8 @@ function Boss.new(approved,formRows,opts)
     if entry.slug=="starter_x" then
       -- FRLG rival champion: use whichever fully evolved starter is
       -- ALREADY in the team. Charizard gets X rather than Y.
-      for i,m in ipairs(party) do
+      for i=#party,1,-1 do
+        local m=party[i]
         local name=keyName(m.species)
         local slug=name=="CHARIZARD" and "mega_charizard_x"
           or name=="BLASTOISE" and "mega_blastoise"
@@ -103,7 +142,8 @@ function Boss.new(approved,formRows,opts)
     end
     local form=forms[entry.slug]
     if not form then return nil,nil,false end
-    for i,m in ipairs(party) do
+    for i=#party,1,-1 do
+      local m=party[i]
       if keyName(m.species)==norm(form.species)
           and (tonumber(m.form or m.formId) or 0)==
             (tonumber(form.base_form) or 0) then
@@ -120,7 +160,7 @@ function Boss.new(approved,formRows,opts)
     end
     local row=metadata or trainers.get(id)
     if not row then return {status="no_rom_trainer",trainerId=id} end
-    local entry,reason=findApproved(row,game)
+    local entry,reason=findApproved(row,game,id)
     if not entry then
       return {status=reason or "not_approved",trainerId=id}
     end
@@ -136,6 +176,11 @@ function Boss.new(approved,formRows,opts)
     end
     if not sameNativeParty(row.party,actualParty) then
       report.status="rom_party_mismatch"
+      return report
+    end
+    if reason=="disabled_by_choice" then
+      report.status="disabled_by_choice"
+      report.slug=nil
       return report
     end
     local slot,slug,present=target(entry,actualParty)
@@ -228,7 +273,7 @@ function Boss.new(approved,formRows,opts)
       -- pack.classNames only by Trainers.get. Use the same native
       -- resolved identity as the live Battle.start hook.
       local row=trainers.get and trainers.get(trainerId) or raw
-      local entry=findApproved(row,game)
+      local entry=findApproved(row,game,trainerId)
       if entry then
         local report=self.assess(game,trainerId,row.party,row)
         rows[#rows+1]=report

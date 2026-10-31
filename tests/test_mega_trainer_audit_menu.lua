@@ -22,13 +22,17 @@ local audit=function()
       }},
     {key="roxanne",slug="mega_glimmora",
       status="trainer_identity_not_found"},
+    {key="giovanni_rocket",name="GIOVANNI",className="BOSS",
+      trainerId=348,status="disabled_by_choice",
+      party={{name="KANGASKHAN",level=29}}},
   }
 end
 local model=Model.new(audit)
 assert(not model.loaded)
 model:refresh()
 local counts=model:counts()
-assert(counts.total==4 and counts.ready==2 and counts.review==2)
+assert(counts.total==5 and counts.ready==2 and counts.review==2
+  and counts.skipped==1)
 assert(model:selected().trainerId==109)
 model:move(1)
 assert(model:selected().trainerId==110)
@@ -42,6 +46,7 @@ assert(model:selected().status=="trainer_identity_not_found")
 assert(model:exportText():find("109 | mega_aerodactyl",1,true))
 assert(model:exportText():find("ONIX Lv.14",1,true))
 assert(model:exportText():find("ACTION: replacement decision",1,true))
+assert(model:exportText():find("RULE: no Mega Evolution",1,true))
 model:filterMove(1)
 assert(model:filterName()=="ALL" and model:selected().trainerId==109)
 

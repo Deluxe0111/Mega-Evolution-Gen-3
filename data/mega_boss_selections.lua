@@ -16,8 +16,14 @@ return {
     {key="bruno",name="BRUNO",classes={"ELITE FOUR"},slug="mega_steelix"},
     {key="agatha",name="AGATHA",classes={"ELITE FOUR"},slug="mega_gengar"},
     {key="lance",name="LANCE",classes={"ELITE FOUR"},slug="mega_dragonite"},
-    {key="rival_champion",name="*",classes={"CHAMPION"},slug="starter_x",noAdd=true},
-    {key="giovanni_rocket",name="GIOVANNI",classes={"BOSS","ROCKET BOSS"},slug="mega_mewtwo_y"}
+    {key="rival_champion",name="*",classes={"CHAMPION"},slug="starter_x",noAdd=true,
+      requireNamed=true,minPartySize=6,requiresStarter=true},
+    {key="giovanni_rocket",name="GIOVANNI",classes={"BOSS","ROCKET BOSS"},
+      slug="mega_mewtwo_y",games={"firered"},
+      -- Verified from the user's imported FireRed ROM trainer audit:
+      -- #348: Rocket Hideout, ace Kangaskhan Lv.29 — NO Mega.
+      -- #349: Silph Co., ace Nidoqueen Lv.41 — add Mega Mewtwo Y.
+      onlyTrainerIds={firered={349}},noMegaTrainerIds={firered={348}}}
   },
   hoenn={
     {key="roxanne",name="ROXANNE",classes={"LEADER"},slug="mega_glimmora"},

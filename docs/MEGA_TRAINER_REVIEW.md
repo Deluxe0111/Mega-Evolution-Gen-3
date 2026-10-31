@@ -1,3 +1,33 @@
+## Verified FireRed ROM audit corrections — 31 October 2026
+
+These decisions are grounded in the exported `mega_trainer_audit.txt`
+from the user's imported FireRed ROM.
+
+- **Rocket Giovanni, trainer #348:** early encounter's final original
+  Pokémon is Kangaskhan Lv.29. **Do not Mega Evolve any Pokémon** in this
+  battle. An explicit disabled choice overrides the generic NPC Mega rule.
+- **Rocket Giovanni, trainer #349:** later encounter's final original
+  Pokémon is Nidoqueen Lv.41. **Add Mega Mewtwo Y** in the open fifth
+  slot at Lv.41. Giovanni's Gym (trainer #350) still uses Mega Kangaskhan.
+  The exact #348/#349 restrictions are applied only to the verified
+  FireRed ROM; LeafGreen Rocket encounter IDs need separate verification.
+- **Fake Champion #38:** unnamed ROM placeholder with one Ekans Lv.5.
+  This is **not the Champion Rival** and will not appear in the Mega
+  trainer audit. Rival Champions must have a real name, six-member party
+  and a final-stage starter. Verified FireRed Champion encounters
+  #438–440 and rematches #739–741 remain eligible.
+- **Duplicate boss species:** select the **last** matching Pokémon in
+  the original party. In the FireRed audit, Agatha's regular and rematch
+  Gengars are slots 5 (Lv.58 and Lv.70 respectively), and Lance's
+  rematch Dragonite is slot 5 (Lv.72).
+
+The audit displays intentionally suppressed encounters as **OFF**,
+separate from READY and NEEDS REVIEW. They are included in the
+text export with an explicit no-Mega rule. No original party Pokémon
+are replaced or permanently changed.
+
+---
+
 ## In-game trainer Mega audit
 
 Open **START → MEGA AUDIT** (shown by default; can be disabled using
