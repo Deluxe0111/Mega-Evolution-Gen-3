@@ -100,7 +100,6 @@ The existing GitHub Actions workflows also check the art provider, animation inv
 
 Mega sprite attribution includes [Aronousqui20](https://www.deviantart.com/aronousqui20/gallery) and [mangalos810](https://www.deviantart.com/mangalos810/gallery/103628774/new-work), alongside the upstream EBDX, Pokémon Essentials and other contributor credits in [CREDITS.md](CREDITS.md) and [source_metadata/README.md](assets/source/ebdx/source_metadata/README.md).
 
-Artwork, audio, UI assets and source code can have **different licence/permission terms**. Do not publish these as if one permissive code licence automatically covers third-party art, and never redistribute Pokémon ROM data.
 
 ---
 
