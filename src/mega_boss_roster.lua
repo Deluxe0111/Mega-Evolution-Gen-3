@@ -74,7 +74,10 @@ function Boss.new(approved,formRows,opts)
         and matchesClass(entry,trainer.className)) then return nil end
     -- Names alone are not sufficient for the FRLG CHAMPION class:
     -- the ROM pack also contains a blank-name, single-Ekans #38 row.
-    if entry.requireNamed and not norm(trainer.name) then return nil end
+    local trainerName=norm(trainer.name)
+    if entry.requireNamed and (not trainerName or trainerName=="") then
+      return nil
+    end
     if entry.minPartySize and #(trainer.party or {})<entry.minPartySize then
       return nil
     end
