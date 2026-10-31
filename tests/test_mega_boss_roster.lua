@@ -130,12 +130,12 @@ assert(noPatch==corrupted and mismatch.status=="rom_party_mismatch")
 -- remains queued, without inserting an invalid species ID.
 sample(107,"ROXANNE","LEADER",{mon("PIDGEY",13)})
 byName.GLIMMORA=nil
-assert(assess(107,"emerald").status=="species_not_registered")
+assert(assess(107,"ruby").status=="species_not_registered")
 byName.GLIMMORA=ids.GLIMMORA
-assert(assess(107,"emerald").status=="add")
+assert(assess(107,"ruby").status=="add")
 -- Tate & Liza's double battle needs owner/party partition review.
 sample(108,"TATE&LIZA","LEADER",{mon("PIDGEY",40)})
-assert(assess(108,"emerald").status=="double_party_review")
+assert(assess(108,"ruby").status=="double_party_review")
 -- The FireRed import contains a #38 CHAMPION placeholder with no name
 -- and one Lv.5 Ekans. That record is NOT the Champion Rival.
 sample(38,"","CHAMPION",{mon("EKANS",5)})
