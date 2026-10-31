@@ -1,0 +1,55 @@
+name: Minimal Mega Evolution player ZIP (private preview)
+on:
+  push:
+    branches:
+      - release/minimal-player-zip
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate manifest and source assets
+        run: python tests/check_project.py
+      - name: Validate public documentation
+        run: python tests/check_docs.py
+      - name: Verify minimal runtime inventory and atlas/party-icon references
+        run: python tools/package_release.py --check
+      - name: Build private player ZIP and checksum
+        run: python tools/package_release.py --private-preview
+      - name: Verify packaged archive paths and contents
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          zips = list(Path("dist").glob("*.zip"))
+          assert len(zips) == 1, zips
+          with ZipFile(zips[0]) as z:
+              paths = set(z.namelist())
+              assert "manifest.json" in paths and "main.lua" in paths
+              assert "assets/runtime/mega_atlas_index.lua" in paths
+              assert "assets/source/ebdx/megas/mega_venusaur/icon.png" in paths
+              assert "assets/source/ebdx/megas/mega_venusaur/cry.ogg" in paths
+              assert "assets/source/ebdx/ui_reference/Graphics/EBDX/Pictures/UI/megaButton.png" in paths
+              assert not any(p.startswith(("tools/", "tests/", ".github/", "docs/")) for p in paths)
+              assert not any(p.endswith(("front.png", "back.png", "front_shiny.png", "back_shiny.png")) for p in paths)
+              assert z.testzip() is None
+          print(f"PASS: minimal installable archive ({len(paths)} files)")
+          PY
+      - name: Upload private preview ZIP and SHA-256 checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: mega-evolution-gen3-minimal-player-preview
+          path: |
+            dist/*.zip
+            dist/*.sha256
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
