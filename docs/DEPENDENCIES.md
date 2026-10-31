@@ -21,6 +21,7 @@ Sources above were checked against the repositories' own `manifest.json` IDs. Th
 - `optional_dependencies`: If one is installed and enabled, Gen1Recomp loads it before Mega Evolution. Missing optional mods do not block Mega's loading.
 - `dependency_sources`: Repository hints for the launcher to show installation/download links. They are **not vendored mod contents** and do **not** silently download or install dependencies.
 - `experimental: true`: Expect incomplete gameplay and compatibility verification. CI success is not the same as all real-ROM scenarios passing.
+- `permissions: [\"engine_internals\"]`: The mod wraps native Gen 3 battle/UI modules through the host's private Lua interfaces. This is an **engine permission**, not another mod dependency. No network access is requested.
 
 In particular, **do not convert National Dex to an unconditional hard dependency**. Doing so would unnecessarily prevent base-game Mega Evolution. Equally, **do not describe expanded boss teams as standalone**: Pokémon not registered by the active species provider cannot be safely inserted.
 
