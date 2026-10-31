@@ -126,6 +126,22 @@ function Boss.new(approved,formRows,opts)
     end
     return true
   end
+  -- The user's actual Emerald audit is authoritative for targeted edits.
+  -- Reject same-name trainers with unknown IDs or altered species/levels.
+  local function auditedEmerald(entry,game,id,party)
+    if game~="emerald" or not entry.emeraldBattles then return nil end
+    local decision=entry.emeraldBattles[id]
+    if not decision then return false,"emerald_id_not_audited" end
+    local names={}
+    for _,mon in ipairs(party or {}) do
+      names[#names+1]=tostring(keyName(mon.species) or "?")
+        ..":"..tostring(tonumber(mon.level) or "?")
+    end
+    if table.concat(names,"|")~=decision.expected then
+      return false,"audited_party_mismatch"
+    end
+    return decision
+  end
   local function target(entry,party)
     if entry.slug=="starter_x" then
       -- FRLG rival champion: use whichever fully evolved starter is
@@ -183,6 +199,26 @@ function Boss.new(approved,formRows,opts)
       report.slug=nil
       return report
     end
+    -- Wally remains a discovery-only selection. His actual ROM trainer
+    -- IDs/class/teams must be exported before any curated team change.
+    if entry.auditOnly then
+      report.status="trainer_identity_unverified"
+      return report
+    end
+    local audited,why=auditedEmerald(entry,game,id,actualParty)
+    if audited==false then
+      report.status=why
+      return report
+    end
+    if entry.double and audited then
+      -- A single ROM double trainer uses one shared party. Distinct
+      -- two-opponent/partner halves are never modified by this rule.
+      if not row.doubleBattle then
+        report.status="double_battle_flag_unverified"
+        return report
+      end
+      report.doubleBattle=true
+    end
     local slot,slug,present=target(entry,actualParty)
     report.slug=slug or entry.slug
     if slot then
@@ -194,11 +230,11 @@ function Boss.new(approved,formRows,opts)
       report.status="starter_not_present"
       return report
     end
-    if entry.double then
+    if entry.double and not audited then
       report.status="double_party_review"
       return report
     end
-    if #actualParty>=6 then
+    if #actualParty>=6 and not (audited and audited.mode=="replace") then
       report.status="full_party_needs_approval"
       return report
     end
@@ -214,6 +250,20 @@ function Boss.new(approved,formRows,opts)
     local species=speciesId(form.species)
     if not species then
       report.status="species_not_registered"
+      return report
+    end
+    if audited and audited.mode=="replace" then
+      local replaceSlot=tonumber(audited.slot)
+      local old=replaceSlot and actualParty[replaceSlot]
+      if not old then
+        report.status="replacement_slot_mismatch"
+        return report
+      end
+      report.status="replace"
+      report.slot=replaceSlot
+      report.replacedName=keyName(old.species)
+      report.species=species
+      report.level=math.max(1,tonumber(old.level) or 5)
       return report
     end
     report.status="add"
@@ -238,23 +288,45 @@ function Boss.new(approved,formRows,opts)
     if not party or opts.foeParty then return opts,nil end
     local id=tonumber(opts.trainerId or foe.trainerId)
     local report=self.assess(game,id,party)
-    if report.status~="existing" and report.status~="add" then
+    if report.status~="existing" and report.status~="add"
+        and report.status~="replace" then
+      return opts,report
+    end
+    if report.doubleBattle then
+      -- Gen1Recomp State.new uses foeHalf / partyOwner for two independent
+      -- enemy owners. Our verified Tate & Liza changes are for one shared
+      -- native ROM double trainer only, not a pair of trainers.
+      if not foe.nativeNpcTrainer or not foe.doubleBattle
+          or opts.twoOpponents or opts.trainerIdB or opts.foeHalf
+          or opts.multi or opts.partyOwner then
+        report.status="double_party_ownership_unverified"
+        return opts,report
+      end
+    end
+    if report.status=="replace" and not foe.nativeNpcTrainer then
+      report.status="replacement_not_native_trainer"
       return opts,report
     end
     local patched=copy(opts)
-    if report.status=="add" then
+    if report.status=="add" or report.status=="replace" then
       local amended=copy(foe)
       amended.party={}
       for i,mon in ipairs(party) do amended.party[i]=mon end
-      local last=party[#party]
-      -- Native foe_mon_from prepares stats and level-based moves from
-      -- this generated foe entry. Do not award a held Mega Stone.
-      amended.party[#amended.party+1]={
+      local template=report.status=="replace" and party[report.slot]
+        or party[#party]
+      -- Let the native Gen3 builder assign legal moves and battle stats
+      -- for the new species. No held stone or old species' move set.
+      local added={
         species=report.species,level=report.level,
-        rawIv=tonumber(last and last.rawIv) or 0,
-        iv=tonumber(last and last.iv) or 0,
-        nativeNpcTrainer=foe.nativeNpcTrainer
+        rawIv=tonumber(template and template.rawIv) or 0,
+        iv=tonumber(template and template.iv) or 0,
+        nativeNpcTrainer=foe.nativeNpcTrainer,
       }
+      if report.status=="replace" then
+        amended.party[report.slot]=added
+      else
+        amended.party[#amended.party+1]=added
+      end
       patched.foe=amended
     end
     return patched,report
@@ -278,6 +350,25 @@ function Boss.new(approved,formRows,opts)
         local report=self.assess(game,trainerId,row.party,row)
         rows[#rows+1]=report
         found[entry.key]=true
+      elseif game=="emerald" and row then
+        -- Wally may be under a ROM class label not in our reviewed
+        -- aliases. Expose named/script-linked candidates, never match
+        -- another trainer by Gardevoir species or a guessed ID.
+        local name=norm(row.name)
+        local script=norm(row.scriptKey)
+        if name=="WALLY" or (script and script:find("WALLY",1,true)) then
+          local candidate={key="wally",trainerId=tonumber(trainerId),
+            name=row.name,className=row.className,
+            slug="mega_gardevoir",status="trainer_identity_unverified",
+            party={}}
+          for i,mon in ipairs(row.party or {}) do
+            candidate.party[i]={slot=i,species=tonumber(mon.species),
+              name=keyName(mon.species) or ("SPECIES "..tostring(mon.species)),
+              level=tonumber(mon.level) or 0}
+          end
+          rows[#rows+1]=candidate
+          found.wally=true
+        end
       end
     end
     for _,entry in ipairs(approved[region(game) or ""] or {}) do
