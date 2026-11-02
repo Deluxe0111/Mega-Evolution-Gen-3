@@ -28,6 +28,6 @@ Classified as a **Mechanics** mod in Gen1Recomp (`MECHANIC`), with no experiment
 
 This is a testing pre-release. FireRed/Emerald live verification and the complete five-game/cross-mod compatibility matrix are unfinished. Wally's Emerald curated encounter remains audit-only until his ROM records are confirmed. Modern Fairy/ability/move interactions depend on the installed provider, and compatibility may vary.
 
-The repository is private; **third-party sprite, UI and audio redistribution rights must be verified before any wider public distribution**. No ROM or copyrighted game binary is included. Artist/source credits are bundled with the package.
+The repository is public, but **the existing downloadable beta is not a rights-cleared distribution**. Third-party sprite, UI and audio redistribution rights still require verification before wider sharing. No ROM or copyrighted game binary is included. Artist/source credits are bundled with the package.
 
 Verify your download with the attached `.sha256` file.

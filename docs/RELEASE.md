@@ -1,51 +1,19 @@
-# Release preparation
+# Release preparation and status
 
-`v1.0.0-Beta` is a **Beta pre-release** in the private development repository. Its automated packaging and regression checks do not constitute five-game, cross-mod or public redistribution certification.
+**The GitHub repository and its existing `v1.0.0-Beta` release are public. That earlier archive is not a verified rights-cleared distribution.** Its third-party artwork and audio require provenance and redistribution-permission review before the package is promoted or shared further. A pre-existing download does not establish licensing or Modkit compliance.
 
-## Distribution prerequisites
+See [Modkit publishing checklist](MODKIT_PUBLISHING.md) for the exact strict `validate`, `lint`, compatibility scan and `pack` workflow, and [testing](TESTING.md) for the gameplay matrix. The new distribution-gate GitHub workflow tests a staged player archive without uploading or publishing it.
 
-1. **Asset permissions:** Verify redistribution permission for each included Mega sprite, item icon, UI image and cry. Retain creator credits and original source metadata; third-party files must not be implicitly relicensed by a code licence.
-2. **Copyright:** Do not package a GBA ROM, BIOS, Pokémon game executable, decompiled ROM assets, personal saves or another mod's distribution.
-3. **Gameplay:** Run the acceptance and cross-mod matrix in [Testing](TESTING.md), including FireRed and Emerald with/without National Dex and G9/HD sprite providers.
-4. **Build health:** Confirm required GitHub Actions workflows pass. A green metadata check alone is insufficient.
-5. **Installability:** Test a clean extracted mod and the actual ZIP through Gen1Recomp's Mods UI. Check for the Key Stone shop, Mega button, animations, switch/faint behaviour and the party screen.
-6. **Version and category:** The Beta remains a GitHub pre-release, but its mod-manager category is `MECHANIC` and `experimental` is `false`. Do not make the repository publicly downloadable until gameplay and asset-rights requirements are satisfied.
+## Release blockers
 
-## Runtime contents to preserve
+1. **Rights and ROM content:** Confirm distribution rights for each included Mega sprite, icon, UI image, atlas derivative and cry. Retain source and contributor credits. The current upstream EBDX material includes third-party sprites and game-derived sources; neither attribution nor a generic code licence clears them.
+2. **Strict Modkit validation:** Prepare a player ZIP from the runtime inventory, extract to a clean folder and pass the engine's strict `modkit validate`, `lint` and `pack` checks. A green repository metadata/test workflow alone is not sufficient.
+3. **Game coverage:** Test the specific claimed Gen 3 games and optional-mod configurations. `games: ["gen3"]` is a family-wide claim, not proof of testing every title.
+4. **Clean install and save safety:** Confirm ZIP import (and manual folder install), the Key Stone shop, Mega action, shiny/normal front/back art, party/switch icons, cries, trainer fights, faint/revert, disable/re-enable and previous-version save migration.
+5. **Release notes:** Describe tested game versions and known limitations; increment semantic version for the next release. Do not republish the original beta tag as though it had passed the new gate.
 
-The installed mod requires:
+## Runtime inventory
 
-- `manifest.json` and `main.lua`;
-- every runtime `src/*.lua` and `data/*.lua` module;
-- `assets/runtime/mega_atlas_index.lua` and all referenced `assets/runtime/atlas/*.png` pages;
-- `assets/source/ebdx/mega_stones/*.png`, the Key Stone and battle UI images in `assets/source/ebdx/ui_reference/`, and `assets/source/ebdx/megas/*/cry.ogg`;
-- `README.md`, `CREDITS.md` and retained upstream `assets/source/ebdx/source_metadata/README.md`. The release guide remains in the source repository.
+The isolated archive is prepared by `tools/package_release.py`. It includes the manifest, entrypoint, runtime `src/*.lua` and `data/*.lua`, the indexed atlas pages and Lua index, Mega Stone and Key Stone icons, EBDX UI images, direct-read Mega party icons and cries, `README.md`, `DIFFERENCES.md` and credited source metadata. It intentionally excludes source animation sheets, developer tooling, tests and workflows. The test builder's `--private-preview` flag is for local verification only.
 
-Source animation PNGs, EBDX import tooling, local previews, test fixtures, GitHub workflows and transient reports need not be in the player archive unless a runtime path references them. Never remove files based only on their location under `assets/source`.
-
-## Minimal runtime ZIP
-
-The player package contains only the mod manifest/entrypoint, runtime Lua modules and data, the referenced battle atlas PNG pages, Mega Stone/Key Stone icons, the three battle UI images, the direct-source Mega party icon strips, available Mega cries, and the README/required source credits. It omits prototype files, tests, Python build tools, GitHub workflows, raw front/back sprite sheets, PBS source definitions, preview images and redundant atlas JSON.
-
-The source `icon.png` and `icon_shiny.png` files are essential because the party/summary UI reads them directly. The ZIP builder validates that all 98 Mega forms have both strips.
-
-A private test ZIP can be built with `py -3 tools/package_release.py --private-preview`; that does not certify public redistribution. Use `--rights-cleared` only after confirming applicable asset permissions. The private preview workflow uploads the installable ZIP and checksum as a GitHub Actions artifact.
-
-## Player archive
-
-After all art/audio rights are cleared, build and verify the distributable ZIP:
-
-```powershell
-py -3 tests/check_project.py
-py -3 tests/check_docs.py
-py -3 tools/package_release.py --check
-py -3 tools/package_release.py --rights-cleared
-```
-
-The output is `dist/mega-evolution-gen3-v<version>.zip` plus a SHA-256 checksum. The ZIP contains root-level `manifest.json`, runtime Lua code, atlas pages, direct-source party icons, cries and short attribution documentation. It omits development tooling and unused source animation PNGs. `--check` is safe to run in CI and never creates a distributable package; `--rights-cleared` is an explicit maintainer assertion, not an automatic rights check.
-
-## Beta publication
-
-The versioned private-repository pre-release is produced by `.github/workflows/publish-beta.yml` on the main branch. It builds the minimal player ZIP, runs inventory, manifest and documentation checks, confirms repository privacy, and attaches the ZIP and SHA-256 checksum to tag `v1.0.0-Beta`. The workflow refuses to publish if the repository is public, pending third-party redistribution clearance. For a future public/stable release, verify rights and live gameplay, use `--rights-cleared` with the ZIP packager, and document supported Gen1Recomp/mod versions.
-
-Release blockers must remain visible rather than converting untested features into release claims.
+**Historical automation:** `.github/workflows/publish-beta.yml` is now manual-only and still refuses publication when the repository is public. Do not bypass that protection or treat `--rights-cleared` as an automated licence check. Use a fresh versioned release only when the substantive release blockers have actually been resolved.

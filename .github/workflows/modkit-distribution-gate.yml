@@ -1,0 +1,79 @@
+name: Gen1Recomp Modkit distribution gate (no publication)
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  modkit-gate:
+    name: Strict package validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Mega Evolution source
+        uses: actions/checkout@v4
+        with:
+          path: mega
+      - name: Check out Gen1Recomp engine and Modkit
+        uses: actions/checkout@v4
+        with:
+          repository: bryanthaboi/gen1recomp
+          ref: dev
+          path: engine
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install headless validator requirements
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y luajit
+          python3 -m pip install Pillow
+      - name: Validate project inventory and docs
+        working-directory: mega
+        run: |
+          python3 tests/check_project.py
+          python3 tests/check_docs.py
+          python3 tools/package_release.py --check
+      - name: Stage an isolated runtime-only ZIP (never publish it)
+        working-directory: mega
+        run: |
+          python3 tools/package_release.py --private-preview --out-dir ../_package
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import json
+          version = json.loads(Path('manifest.json').read_text())['version']
+          path = Path('../_package') / f'mega-evolution-gen3-v{version}-private-preview.zip'
+          root = Path('../_staged/mega-evolution-gen3')
+          root.mkdir(parents=True, exist_ok=True)
+          with ZipFile(path) as archive:
+              files = archive.namelist()
+              if any(p.startswith('/') or '..' in Path(p).parts for p in files):
+                  raise ValueError('Unexpected ZIP member path')
+              for required in ('manifest.json', 'main.lua', 'README.md', 'DIFFERENCES.md'):
+                  if required not in files:
+                      raise ValueError(f'Missing root member: {required}')
+              archive.extractall(root)
+              if archive.testzip() is not None:
+                  raise ValueError('Archive integrity failure')
+          print(f'Staged {len(files)} files in {root}')
+          PY
+      - name: Run engine strict validation
+        run: python3 engine/tools/modkit.py --repo engine validate _staged/mega-evolution-gen3 --strict --base fixture
+      - name: Run distribution lint
+        run: python3 engine/tools/modkit.py --repo engine lint _staged/mega-evolution-gen3
+      - name: Check Gen 3 compatibility scan
+        run: python3 engine/tools/modkit.py --repo engine gen3check _staged/mega-evolution-gen3 --strict
+      - name: Re-run both gates and pack with Modkit
+        run: |
+          python3 engine/tools/modkit.py --repo engine pack _staged/mega-evolution-gen3 --base fixture -o _package/mega-evolution-gen3-modkit-gated.zip
+          python3 - <<'PY'
+          from zipfile import ZipFile
+          with ZipFile('_package/mega-evolution-gen3-modkit-gated.zip') as archive:
+              entries = set(archive.namelist())
+              assert {'manifest.json', 'main.lua', 'DIFFERENCES.md'}.issubset(entries)
+              assert archive.testzip() is None
+          print('Modkit gate passed (archive retained only in CI runner; not published).')
+          PY
