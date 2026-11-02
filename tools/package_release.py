@@ -25,6 +25,7 @@ REQUIRED = (
     "main.lua",
     "README.md",
     "CREDITS.md",
+    "DIFFERENCES.md",
     "assets/runtime/mega_atlas_index.lua",
     "assets/source/ebdx/ui_reference/Graphics/EBDX/Pictures/UI/megaButton.png",
     "assets/source/ebdx/ui_reference/Graphics/EBDX/Pictures/UI/symMega.png",

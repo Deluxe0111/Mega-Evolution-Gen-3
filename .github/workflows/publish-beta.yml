@@ -1,13 +1,8 @@
 name: Publish Mega Evolution Gen 3 v1.0.0-Beta
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'manifest.json'
-      - 'RELEASE_NOTES.md'
-      - '.github/workflows/publish-beta.yml'
+  # Legacy publishing task is manual-only. Public distribution needs asset clearance
+  # and an independently passing modkit distribution gate.
   workflow_dispatch:
 
 permissions:

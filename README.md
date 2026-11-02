@@ -4,7 +4,7 @@
 
 Experience the classic Gen 3 adventures with Mega Stones, in-battle transformations, enhanced Pokémon forms and surprise Mega-powered trainer battles — **without modifying a GBA ROM**. This mechanics mod adds **98 Mega form entries** and **92 Mega Stones**, alongside animated sprites, new battle presentation and optional integration with expanded Pokémon content packs.
 
-> **Status: v1.0.0-Beta (pre-release).** Includes 98 Mega form entries, 92 held Mega Stones plus a Key Stone, battle Mega selection, temporary form/stats/art, trainer Mega behaviour and curated boss encounters. Automated tests cover the current implementation, but **full cross-mod and five-game gameplay QA is not complete**. This release is currently available through the private development repository.
+> **Status: v1.0.0-Beta (pre-release).** Includes 98 Mega form entries, 92 held Mega Stones plus a Key Stone, battle Mega selection, temporary form/stats/art, trainer Mega behaviour and curated boss encounters. Automated tests cover the current implementation, but **full cross-mod and five-game gameplay QA is not complete**. A GitHub beta archive exists, but bundled third-party art/audio has not completed redistribution-rights review. The existing archive is an unverified testing build, not a cleared public distribution.
 
 No patched GBA ROM, game binary modification or separate Gen1Recomp engine fork is needed. Battle integration uses existing Gen 3 Lua entrypoints and may need maintenance as the host engine evolves. The manifest explicitly requests Gen1Recomp's **engine_internals** permission because the mod wraps private battle functions; it does not request network permission.
 
@@ -18,6 +18,8 @@ No patched GBA ROM, game binary modification or separate Gen1Recomp engine fork 
 The player gets **one Mega Evolution per battle**. The form appears before the move resolves, remains in battle through switching, and reverts after fainting/battle end. Mega Rayquaza instead requires Dragon Ascent, with that move supplied by the active game's move provider.
 
 **[Detailed installation and troubleshooting →](docs/INSTALLATION.md)**
+
+**Publishing status:** The source repository is public, but that does not grant permission to redistribute the bundled EBDX-derived art, cries or generated atlas pages. Before sharing a player ZIP, check [the Modkit publishing gate](docs/MODKIT_PUBLISHING.md), obtain applicable asset permissions and pass the engine's strict validation, lint and packaging checks.
 
 The player ZIP is generated from a vetted runtime-file inventory, not from GitHub's full source archive. See [release and testing policy](docs/RELEASE.md).
 
@@ -37,6 +39,8 @@ The player ZIP is generated from a vetted runtime-file inventory, not from GitHu
 All six are **optional to install**, but National Dex is **necessary for features involving those extra species**. Dependencies are **not bundled** with the Mega mod and aren't installed automatically by the manifest. Each repository's manifest controls its own dependencies; for example, G9 requires National Dex.
 
 **[Exact mod IDs, install order, recommended setups and limitations →](docs/DEPENDENCIES.md)**
+
+**Regenerating artwork:** In a source checkout (not the player ZIP), import source sheets only from material you have the right to use. Install Python 3 and Pillow, then run `python3 tools/build_mega_atlas.py --audit-only` and `python3 tools/build_mega_atlas.py --normalize-padding`, followed by `python3 tests/check_full_mega_atlas.py`. Recheck front/back/shiny art and party icons in-game. See [Animation pipeline](docs/ANIMATION_PIPELINE.md); regenerating an atlas does not itself resolve redistribution rights.
 
 ## Features
 
@@ -112,7 +116,7 @@ The existing GitHub Actions workflows also check the art provider, animation inv
 - [Animation pipeline](docs/ANIMATION_PIPELINE.md)
 - [Development](docs/DEVELOPMENT.md) · [Roadmap](docs/ROADMAP.md)
 - [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
-- [Credits and asset rights](CREDITS.md) · [Release requirements](docs/RELEASE.md)
+- [Credits and asset rights](CREDITS.md) · [Release requirements](docs/RELEASE.md) · [Modkit publishing checklist](docs/MODKIT_PUBLISHING.md) · [Differences from vanilla](DIFFERENCES.md)
 
 ## Rights and credits
 

@@ -1,6 +1,6 @@
 # Installation and first battle
 
-This is a **Gen1Recomp Mod API 2 mechanics mod (v1.0.0-Beta)** for FireRed, LeafGreen, Ruby, Sapphire and Emerald. It uses the Gen 3 runtime, not a patched GBA ROM. Download the installable ZIP attached to the [Beta GitHub Release](https://github.com/Deluxe0111/Mega-Evolution-Gen-3/releases/tag/v1.0.0-Beta); the repository may require access.
+This is a **Gen1Recomp Mod API 2 mechanics mod (v1.0.0-Beta)** for FireRed, LeafGreen, Ruby, Sapphire and Emerald. It uses the Gen 3 runtime, not a patched GBA ROM. Download the installable ZIP attached to the [Beta GitHub Release](https://github.com/Deluxe0111/Mega-Evolution-Gen-3/releases/tag/v1.0.0-Beta).
 
 ## 1. Install Mega Evolution
 
