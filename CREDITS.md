@@ -5,7 +5,7 @@
 Mega sprite artwork is attributed to the following artists in the imported source collection:
 
 - **Aronousqui20** — Mega Evolution sprites **except Mega Manectric**. [DeviantArt gallery](https://www.deviantart.com/aronousqui20/gallery)
-- **mangalos810** — art attributed separately, including **Mega Manectric** . [DeviantArt gallery](https://www.deviantart.com/mangalos810/gallery/103628774/new-work)
+- **mangalos810** — art attributed separately, including **Mega Manectric**. [DeviantArt gallery](https://www.deviantart.com/mangalos810/gallery/103628774/new-work)
 
 These credits refer to the artwork, not necessarily to all UI graphics, item icons, cries, code or Pokémon Essentials materials.
 
