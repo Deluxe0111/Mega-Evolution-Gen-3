@@ -4,7 +4,7 @@
 
 Experience the classic Gen 3 adventures with Mega Stones, in-battle transformations, enhanced Pokémon forms and surprise Mega-powered trainer battles — **without modifying a GBA ROM**. This mechanics mod adds **98 Mega form entries** and **92 Mega Stones**, alongside animated sprites, new battle presentation and optional integration with expanded Pokémon content packs.
 
-> **Status: v1.0.0-Beta (pre-release).** Includes 98 Mega form entries, 92 held Mega Stones plus a Key Stone, battle Mega selection, temporary form/stats/art, trainer Mega behaviour and curated boss encounters. Automated tests cover the current implementation, but **full cross-mod and five-game gameplay QA is not complete**. A GitHub beta archive exists, but bundled third-party art/audio has not completed redistribution-rights review. The existing archive is an unverified testing build, not a cleared public distribution.
+> **Status: v1.0.0-Beta (pre-release).** Includes 98 Mega form entries, 92 held Mega Stones plus a Key Stone, battle Mega selection, temporary form/stats/art, trainer Mega behaviour and curated boss encounters. Automated tests cover the current implementation, but **full cross-mod and five-game gameplay QA is not complete**. The existing GitHub beta archive predates the current strict Modkit release checks; a newly verified archive is being prepared.
 
 No patched GBA ROM, game binary modification or separate Gen1Recomp engine fork is needed. Battle integration uses existing Gen 3 Lua entrypoints and may need maintenance as the host engine evolves. The manifest explicitly requests Gen1Recomp's **engine_internals** permission because the mod wraps private battle functions; it does not request network permission.
 
@@ -19,7 +19,7 @@ The player gets **one Mega Evolution per battle**. The form appears before the m
 
 **[Detailed installation and troubleshooting →](docs/INSTALLATION.md)**
 
-**Publishing status:** The source repository is public, but that does not grant permission to redistribute the bundled EBDX-derived art, cries or generated atlas pages. Before sharing a player ZIP, check [the Modkit publishing gate](docs/MODKIT_PUBLISHING.md), obtain applicable asset permissions and pass the engine's strict validation, lint and packaging checks.
+**Publishing status:** The next player ZIP will follow [the Modkit publishing gate](docs/MODKIT_PUBLISHING.md) and must pass strict validation, lint and packaging checks. Artwork and audio contributor credits are retained in [CREDITS.md](CREDITS.md).
 
 The player ZIP is generated from a vetted runtime-file inventory, not from GitHub's full source archive. See [release and testing policy](docs/RELEASE.md).
 
@@ -40,7 +40,7 @@ All six are **optional to install**, but National Dex is **necessary for feature
 
 **[Exact mod IDs, install order, recommended setups and limitations →](docs/DEPENDENCIES.md)**
 
-**Regenerating artwork:** In a source checkout (not the player ZIP), import source sheets only from material you have the right to use. Install Python 3 and Pillow, then run `python3 tools/build_mega_atlas.py --audit-only` and `python3 tools/build_mega_atlas.py --normalize-padding`, followed by `python3 tests/check_full_mega_atlas.py`. Recheck front/back/shiny art and party icons in-game. See [Animation pipeline](docs/ANIMATION_PIPELINE.md); regenerating an atlas does not itself resolve redistribution rights.
+**Regenerating artwork:** In a source checkout (not the player ZIP), use the credited source sheets. Install Python 3 and Pillow, then run `python3 tools/build_mega_atlas.py --audit-only` and `python3 tools/build_mega_atlas.py --normalize-padding`, followed by `python3 tests/check_full_mega_atlas.py`. Recheck front/back/shiny art and party icons in-game. See [Animation pipeline](docs/ANIMATION_PIPELINE.md).
 
 ## Features
 
@@ -116,9 +116,9 @@ The existing GitHub Actions workflows also check the art provider, animation inv
 - [Animation pipeline](docs/ANIMATION_PIPELINE.md)
 - [Development](docs/DEVELOPMENT.md) · [Roadmap](docs/ROADMAP.md)
 - [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
-- [Credits and asset rights](CREDITS.md) · [Release requirements](docs/RELEASE.md) · [Modkit publishing checklist](docs/MODKIT_PUBLISHING.md) · [Differences from vanilla](DIFFERENCES.md)
+- [Credits and source provenance](CREDITS.md) · [Release requirements](docs/RELEASE.md) · [Modkit publishing checklist](docs/MODKIT_PUBLISHING.md) · [Differences from vanilla](DIFFERENCES.md)
 
-## Rights and credits
+## Credits
 
 Mega sprite attribution includes [Aronousqui20](https://www.deviantart.com/aronousqui20/gallery) and [mangalos810](https://www.deviantart.com/mangalos810/gallery/103628774/new-work), alongside the upstream EBDX, Pokémon Essentials and other contributor credits in [CREDITS.md](CREDITS.md) and [source_metadata/README.md](assets/source/ebdx/source_metadata/README.md).
 
