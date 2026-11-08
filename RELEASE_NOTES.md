@@ -1,6 +1,6 @@
-# Mega Evolution Gen 3 — v1.0.0-Beta
+# Mega Evolution Gen 3 — v1.0.0
 
-First versioned beta of Mega Evolution for Gen1Recomp's FireRed, LeafGreen, Ruby, Sapphire and Emerald runtime.
+First stable-version-numbered release of Mega Evolution for Gen1Recomp's FireRed, LeafGreen, Ruby, Sapphire and Emerald runtime. The release archive must be validated with Gen1Recomp Modkit before publication.
 
 ## Features
 
@@ -18,16 +18,16 @@ First versioned beta of Mega Evolution for Gen1Recomp's FireRed, LeafGreen, Ruby
 
 ## Install
 
-**Download the attached `mega-evolution-gen3-v1.0.0-Beta.zip`**, not the automatically generated GitHub source archive. Import it through Gen1Recomp's **MODS** screen and enable it for a Gen 3 game.
+**Download the attached `mega-evolution-gen3-v1.0.0.zip`**, not the automatically generated GitHub source archive. Import it through Gen1Recomp's **MODS** screen and enable it for a Gen 3 game.
 
 The base game does not require other mods. **National Dex Gen 3** is needed for later-generation Pokémon and corresponding Mega boss choices. G9 Battle Sprites, Gen 3 HD Sprites, Modern Spawns, Untamed Advanced and Nuzlocke are optional. See `README.md` and `CREDITS.md` inside the ZIP.
 
-## Category and Beta limitations
+## Category and known limitations
 
 Classified as a **Mechanics** mod in Gen1Recomp (`MECHANIC`), with no experimental enablement warning.
 
-This is a testing pre-release. FireRed/Emerald live verification and the complete five-game/cross-mod compatibility matrix are unfinished. Wally's Emerald curated encounter remains audit-only until his ROM records are confirmed. Modern Fairy/ability/move interactions depend on the installed provider, and compatibility may vary.
+The full FireRed/Emerald gameplay verification and five-game/cross-mod compatibility matrix are not yet documented as complete. Wally's Emerald curated encounter remains audit-only until his ROM records are confirmed. Modern Fairy/ability/move interactions depend on the installed provider, and compatibility may vary.
 
-The repository is public, but **the existing downloadable beta is not a rights-cleared distribution**. Third-party sprite, UI and audio redistribution rights still require verification before wider sharing. No ROM or copyrighted game binary is included. Artist/source credits are bundled with the package.
+The earlier `v1.0.0-Beta` archive is historical and was not produced through the current strict Modkit packaging gate. The `v1.0.0` archive is generated separately from the runtime inventory and excludes ROM files. Artist and source credits are bundled with the package.
 
 Verify your download with the attached `.sha256` file.
