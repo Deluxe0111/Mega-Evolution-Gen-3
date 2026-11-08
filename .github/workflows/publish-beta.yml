@@ -1,8 +1,8 @@
 name: Publish Mega Evolution Gen 3 v1.0.0-Beta
 
 on:
-  # Legacy publishing task is manual-only. Public distribution needs asset clearance
-  # and an independently passing modkit distribution gate.
+  # Legacy Beta publisher is manual-only and retained for historical reference.
+  # The versioned v1.0.0 build uses tools/prepare_release.ps1 and Modkit.
   workflow_dispatch:
 
 permissions:
@@ -29,7 +29,7 @@ jobs:
         shell: bash
         run: |
           if [ "$(gh api "repos/$GITHUB_REPOSITORY" --jq '.private')" != "true" ]; then
-            echo 'Asset redistribution permissions are unresolved. Publishing to a public repository is disabled.'
+            echo 'The legacy Beta publisher is retired for public releases. Prepare v1.0.0 with the strict Modkit release workflow instead.'
             exit 1
           fi
       - name: Confirm exact release version
