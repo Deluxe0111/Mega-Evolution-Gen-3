@@ -4,13 +4,13 @@
 
 Experience the classic Gen 3 adventures with Mega Stones, in-battle transformations, enhanced Pokémon forms and surprise Mega-powered trainer battles — **without modifying a GBA ROM**. This mechanics mod adds **98 Mega form entries** and **92 Mega Stones**, alongside animated sprites, new battle presentation and optional integration with expanded Pokémon content packs.
 
-> **Status: v1.0.0-Beta (pre-release).** Includes 98 Mega form entries, 92 held Mega Stones plus a Key Stone, battle Mega selection, temporary form/stats/art, trainer Mega behaviour and curated boss encounters. Automated tests cover the current implementation, but **full cross-mod and five-game gameplay QA is not complete**. The existing GitHub beta archive predates the current strict Modkit release checks; a newly verified archive is being prepared.
+> **Status: v1.0.0 (release candidate; not yet published).** Includes 98 Mega form entries, 92 held Mega Stones plus a Key Stone, battle Mega selection, temporary form/stats/art, trainer Mega behaviour and curated boss encounters. Automated tests cover the current implementation, but **full cross-mod and five-game gameplay QA is not complete**. The old beta archive is historical. The v1.0.0 release ZIP must be rebuilt and tested through the strict Modkit release checks.
 
 No patched GBA ROM, game binary modification or separate Gen1Recomp engine fork is needed. Battle integration uses existing Gen 3 Lua entrypoints and may need maintenance as the host engine evolves. The manifest explicitly requests Gen1Recomp's **engine_internals** permission because the mod wraps private battle functions; it does not request network permission.
 
 ## Quick start
 
-1. Download the `mega-evolution-gen3-v1.0.0-Beta.zip` **release asset** (not GitHub's automatic Source code ZIP) and import it from the Gen1Recomp **MODS** screen.
+1. Once published, download the `mega-evolution-gen3-v1.0.0.zip` **release asset** (not GitHub's automatic Source code ZIP) and import it from the Gen1Recomp **MODS** screen.
 2. Enable **Mega Evolution Gen 3** for a supported Gen 3 game.
 3. In Oak's Lab (FireRed/LeafGreen) or Birch's Lab (Ruby/Sapphire/Emerald), buy the **Key Stone (₽10,000)** and the Pokémon's **Mega Stone (₽5,000)** from the added lab aide.
 4. Give the Pokémon its Mega Stone, open **FIGHT**, toggle Mega with **START** (or the on-screen control), then select its move.
@@ -21,7 +21,7 @@ The player gets **one Mega Evolution per battle**. The form appears before the m
 
 **Publishing status:** The next player ZIP will follow [the Modkit publishing gate](docs/MODKIT_PUBLISHING.md) and must pass strict validation, lint and packaging checks. Artwork and audio contributor credits are retained in [CREDITS.md](CREDITS.md).
 
-The player ZIP is generated from a vetted runtime-file inventory, not from GitHub's full source archive. See [release and testing policy](docs/RELEASE.md).
+The player ZIP is generated from a vetted runtime-file inventory, not from GitHub's full source archive. On Windows, run `powershell -NoProfile -File .\tools\prepare_release.ps1` in the mod repository to create `dist\mega-evolution-gen3-v1.0.0.zip` after strict validation. See [release and testing policy](docs/RELEASE.md).
 
 ## Dependencies
 
@@ -66,7 +66,7 @@ All six are **optional to install**, but National Dex is **necessary for feature
 - **Optional content-pack integration.** Compatible with the project’s supported **National Dex Gen 3**, **G9 Battle Sprites**, **Gen 3 HD Sprites**, **Modern Spawns**, **Untamed Advanced** and **Nuzlocke** integrations. The base mod has no additional mandatory mod dependency; later-generation Pokémon require a species provider such as National Dex.
 - **ROM-safe installation.** Installs as a Gen1Recomp Mechanics mod via a release ZIP, with no ROM patch or separate engine fork.
 
-**Beta note:** The core release is functional and covered by automated tests, but not every Mega, boss encounter, newer-generation ability interaction or combination of optional mods has completed live testing. See [Testing](docs/TESTING.md) and [Dependencies](docs/DEPENDENCIES.md).
+**Testing note:** The core release is functional and covered by automated tests, but not every Mega, boss encounter, newer-generation ability interaction or combination of optional mods has completed live testing. See [Testing](docs/TESTING.md) and [Dependencies](docs/DEPENDENCIES.md).
 
 ## Trainer roster at a glance
 
@@ -125,4 +125,4 @@ Mega sprite attribution includes [Aronousqui20](https://www.deviantart.com/arono
 
 ---
 
-Maintained at [Deluxe0111/Mega-Evolution-Gen-3](https://github.com/Deluxe0111/Mega-Evolution-Gen-3). **Beta mechanics mod; not an official Pokémon project.**
+Maintained at [Deluxe0111/Mega-Evolution-Gen-3](https://github.com/Deluxe0111/Mega-Evolution-Gen-3). **Community mechanics mod; not an official Pokémon project.**
