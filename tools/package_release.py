@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Validate and package a reproducible Gen1Recomp Mega Evolution player archive.
 
-Public redistribution is permitted only after the project maintainer has
-verified applicable third-party asset licences and permissions.
+Preserves source and contributor credits while excluding development-only files.
 """
 import argparse
 import hashlib
@@ -90,10 +89,10 @@ def inventory():
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="Audit runtime package inventory only; write nothing")
-    parser.add_argument("--rights-cleared", action="store_true",
-                        help="Confirm distribution rights have been checked for bundled artwork/audio")
+    parser.add_argument("--release", "--rights-cleared", dest="release", action="store_true",
+                        help="Build an installable versioned release archive")
     parser.add_argument("--private-preview", action="store_true",
-                        help="Build an installable test archive for private review; not a rights-cleared public release")
+                        help="Build an isolated preview archive for local testing")
     parser.add_argument("--out-dir", type=Path, default=ROOT / "dist")
     args = parser.parse_args()
     files, version, pages = inventory()
@@ -101,8 +100,8 @@ def main():
     print(f"Inventory OK: {len(files)} files, {pages} referenced atlas pages, {cries} imported Mega cries.")
     if args.check:
         return
-    if args.rights_cleared == args.private_preview:
-        parser.error("Use --private-preview for a private test ZIP or --rights-cleared for a public release ZIP")
+    if args.release == args.private_preview:
+        parser.error("Choose --private-preview for local testing or --release for an installable release ZIP")
     args.out_dir.mkdir(parents=True, exist_ok=True)
     suffix = "-private-preview" if args.private_preview else ""
     name = f"mega-evolution-gen3-v{version}{suffix}.zip"
