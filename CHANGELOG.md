@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.0.0 — 8 November 2026 (release candidate)
+
+- Promoted the project manifest to `1.0.0`, with a separate `v1.0.0` release tag planned.
+- Added a reproducible Windows release-preparation command that stages the minimal player inventory and runs strict Gen1Recomp Modkit validation, lint, Gen 3 compatibility and package generation.
+- Preserved the 98 Mega form entries, 92 Mega Stones, Key Stone, battle mechanics, trainer choices and credited source assets from the Beta line.
+- Full cross-mod and five-game gameplay coverage remains in progress; see [Testing](docs/TESTING.md).
+
 ## v1.0.0-Beta — 31 October 2026
 
 First versioned Gen1Recomp Gen 3 Mega Evolution pre-release.
@@ -12,7 +19,7 @@ First versioned Gen1Recomp Gen 3 Mega Evolution pre-release.
 - Minimal installable ZIP with only runtime Lua, indexed atlas pages, directly-loaded UI/icon/audio, README and full attribution; includes SHA-256 checksum.
 - Classified as `MECHANIC` in Gen1Recomp; no experimental activation warning.
 
-**Beta limitations:** Full five-game and cross-mod gameplay certification is outstanding. Source art/audio permissions must be established before wider redistribution; this pre-release is intended for testing in the private repository.
+**Beta limitations (historical):** Full five-game and cross-mod gameplay certification was not completed for the initial pre-release. The old Beta archive predates the strict Modkit packaging gate.
 
 ## Earlier development preview
 
