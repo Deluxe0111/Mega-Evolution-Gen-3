@@ -63,4 +63,4 @@ Please provide: game and imported ROM version; Gen1Recomp version or commit; Meg
 
 ## Release gate
 
-Before publishing a downloadable mod ZIP: confirm the intended ZIP layout, all runtime PNG atlas pages, source-backed item icons and cries; smoke-test the ZIP via the launcher; check rights and attribution for every art/audio category; confirm current CI; complete at least one FireRed and Emerald full-battle test with and without National Dex. Until then use the repository checkout as an experimental development build.
+Before publishing a downloadable mod ZIP: confirm the intended ZIP layout, all runtime PNG atlas pages, source-backed item icons and cries; smoke-test the ZIP via the launcher; check attribution and package inventory for every art/audio category; confirm current CI; complete at least one FireRed and Emerald full-battle test with and without National Dex. Until then use the repository checkout as an experimental development build.
