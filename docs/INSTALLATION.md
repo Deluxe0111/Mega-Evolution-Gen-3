@@ -56,4 +56,4 @@ For deeper tests and diagnostics, see [Testing](TESTING.md). For known caveats, 
 | Boss team unchanged | Use MEGA AUDIT to inspect exact trainer ID, original party and status; mismatches are intentionally blocked |
 | Old artwork index or missing item icon | Keep the committed runtime atlas and source icon folders; run the repository validators |
 
-**Please do not distribute Nintendo ROM files, a preconfigured game installation, or third-party art under a blanket licence.** See [Credits](../CREDITS.md).
+**Do not distribute Nintendo ROM files or preconfigured game installations.** See [Credits](../CREDITS.md) for artwork and audio attribution.
