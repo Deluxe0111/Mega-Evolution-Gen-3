@@ -51,7 +51,7 @@ assert manifest.get("permissions") == ["engine_internals"], (
 assert manifest.get("category") == "MECHANIC", (
     "Mega Evolution must be grouped under the Gen1Recomp MECHANIC category")
 assert manifest.get("experimental") is False, (
-    "The Beta must not trigger the experimental activation prompt")
+    "The release must not trigger the experimental activation prompt")
 for doc in [
     "docs/INSTALLATION.md", "docs/DEPENDENCIES.md", "docs/ARCHITECTURE.md",
     "docs/MEGA_TRAINER_REVIEW.md", "docs/TESTING.md",
